@@ -127,14 +127,21 @@ export function JBExpoRootLayout({
       }
 
       void (async () => {
-        const accessToken = await authClient.getAccessToken();
-        const refreshToken = await authClient.tokenStorage.getRefreshToken();
+        let accessToken: string | null = null;
+        let refreshToken: string | null = null;
 
-        setSessionFromJBAuth({
-          user: state.user,
-          accessToken,
-          refreshToken,
-        });
+        try {
+          accessToken = await authClient.getAccessToken();
+          refreshToken = await authClient.tokenStorage.getRefreshToken();
+        } catch {
+          // Keep auth store synchronized with provider auth state even if token reads fail.
+        } finally {
+          setSessionFromJBAuth({
+            user: state.user,
+            accessToken,
+            refreshToken,
+          });
+        }
       })();
     },
     [authClient, onAuthStateChanged, setSessionFromJBAuth, signout],

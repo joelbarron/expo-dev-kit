@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import Toast from "react-native-toast-message";
 import { z } from "zod";
@@ -20,6 +20,13 @@ export type JBAuthPasswordSignInFormProps = {
   loading?: boolean;
   disabled?: boolean;
   submitLabel?: string;
+  showSubmitButton?: boolean;
+  showForgotPasswordLink?: boolean;
+  onFormStateChange?: (state: {
+    submit: () => void;
+    canSubmit: boolean;
+    isLoading: boolean;
+  }) => void;
   forgotPasswordLabel?: string;
   loginLabel?: string;
   passwordLabel?: string;
@@ -53,6 +60,9 @@ export function JBAuthPasswordSignInForm(props: JBAuthPasswordSignInFormProps) {
     loading = false,
     disabled = false,
     submitLabel = "Iniciar sesión",
+    showSubmitButton = true,
+    showForgotPasswordLink = true,
+    onFormStateChange,
     forgotPasswordLabel = "¿Olvidaste tu contraseña?",
     loginLabel = "Usuario o correo",
     passwordLabel = "Contraseña",
@@ -99,7 +109,7 @@ export function JBAuthPasswordSignInForm(props: JBAuthPasswordSignInFormProps) {
     );
   }, [formState.errors.root?.message]);
 
-  const submitForm = async (values: JBAuthPasswordSignInFormValues) => {
+  const submitForm = useCallback(async (values: JBAuthPasswordSignInFormValues) => {
     try {
       await onSubmit(values);
     } catch (error) {
@@ -128,7 +138,20 @@ export function JBAuthPasswordSignInForm(props: JBAuthPasswordSignInFormProps) {
         text2: toastMessage,
       });
     }
-  };
+  }, [onSubmit, setError]);
+
+  const submitHandler = useCallback(() => {
+    void handleSubmit(submitForm)();
+  }, [handleSubmit, submitForm]);
+  const canSubmit = !(disabled || !loginValue?.trim() || !passwordValue);
+
+  useEffect(() => {
+    onFormStateChange?.({
+      submit: submitHandler,
+      canSubmit,
+      isLoading,
+    });
+  }, [onFormStateChange, submitHandler, canSubmit, isLoading]);
 
   return (
     <VStack space="lg">
@@ -149,7 +172,7 @@ export function JBAuthPasswordSignInForm(props: JBAuthPasswordSignInFormProps) {
         isDisabled={disabled || isLoading}
       />
 
-      {onPressForgotPassword ? (
+      {showForgotPasswordLink && onPressForgotPassword ? (
         <Button
           variant="link"
           action="primary"
@@ -164,13 +187,15 @@ export function JBAuthPasswordSignInForm(props: JBAuthPasswordSignInFormProps) {
         </Button>
       ) : null}
 
-      <JBAuthPrimaryButton
-        className="mt-6"
-        label={submitLabel}
-        loading={isLoading}
-        disabled={disabled || !loginValue?.trim() || !passwordValue}
-        onPress={handleSubmit(submitForm)}
-      />
+      {showSubmitButton ? (
+        <JBAuthPrimaryButton
+          className="mt-6"
+          label={submitLabel}
+          loading={isLoading}
+          disabled={!canSubmit}
+          onPress={submitHandler}
+        />
+      ) : null}
 
       {shouldShowVerifyAccountCta && onPressVerifyAccount ? (
         <JBAuthSecondaryButton

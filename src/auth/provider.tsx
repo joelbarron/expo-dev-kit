@@ -191,9 +191,12 @@ export function JBAuthProvider(props: JBAuthProviderProps) {
   );
 
   const signOut = useCallback(async () => {
-    await authClient.logout();
-    setUser(null);
-    setAuthStatus('unauthenticated');
+    try {
+      await authClient.logout();
+    } finally {
+      setUser(null);
+      setAuthStatus('unauthenticated');
+    }
   }, [authClient]);
 
   const refreshToken = useCallback(async () => {
@@ -259,7 +262,11 @@ export function JBAuthProvider(props: JBAuthProviderProps) {
         if (!isMounted) {
           return;
         }
-        await authClient.logout();
+        try {
+          await authClient.logout();
+        } catch {
+          // Ignore logout cleanup errors and continue forcing local unauthenticated state.
+        }
         setUser(null);
         setAuthStatus('unauthenticated');
       }

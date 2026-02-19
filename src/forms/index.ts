@@ -24,6 +24,7 @@ export { CustomFormTextArea as JBFormTextArea } from './JBFormTextArea';
 export { CustomFormPicker as JBFormPicker } from './JBFormPicker';
 export { CustomFormMultiSelect as JBFormMultiSelect } from './JBFormMultiSelect';
 export { CustomFormDateTimePicker as JBFormDateTimePicker } from './JBFormDateTimePicker';
+export { JBFormButton } from './JBFormButton';
 export { CustomFormRadioGroup as JBFormRadioGroup } from './JBFormRadioGroup';
 export { CustomFormSwitch as JBFormSwitch } from './JBFormSwitch';
 export { CustomFormColorSelector as JBFormColorSelector } from './JBFormColorSelector';

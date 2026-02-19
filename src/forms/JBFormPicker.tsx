@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { getColor } from "../utils/colors";
 import {
   BottomSheetBackdrop,
   BottomSheetFlatList,
@@ -24,6 +23,7 @@ import {
 import { HStack } from "../ui/hstack";
 import { AlertCircleIcon, ChevronDownIcon, Icon } from "../ui/icon";
 import { Text } from "../ui/text";
+import { getColor } from "../utils/colors";
 
 const backgroundColor = getColor("background");
 const TouchableOpacity: any = RNTouchableOpacity;
@@ -110,7 +110,7 @@ export const CustomFormPicker = ({
   triggerTextClassName = "",
   iconClassName = "text-white mr-1",
   optionContainerClassName = "w-full justify-center items-center",
-  optionClassName = "mb-3 rounded-xl w-[90%] self-center bg-background-200 px-4 py-4",
+  optionClassName = "mb-3 rounded-xl w-[90%] self-center bg-background-200 px-4 py-2",
   optionSelectedClassName = "bg-primary-500",
   optionTextClassName = "p-2 text-white",
   renderTrigger,
@@ -205,7 +205,7 @@ export const CustomFormPicker = ({
           {renderItem ? (
             renderItem(item, index, { isSelected, value })
           ) : (
-            <Box className="h-16 w-full justify-center">
+            <Box className="h-10 w-full justify-center">
               <Text size="md" className={optionTextClassName}>
                 {itemLabel}
               </Text>

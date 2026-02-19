@@ -1,54 +1,104 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
+import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
-import { JBFormCheckbox, JBFormInput, JBFormPasswordInput, JBFormSelect, JBSelectOption } from '../../../forms';
-import { DEFAULT_GENDER, GENDERS, GENDER_SELECT_OPTIONS } from '../../constants';
+import {
+  JBFormCheckbox,
+  JBFormDateTimePicker,
+  JBFormInput,
+  JBFormPasswordInput,
+  JBFormPicker,
+  JBSelectOption
+} from '../../../forms';
+import { GENDERS, GENDER_SELECT_OPTIONS } from '../../constants';
 import { RegisterPayload } from '../../types';
-import { JBAuthAlert, JBAuthPrimaryButton } from '../../ui';
+import { JBAuthPrimaryButton } from '../../ui';
+import { getFormattedDate } from '../../../utils/data-format';
 import { parseAuthError } from '../errorParser';
 import { getDjangoLikePasswordError, isPasswordTooSimilar } from '../password/passwordValidation';
 
-const signUpSchema = z
-  .object({
-    firstName: z.string().nonempty('Debes ingresar el nombre'),
-    lastName1: z.string().nonempty('Debes ingresar el primer apellido'),
-    lastName2: z.string().optional(),
-    email: z.string().email('Debes ingresar un correo válido').nonempty('Debes ingresar un correo'),
-    birthday: z.string().optional(),
-    gender: z.enum(GENDERS).optional(),
-    role: z.string().optional(),
-    password: z.string().nonempty('Debes ingresar la contraseña.'),
-    passwordConfirm: z.string().nonempty('La confirmación de contraseña es obligatoria'),
-    acceptTermsConditions: z.boolean().refine((value) => value === true, 'Debes aceptar los términos y condiciones.')
-  })
-  .refine((data) => data.password === data.passwordConfirm, {
-    message: 'Las contraseñas deben coincidir',
-    path: ['passwordConfirm']
-  })
-  .superRefine((data, ctx) => {
-    const passwordError = getDjangoLikePasswordError(data.password);
-    if (passwordError) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: passwordError, path: ['password'] });
-    }
+const getMaximumBirthDate = (minimumAge: number): Date => {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setFullYear(date.getFullYear() - minimumAge);
+  return date;
+};
 
-    if (isPasswordTooSimilar(data.password, [data.email, data.firstName, data.lastName1, data.lastName2])) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'La contraseña es demasiado similar a tus datos personales.',
-        path: ['password']
-      });
-    }
-  });
+const createSignUpSchema = (minimumAge: number) =>
+  z
+    .object({
+      firstName: z.string().nonempty('Debes ingresar el nombre'),
+      lastName1: z.string().nonempty('Debes ingresar el primer apellido'),
+      lastName2: z.string().optional(),
+      email: z.string().email('Debes ingresar un correo válido').nonempty('Debes ingresar un correo'),
+      birthday: z.date().optional(),
+      gender: z.any().optional(),
+      role: z.any().optional(),
+      password: z.string().nonempty('Debes ingresar la contraseña.'),
+      passwordConfirm: z.string().nonempty('La confirmación de contraseña es obligatoria'),
+      acceptTermsConditions: z.boolean().refine((value) => value === true, 'Debes aceptar los términos y condiciones.')
+    })
+    .refine((data) => data.password === data.passwordConfirm, {
+      message: 'Las contraseñas deben coincidir',
+      path: ['passwordConfirm']
+    })
+    .superRefine((data, ctx) => {
+      const passwordError = getDjangoLikePasswordError(data.password);
+      if (passwordError) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: passwordError, path: ['password'] });
+      }
 
-export type JBAuthSignUpFormValues = z.infer<typeof signUpSchema>;
+      if (isPasswordTooSimilar(data.password, [data.email, data.firstName, data.lastName1, data.lastName2])) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'La contraseña es demasiado similar a tus datos personales.',
+          path: ['password']
+        });
+      }
+
+      const birthdayLimit = getMaximumBirthDate(minimumAge);
+      if (!data.birthday) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Debes seleccionar la fecha de nacimiento',
+          path: ['birthday']
+        });
+      } else if (data.birthday > birthdayLimit) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Debes tener al menos ${minimumAge} años para registrarte.`,
+          path: ['birthday']
+        });
+      }
+
+      const genderValue = typeof data.gender === 'string' ? data.gender : data.gender?.value;
+      if (genderValue && !GENDERS.includes(genderValue)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Género inválido.',
+          path: ['gender']
+        });
+      }
+    });
+
+const defaultSignUpSchema = createSignUpSchema(18);
+export type JBAuthSignUpFormValues = z.infer<typeof defaultSignUpSchema>;
 
 export type JBAuthSignUpFormProps = {
   defaultValues?: Partial<JBAuthSignUpFormValues>;
+  minimumAge?: number;
   loading?: boolean;
   disabled?: boolean;
   submitLabel?: string;
+  showSubmitButton?: boolean;
+  onFormStateChange?: (state: {
+    submit: () => void;
+    isValid: boolean;
+    isLoading: boolean;
+    canSubmit: boolean;
+  }) => void;
   roleOptions?: Array<JBSelectOption<string> & { allowSignup?: boolean }>;
   defaultRole?: string;
   onSubmit: (values: RegisterPayload) => unknown | Promise<unknown>;
@@ -59,8 +109,8 @@ const defaults: JBAuthSignUpFormValues = {
   lastName1: '',
   lastName2: '',
   email: '',
-  birthday: '',
-  gender: DEFAULT_GENDER,
+  birthday: undefined,
+  gender: undefined,
   role: '',
   password: '',
   passwordConfirm: '',
@@ -70,9 +120,12 @@ const defaults: JBAuthSignUpFormValues = {
 export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
   const {
     defaultValues,
+    minimumAge = 18,
     loading = false,
     disabled = false,
     submitLabel = 'Crear cuenta',
+    showSubmitButton = true,
+    onFormStateChange,
     roleOptions,
     defaultRole,
     onSubmit
@@ -82,14 +135,25 @@ export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
     () => (roleOptions ?? []).filter((roleOption) => roleOption.allowSignup !== false),
     [roleOptions]
   );
+  const maximumBirthDate = useMemo(() => getMaximumBirthDate(minimumAge), [minimumAge]);
+  const signUpSchema = useMemo(() => createSignUpSchema(minimumAge), [minimumAge]);
 
-  const resolvedDefaultRole = defaultValues?.role ?? defaultRole ?? signupRoleOptions[0]?.value ?? defaults.role;
+  const resolvedDefaultGender = useMemo(
+    () => GENDER_SELECT_OPTIONS.find((option) => option.value === defaultValues?.gender),
+    [defaultValues?.gender]
+  );
+  const resolvedDefaultRoleValue = defaultValues?.role ?? defaultRole ?? signupRoleOptions[0]?.value ?? defaults.role;
+  const resolvedDefaultRole = useMemo(
+    () => signupRoleOptions.find((option) => option.value === resolvedDefaultRoleValue) ?? undefined,
+    [resolvedDefaultRoleValue, signupRoleOptions]
+  );
 
   const { control, formState, handleSubmit, setError, clearErrors, trigger, watch } = useForm<JBAuthSignUpFormValues>({
     mode: 'onChange',
     defaultValues: {
       ...defaults,
-      role: resolvedDefaultRole,
+      gender: resolvedDefaultGender as any,
+      role: resolvedDefaultRole as any,
       ...(defaultValues ?? {})
     },
     resolver: zodResolver(signUpSchema)
@@ -115,9 +179,9 @@ export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
     return () => subscription.unsubscribe();
   }, [watch, clearErrors]);
 
-  const isLoading = loading || formState.isSubmitting;
-
-  const submitForm = async (values: JBAuthSignUpFormValues) => {
+  const submitForm = useCallback(async (values: JBAuthSignUpFormValues) => {
+    const genderValue = typeof values.gender === 'string' ? values.gender : values.gender?.value;
+    const roleValue = typeof values.role === 'string' ? values.role : values.role?.value;
     try {
       await onSubmit({
         firstName: values.firstName,
@@ -125,11 +189,11 @@ export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
         lastName2: values.lastName2 || undefined,
         username: null,
         email: values.email,
-        birthday: values.birthday || undefined,
-        gender: values.gender || undefined,
+        birthday: values.birthday ? getFormattedDate(values.birthday) : undefined,
+        gender: genderValue || undefined,
         password: values.password,
         passwordConfirm: values.passwordConfirm,
-        role: values.role || defaultRole || undefined,
+        role: roleValue || defaultRole || undefined,
         termsAndConditionsAccepted: values.acceptTermsConditions
       });
     } catch (error) {
@@ -139,17 +203,37 @@ export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
       });
 
       if (parsed.rootMessage) {
-        setError('root', { type: 'manual', message: parsed.rootMessage });
+        Toast.show({
+          type: 'error',
+          text1: 'Error de registro',
+          text2: parsed.rootMessage
+        });
       } else {
-        setError('root', { type: 'manual', message: 'No se pudo crear la cuenta. Inténtalo de nuevo.' });
+        Toast.show({
+          type: 'error',
+          text1: 'Error de registro',
+          text2: 'No se pudo crear la cuenta. Inténtalo de nuevo.'
+        });
       }
     }
-  };
+  }, [onSubmit, defaultRole, setError]);
+
+  const isLoading = loading || formState.isSubmitting;
+  const submitHandler = useCallback(() => {
+    void handleSubmit(submitForm)();
+  }, [handleSubmit, submitForm]);
+
+  useEffect(() => {
+    onFormStateChange?.({
+      submit: submitHandler,
+      isValid: formState.isValid,
+      isLoading,
+      canSubmit: !(disabled || !formState.isValid || isLoading)
+    });
+  }, [onFormStateChange, submitHandler, formState.isValid, isLoading, disabled]);
 
   return (
     <>
-      {formState.errors.root?.message ? <JBAuthAlert type="error" message={formState.errors.root.message} /> : null}
-
       <JBFormInput control={control} fieldName="firstName" label="Nombre(s)" isDisabled={disabled || isLoading} />
       <JBFormInput control={control} fieldName="lastName1" label="Primer apellido" isDisabled={disabled || isLoading} />
       <JBFormInput control={control} fieldName="lastName2" label="Segundo apellido" isDisabled={disabled || isLoading} />
@@ -161,15 +245,28 @@ export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
         keyboardType="email-address"
         isDisabled={disabled || isLoading}
       />
-      <JBFormInput control={control} fieldName="birthday" label="Fecha de nacimiento (YYYY-MM-DD)" isDisabled={disabled || isLoading} />
-      <JBFormSelect control={control} fieldName="gender" label="Género" options={GENDER_SELECT_OPTIONS} isDisabled={disabled || isLoading} />
+      <JBFormDateTimePicker
+        control={control}
+        fieldName="birthday"
+        label="Fecha de nacimiento"
+        mode="date"
+        maximumDate={maximumBirthDate}
+        isDisabled={disabled || isLoading}
+      />
+      <JBFormPicker
+        control={control}
+        fieldName="gender"
+        label="Género"
+        items={GENDER_SELECT_OPTIONS}
+        isDisabled={disabled || isLoading}
+      />
 
       {signupRoleOptions.length > 0 ? (
-        <JBFormSelect
+        <JBFormPicker
           control={control}
           fieldName="role"
           label="Rol de perfil"
-          options={signupRoleOptions}
+          items={signupRoleOptions}
           isDisabled={disabled || isLoading}
         />
       ) : null}
@@ -193,15 +290,18 @@ export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
         control={control}
         fieldName="acceptTermsConditions"
         label="Acepto términos y condiciones"
+        labelClassName="hidden"
         isDisabled={disabled || isLoading}
       />
 
-      <JBAuthPrimaryButton
-        label={submitLabel}
-        loading={isLoading}
-        disabled={disabled || !formState.isValid}
-        onPress={handleSubmit(submitForm)}
-      />
+      {showSubmitButton ? (
+        <JBAuthPrimaryButton
+          label={submitLabel}
+          loading={isLoading}
+          disabled={disabled || !formState.isValid}
+          onPress={submitHandler}
+        />
+      ) : null}
     </>
   );
 }

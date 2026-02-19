@@ -63,7 +63,7 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
   }
 
   return (
-    <AuthScreenLayout title={appName ?? "Bienvenido"} subtitle={subtitle}>
+    <AuthScreenLayout useMainLayout={false} title={appName ?? "Bienvenido"} subtitle={subtitle}>
       <JBAuthPrimaryButton label="Ingresar" onPress={navigator.goToSignIn} />
       <JBAuthSecondaryButton
         label="Crear cuenta"

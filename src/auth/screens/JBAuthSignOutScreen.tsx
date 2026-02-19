@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 
 import { useJBAuth } from '../provider';
-import { AuthScreenLayout, JBAuthAlert, JBAuthPrimaryButton } from '../ui';
+import { Loading } from '../../shared';
+import { AuthScreenLayout } from '../ui';
 import { JBAuthNavigator } from './types';
 
 export type JBAuthSignOutScreenProps = {
@@ -13,21 +14,18 @@ export function JBAuthSignOutScreen(props: JBAuthSignOutScreenProps) {
   const auth = useJBAuth();
 
   useEffect(() => {
-    auth.signOut().then(() => {
-      navigator.onSignedOut?.();
+    auth.signOut().finally(() => {
+      if (navigator.onSignedOut) {
+        navigator.onSignedOut();
+        return;
+      }
       navigator.goToSignIn();
     });
   }, []);
 
   return (
-    <AuthScreenLayout title="Cerrando sesión">
-      <JBAuthAlert type="info" message="Cerrando sesión..." />
-      <JBAuthPrimaryButton
-        label="Ir a iniciar sesión"
-        onPress={() => {
-          navigator.goToSignIn();
-        }}
-      />
+    <AuthScreenLayout useMainLayout contentAlign="center">
+      <Loading />
     </AuthScreenLayout>
   );
 }

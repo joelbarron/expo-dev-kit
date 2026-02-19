@@ -9,6 +9,9 @@ export type JBMainLayoutProps = {
   classNameScrollView?: string;
   contentContainerStyle?: StyleProp<ViewStyle>;
   footer?: ReactNode;
+  footerClassName?: string;
+  footerStyle?: StyleProp<ViewStyle>;
+  footerAdjustableHeight?: boolean;
   header?: ReactNode;
   onScroll?: (event: unknown) => void;
   refreshControl?: ReactElement<any, any>;
@@ -21,6 +24,9 @@ export const JBMainLayout = ({
   classNameScrollView,
   contentContainerStyle = { paddingBottom: 120 },
   footer = null,
+  footerClassName = '',
+  footerStyle,
+  footerAdjustableHeight = false,
   header = null,
   onScroll,
   refreshControl
@@ -46,7 +52,10 @@ export const JBMainLayout = ({
             {children}
           </ScrollView>
           {footer ? (
-            <Box className="h-[12%] px-8 bg-light dark:bg-background-950 justify-center rounded-tl-3xl rounded-tr-3xl">
+            <Box
+              className={`${footerAdjustableHeight ? 'py-4' : 'min-h-[96px]'} px-8 bg-light dark:bg-background-950 justify-center rounded-tl-3xl rounded-tr-3xl ${footerClassName}`}
+              style={footerStyle}
+            >
               {footer}
             </Box>
           ) : null}
@@ -61,10 +70,12 @@ export const JBMainLayout = ({
         {header}
         <Box className={`pt-0 ${contentContainerClassName} ${backgroundClassName}`}>
           {children}
-          {footer}
         </Box>
         {footer ? (
-          <Box className="h-[12%] bg-light dark:bg-background-950 justify-center">
+          <Box
+            className={`${footerAdjustableHeight ? 'py-4' : 'min-h-[96px]'} px-8 bg-light dark:bg-background-950 justify-center ${footerClassName}`}
+            style={footerStyle}
+          >
             {footer}
           </Box>
         ) : null}

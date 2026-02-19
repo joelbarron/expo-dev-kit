@@ -4,6 +4,26 @@ export type JBAppStageLowercase = Lowercase<JBAppStage>;
 export type JBApiHostConfig = Partial<Record<JBAppStage, string>> &
   Partial<Record<JBAppStageLowercase, string>>;
 
+export type JBSocialProviderName = 'google' | 'facebook' | 'apple';
+
+export type JBSocialProviderConfig = {
+  enabled: boolean;
+  clientId?: string;
+  redirectUri?: string;
+  scopes?: string[];
+};
+
+export type JBGoogleSocialProviderConfig = JBSocialProviderConfig & {
+  iosClientId?: string;
+  androidClientId?: string;
+};
+
+export type JBAuthSocialConfig = {
+  google: JBGoogleSocialProviderConfig;
+  facebook: JBSocialProviderConfig;
+  apple: JBSocialProviderConfig;
+};
+
 export type JBAppConfig = {
   debug: boolean;
   forceHideStage: boolean;
@@ -21,10 +41,27 @@ export type JBAppConfig = {
   };
   auth: {
     apiBasePath: string;
+    showDebugSocial: boolean;
+    signUp: {
+      minimumAge: number;
+    };
+    social: JBAuthSocialConfig;
   };
   userDebug: {
     login: string;
     password: string;
+    signUp?: {
+      firstName?: string;
+      lastName1?: string;
+      lastName2?: string;
+      email?: string;
+      birthday?: string;
+      gender?: string;
+      role?: string;
+      password?: string;
+      passwordConfirm?: string;
+      acceptTermsConditions?: boolean;
+    };
   };
 };
 

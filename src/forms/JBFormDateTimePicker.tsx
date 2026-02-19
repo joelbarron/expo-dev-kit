@@ -58,6 +58,8 @@ type CustomFormDateTimePickerProps = {
   dateTextClassName?: string;
   closeOnSelect?: boolean;
   showTime?: boolean;
+  minimumDate?: Date;
+  maximumDate?: Date;
 };
 
 export const CustomFormDateTimePicker = ({
@@ -83,6 +85,8 @@ export const CustomFormDateTimePicker = ({
   dateTextClassName = "ml-3 mt-4font-medium text-gray-600",
   closeOnSelect = true,
   showTime = false,
+  minimumDate,
+  maximumDate,
 }: CustomFormDateTimePickerProps) => {
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ["42%"], []);
@@ -167,30 +171,34 @@ export const CustomFormDateTimePicker = ({
           >
             <Box className="px-4 pt-2 pb-4">
               {value ? (
-                <RNDateTimePicker
-                  themeVariant={colorScheme}
-                  textColor={primaryColor[500]}
-                  accentColor={primaryColor[500]}
-                  disabled={isDisabled}
-                  style={styles.date}
-                  mode={pickerMode}
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  locale="es-MX"
-                  value={value}
-                  onChange={(event: DateTimePickerEvent, date?: Date) => {
-                    const eventType = event?.type;
-                    if (eventType === "dismissed" || !date) return;
-                    if (onChangeCustom) {
-                      onChangeCustom(date, onChange);
-                    } else {
-                      onChange(date);
-                    }
-                    if (Platform.OS === "android" && closeOnSelect) {
-                      closePicker();
-                    }
-                  }}
-                  onError={(e) => console.log(e)}
-                />
+                <Box className="w-full items-center justify-center">
+                  <RNDateTimePicker
+                    themeVariant={colorScheme}
+                    textColor={primaryColor[500]}
+                    accentColor={primaryColor[500]}
+                    disabled={isDisabled}
+                    style={styles.date}
+                    mode={pickerMode}
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    locale="es-MX"
+                    value={value}
+                    minimumDate={minimumDate}
+                    maximumDate={maximumDate}
+                    onChange={(event: DateTimePickerEvent, date?: Date) => {
+                      const eventType = event?.type;
+                      if (eventType === "dismissed" || !date) return;
+                      if (onChangeCustom) {
+                        onChangeCustom(date, onChange);
+                      } else {
+                        onChange(date);
+                      }
+                      if (Platform.OS === "android" && closeOnSelect) {
+                        closePicker();
+                      }
+                    }}
+                    onError={(e) => console.log(e)}
+                  />
+                </Box>
               ) : null}
 
               <Button
@@ -229,8 +237,7 @@ export const CustomFormDateTimePicker = ({
 
 const styles = StyleSheet.create({
   date: {
-    width: "100%",
+    alignSelf: "center",
     height: "100%",
-    // backgroundColor: "red",
   },
 });

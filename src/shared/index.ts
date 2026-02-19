@@ -5,7 +5,6 @@ export * from './ConfirmationDialog';
 export * from './CustomLoader';
 export * from './Loading';
 export * from './FormSkeleton';
-export * from './MainLayout';
 export * from './PeriodControls';
 export * from './HapticTab';
 export * from './MenuItem';

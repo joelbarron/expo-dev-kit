@@ -1,6 +1,6 @@
 import { defaultJBExpoConfig } from './defaults';
 import { deepMerge } from './merge';
-import { JBApiHostConfig, JBAppConfig, JBAppConfigOverrides, JBAppStage, JBAppStageLowercase } from './types';
+import { JBApiHostConfig, JBAppConfig, JBAppConfigOverrides, JBAppStage, JBAppStageLowercase, JBSocialProviderName } from './types';
 
 let lastCreatedJBExpoConfig: JBAppConfig = defaultJBExpoConfig;
 
@@ -33,6 +33,44 @@ const resolveApiHostByStage = (hostConfig: JBApiHostConfig, stage: JBAppStage): 
 };
 
 const trimTrailingSlashes = (value: string): string => value.replace(/\/+$/, '');
+const hasAnyGoogleClientId = (providerConfig: {
+  clientId?: string;
+  iosClientId?: string;
+  androidClientId?: string;
+}): boolean =>
+  Boolean(
+    providerConfig.clientId?.trim() ||
+    providerConfig.iosClientId?.trim() ||
+    providerConfig.androidClientId?.trim()
+  );
+
+const validateSocialConfig = (config: JBAppConfig) => {
+  const minimumSignUpAge = config.auth?.signUp?.minimumAge;
+  if (!Number.isInteger(minimumSignUpAge) || minimumSignUpAge < 0) {
+    throw new Error('[jb-expo-config] auth.signUp.minimumAge must be a non-negative integer.');
+  }
+
+  const socialConfig = config.auth?.social;
+  if (!socialConfig) {
+    return;
+  }
+
+  (Object.keys(socialConfig) as JBSocialProviderName[]).forEach((providerName) => {
+    const providerConfig = socialConfig[providerName];
+    if (
+      providerName === 'google' &&
+      providerConfig?.enabled &&
+      !hasAnyGoogleClientId(providerConfig as { clientId?: string; iosClientId?: string; androidClientId?: string })
+    ) {
+      throw new Error(
+        `[jb-expo-config] auth.social.google requires at least one client id (clientId, iosClientId or androidClientId) when enabled=true.`
+      );
+    }
+    if (providerName !== 'google' && providerConfig?.enabled && !providerConfig.clientId?.trim()) {
+      throw new Error(`[jb-expo-config] auth.social.${providerName}.clientId is required when enabled=true.`);
+    }
+  });
+};
 
 export const createJBExpoConfig = (
   baseConfig?: JBAppConfigOverrides,
@@ -48,6 +86,7 @@ export const createJBExpoConfig = (
     overrides as Record<string, unknown> | undefined
   ) as unknown as JBAppConfig;
 
+  validateSocialConfig(resolved);
   lastCreatedJBExpoConfig = resolved;
   return resolved;
 };

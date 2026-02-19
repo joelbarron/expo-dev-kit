@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
 import { JBFormInput } from '../../../forms';
-import { JBAuthAlert, JBAuthPrimaryButton } from '../../ui';
+import { JBAuthPrimaryButton } from '../../ui';
 import { parseAuthError } from '../errorParser';
 
 export type JBAuthForgotPasswordFormValues = {
@@ -19,6 +20,12 @@ export type JBAuthForgotPasswordFormProps = {
   successMessage?: string;
   notSentMessage?: string;
   resendCooldownSeconds?: number;
+  showSubmitButton?: boolean;
+  onFormStateChange?: (state: {
+    submit: () => void;
+    canSubmit: boolean;
+    isLoading: boolean;
+  }) => void;
   onEmailSentSuccess?: () => void;
   onSubmit: (values: JBAuthForgotPasswordFormValues) => unknown | Promise<unknown>;
 };
@@ -46,6 +53,8 @@ export function JBAuthForgotPasswordForm(props: JBAuthForgotPasswordFormProps) {
     successMessage = 'Si la cuenta existe, enviamos un enlace de recuperación a tu correo.',
     notSentMessage = 'Solicitud recibida, pero no se pudo enviar el correo de recuperación.',
     resendCooldownSeconds = 30,
+    showSubmitButton = true,
+    onFormStateChange,
     onEmailSentSuccess,
     onSubmit
   } = props;
@@ -90,7 +99,7 @@ export function JBAuthForgotPasswordForm(props: JBAuthForgotPasswordFormProps) {
     return () => subscription.unsubscribe();
   }, [watch, clearErrors]);
 
-  const submitForm = async (values: JBAuthForgotPasswordFormValues) => {
+  const submitForm = useCallback(async (values: JBAuthForgotPasswordFormValues) => {
     try {
       setSuccess(null);
       const response = await onSubmit(values);
@@ -99,6 +108,11 @@ export function JBAuthForgotPasswordForm(props: JBAuthForgotPasswordFormProps) {
       setSuccessType(emailSent === false ? 'warning' : 'success');
       setSuccess(emailSent === false ? notSentMessage : successMessage);
       setIsEmailSentSuccessfully(emailSent === true);
+      Toast.show({
+        type: emailSent === false ? 'info' : 'success',
+        text1: emailSent === false ? 'Solicitud procesada' : 'Correo enviado',
+        text2: emailSent === false ? notSentMessage : successMessage
+      });
       if (emailSent === true) {
         setResendSecondsLeft(resendCooldownSeconds);
         onEmailSentSuccess?.();
@@ -109,18 +123,35 @@ export function JBAuthForgotPasswordForm(props: JBAuthForgotPasswordFormProps) {
         setError('email', { type: 'manual', message: parsed.fieldErrors.email });
       }
 
-      setError('root', {
-        type: 'manual',
-        message: parsed.rootMessage || 'No se pudo enviar el correo de recuperación. Inténtalo de nuevo.'
+      Toast.show({
+        type: 'error',
+        text1: 'Error de recuperación',
+        text2: parsed.rootMessage || 'No se pudo enviar el correo de recuperación. Inténtalo de nuevo.'
       });
     }
-  };
+  }, [
+    onSubmit,
+    notSentMessage,
+    successMessage,
+    resendCooldownSeconds,
+    onEmailSentSuccess,
+    setError
+  ]);
+
+  const submitHandler = useCallback(() => {
+    void handleSubmit(submitForm)();
+  }, [handleSubmit, submitForm]);
+
+  useEffect(() => {
+    onFormStateChange?.({
+      submit: submitHandler,
+      canSubmit: !(isResendCooldownActive || !email?.trim() || !formState.isValid),
+      isLoading
+    });
+  }, [onFormStateChange, submitHandler, isResendCooldownActive, email, formState.isValid, isLoading]);
 
   return (
     <>
-      {formState.errors.root?.message ? <JBAuthAlert type="error" message={formState.errors.root.message} /> : null}
-      {success ? <JBAuthAlert type={successType} message={success} /> : null}
-
       {!isEmailSentSuccessfully ? (
         <JBFormInput
           control={control}
@@ -132,12 +163,14 @@ export function JBAuthForgotPasswordForm(props: JBAuthForgotPasswordFormProps) {
         />
       ) : null}
 
-      <JBAuthPrimaryButton
-        label={isResendCooldownActive ? `${resendLabel} (${resendSecondsLeft}s)` : isEmailSentSuccessfully ? resendLabel : submitLabel}
-        loading={isLoading}
-        disabled={isResendCooldownActive || !email?.trim() || !formState.isValid}
-        onPress={handleSubmit(submitForm)}
-      />
+      {showSubmitButton ? (
+        <JBAuthPrimaryButton
+          label={isResendCooldownActive ? `${resendLabel} (${resendSecondsLeft}s)` : isEmailSentSuccessfully ? resendLabel : submitLabel}
+          loading={isLoading}
+          disabled={isResendCooldownActive || !email?.trim() || !formState.isValid}
+          onPress={handleSubmit(submitForm)}
+        />
+      ) : null}
     </>
   );
 }

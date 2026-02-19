@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import Toast from 'react-native-toast-message';
 
-import { JBAuthAlert, JBAuthPrimaryButton, JBAuthSecondaryButton } from '../../ui';
+import { JBAuthPrimaryButton, JBAuthSecondaryButton } from '../../ui';
 import { parseAuthError } from '../errorParser';
 
 export type JBAuthAccountConfirmationFormValues = {
@@ -62,6 +63,11 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
   const submit = async () => {
     if (!hasValues) {
       setErrorMessage('El enlace no es válido o está incompleto.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error de verificación',
+        text2: 'El enlace no es válido o está incompleto.'
+      });
       return;
     }
 
@@ -72,12 +78,22 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
       await onSubmit({ uid, token });
       setIsSuccess(true);
       setSignInRedirectCountdown(signInRedirectSeconds);
+      Toast.show({
+        type: 'success',
+        text1: 'Cuenta verificada',
+        text2: 'Tu cuenta fue verificada correctamente.'
+      });
     } catch (error) {
       const parsed = parseAuthError(error);
       const resolved = parsed.rootMessage || 'No se pudo verificar la cuenta. El enlace puede haber expirado.';
       setErrorMessage(resolved);
       setIsExpiredVerificationError(isExpiredMessage(resolved));
       setIsSuccess(false);
+      Toast.show({
+        type: 'error',
+        text1: 'Error de verificación',
+        text2: resolved
+      });
     } finally {
       setLoading(false);
     }
@@ -95,8 +111,18 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
       await onResend({ email });
       setResendMessage('Correo de verificación reenviado.');
       setResendCooldown(resendCooldownSeconds);
+      Toast.show({
+        type: 'success',
+        text1: 'Correo reenviado',
+        text2: 'Correo de verificación reenviado.'
+      });
     } catch {
       setErrorMessage('No se pudo reenviar el correo de verificación.');
+      Toast.show({
+        type: 'error',
+        text1: 'Error de verificación',
+        text2: 'No se pudo reenviar el correo de verificación.'
+      });
     } finally {
       setResending(false);
     }
@@ -149,13 +175,6 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
 
   return (
     <>
-      {!hasValues && email ? <JBAuthAlert type="info" message="Tu cuenta fue creada. Revisa tu correo para verificar tu cuenta." /> : null}
-      {!hasValues && !email ? <JBAuthAlert type="warning" message="Falta información del enlace de verificación." /> : null}
-      {loading ? <JBAuthAlert type="info" message="Verificando tu cuenta..." /> : null}
-      {isSuccess ? <JBAuthAlert type="success" message="Tu cuenta fue verificada correctamente." /> : null}
-      {resendMessage ? <JBAuthAlert type="success" message={resendMessage} /> : null}
-      {errorMessage ? <JBAuthAlert type="error" message={errorMessage} /> : null}
-
       {!isSuccess && hasValues && !canResendFromExpiredLink ? (
         <JBAuthPrimaryButton label="Reintentar verificación" loading={loading} onPress={() => void submit()} />
       ) : null}

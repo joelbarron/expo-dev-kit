@@ -21,10 +21,37 @@ export const defaultJBExpoConfig: JBAppConfig = {
     }
   },
   auth: {
-    apiBasePath: '/authentication'
+    apiBasePath: '/authentication',
+    showDebugSocial: false,
+    signUp: {
+      minimumAge: 18
+    },
+    social: {
+      google: {
+        enabled: false,
+        clientId: '',
+        iosClientId: '',
+        androidClientId: '',
+        redirectUri: '',
+        scopes: ['openid', 'profile', 'email']
+      },
+      facebook: {
+        enabled: false,
+        clientId: '',
+        redirectUri: '',
+        scopes: ['public_profile', 'email']
+      },
+      apple: {
+        enabled: false,
+        clientId: '',
+        redirectUri: '',
+        scopes: ['name', 'email']
+      }
+    }
   },
   userDebug: {
     login: '',
-    password: ''
+    password: '',
+    signUp: {}
   }
 };

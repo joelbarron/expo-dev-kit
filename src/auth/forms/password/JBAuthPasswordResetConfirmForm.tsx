@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
 import { JBFormPasswordInput } from '../../../forms';
-import { JBAuthAlert, JBAuthPrimaryButton, JBAuthSecondaryButton } from '../../ui';
+import { JBAuthPrimaryButton, JBAuthSecondaryButton } from '../../ui';
 import { parseAuthError } from '../errorParser';
 import { getDjangoLikePasswordError } from './passwordValidation';
 
@@ -113,25 +114,36 @@ export function JBAuthPasswordResetConfirmForm(props: JBAuthPasswordResetConfirm
   const submitForm = async (values: JBAuthPasswordResetConfirmFormValues) => {
     try {
       await onSubmit(values);
+      Toast.show({
+        type: 'success',
+        text1: 'Contraseña actualizada',
+        text2: successMessage
+      });
     } catch (error) {
       const parsed = parseAuthError(error);
       const rootMessage = parsed.rootMessage || Object.values(parsed.fieldErrors)[0];
-      setError('root', {
-        type: 'manual',
-        message: rootMessage || 'No se pudo restablecer la contraseña. Inténtalo de nuevo.'
+      Toast.show({
+        type: 'error',
+        text1: 'Error de recuperación',
+        text2: rootMessage || 'No se pudo restablecer la contraseña. Inténtalo de nuevo.'
       });
     }
   };
 
+  useEffect(() => {
+    if (!formState.isSubmitSuccessful || hasValidRecoveryLink) {
+      return;
+    }
+
+    Toast.show({
+      type: 'error',
+      text1: 'Enlace inválido',
+      text2: 'El enlace de recuperación es inválido o incompleto.'
+    });
+  }, [formState.isSubmitSuccessful, hasValidRecoveryLink]);
+
   return (
     <>
-      {!formState.isSubmitSuccessful && !hasValidRecoveryLink ? (
-        <JBAuthAlert type="warning" message="El enlace de recuperación es inválido o incompleto." />
-      ) : null}
-
-      {formState.errors.root?.message ? <JBAuthAlert type="error" message={formState.errors.root.message} /> : null}
-      {formState.isSubmitSuccessful ? <JBAuthAlert type="success" message={successMessage} /> : null}
-
       {!formState.isSubmitSuccessful ? (
         <>
           <JBFormPasswordInput

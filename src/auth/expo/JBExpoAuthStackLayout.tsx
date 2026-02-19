@@ -1,14 +1,12 @@
 import { Entypo } from '@expo/vector-icons';
-import { Redirect, Stack, useRouter } from 'expo-router';
-import { TouchableOpacity, View, Text } from 'react-native';
+import { Redirect, Stack, usePathname, useRouter } from 'expo-router';
+import { TouchableOpacity, View } from 'react-native';
 
 export type JBExpoAuthStackLayoutProps = {
   isAuthenticated: boolean;
   redirectHref?: string;
   headerBackgroundColor?: string;
   headerTintColor?: string;
-  stage?: string;
-  hideStageBadgeOnProduction?: boolean;
 };
 
 export function JBExpoAuthStackLayout(props: JBExpoAuthStackLayoutProps) {
@@ -16,17 +14,15 @@ export function JBExpoAuthStackLayout(props: JBExpoAuthStackLayoutProps) {
     isAuthenticated,
     redirectHref = '/',
     headerBackgroundColor = '#111827',
-    headerTintColor = 'white',
-    stage = 'PRODUCTION',
-    hideStageBadgeOnProduction = true
+    headerTintColor = 'white'
   } = props;
   const router = useRouter();
+  const pathname = usePathname();
+  const isSignOutRoute = pathname === '/sign-out' || pathname.endsWith('/sign-out');
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !isSignOutRoute) {
     return <Redirect href={redirectHref as any} />;
   }
-
-  const shouldShowStageBadge = !(hideStageBadgeOnProduction && stage === 'PRODUCTION');
 
   return (
     <Stack
@@ -45,27 +41,7 @@ export function JBExpoAuthStackLayout(props: JBExpoAuthStackLayoutProps) {
             </TouchableOpacity>
           </View>
         ),
-        headerRight: () => {
-          if (!shouldShowStageBadge) {
-            return null;
-          }
-          return (
-            <View
-              style={{
-                marginRight: 16,
-                marginBottom: 12,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: '#1d4ed8',
-                paddingVertical: 4,
-                paddingHorizontal: 8,
-                borderRadius: 12
-              }}
-            >
-              <Text style={{ color: 'white', fontSize: 16 }}>STAGE: {stage}</Text>
-            </View>
-          );
-        }
+        headerRight: () => null
       }}
     >
       <Stack.Screen name="welcome" options={{ headerShown: false }} />
@@ -73,7 +49,7 @@ export function JBExpoAuthStackLayout(props: JBExpoAuthStackLayoutProps) {
         name="sign-in"
         options={{ headerShown: true, title: 'Iniciar sesión' }}
       />
-      <Stack.Screen name="sign-up" options={{ headerShown: true }} />
+      <Stack.Screen name="sign-up" options={{ headerShown: true, title: 'Crear cuenta' }} />
       <Stack.Screen name="forgot-password" options={{ headerShown: true }} />
       <Stack.Screen name="reset-password" options={{ headerShown: true }} />
       <Stack.Screen name="verify-email" options={{ headerShown: true }} />
