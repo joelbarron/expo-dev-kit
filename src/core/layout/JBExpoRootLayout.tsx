@@ -2,10 +2,14 @@ import { DarkTheme, DefaultTheme, Theme } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen";
 import { Stack } from "expo-router";
 import { StatusBar, StatusBarStyle } from "expo-status-bar";
+import moment from "moment";
+import "moment/locale/es";
+import "moment/locale/es-mx";
 import React, { useCallback, useEffect } from "react";
 import { Platform } from "react-native";
 
 import { JBAuthProvider, JBAuthStatus } from "../../auth";
+import { getLastCreatedJBExpoConfig } from "../../config";
 import { useColorScheme } from "../../hooks";
 import { useAppConfigStore, useAuthStore } from "../../runtime";
 import { getColor } from "../../utils";
@@ -81,6 +85,7 @@ export function JBExpoRootLayout({
   queryClientOptions,
   ...providersProps
 }: JBExpoRootLayoutProps) {
+  const baseConfig = getLastCreatedJBExpoConfig();
   const scheme = useColorScheme();
   const effectiveMode = colorMode ?? scheme ?? "dark";
   const navigationTheme = resolveNavigationTheme(
@@ -110,6 +115,11 @@ export function JBExpoRootLayout({
     }
     SplashScreen.hideAsync().catch(() => {});
   }, [isConfigLoaded, manageNativeSplash]);
+
+  useEffect(() => {
+    const locale = (appConfig?.momentLocale ?? baseConfig?.momentLocale ?? "es-mx").toLowerCase();
+    moment.locale(locale);
+  }, [appConfig?.momentLocale, baseConfig?.momentLocale]);
 
   const handleAuthStateChanged = useCallback(
     (state: {

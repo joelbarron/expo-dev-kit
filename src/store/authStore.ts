@@ -35,13 +35,15 @@ export type CreateJBAuthStoreOptions = {
 const normalizeProfiles = (user: Record<string, any>) => {
   const profilesRaw = user?.profiles ?? user?.uProfiles ?? [];
   const profiles = Array.isArray(profilesRaw) ? profilesRaw : [];
+  const activeProfile = user?.activeProfile ?? user?.active_profile ?? null;
+  const defaultProfile =
+    profiles.find((profile: Record<string, any>) => profile?.default === true) ?? activeProfile ?? null;
 
   return {
     allProfiles: profiles,
-    defaultProfile:
-      profiles.find((profile: Record<string, any>) => profile?.default === true) ?? null,
+    defaultProfile,
     nonDefaultProfiles: profiles.filter((profile: Record<string, any>) => profile?.default === false),
-    activeProfile: user?.activeProfile ?? user?.active_profile ?? null
+    activeProfile
   };
 };
 
@@ -61,9 +63,21 @@ export const createJBAuthStore = (options?: CreateJBAuthStoreOptions) => {
         refreshToken: null,
 
         basicLogin: (response: Record<string, any>) => {
-          const { tokens, profiles: uProfiles = [], activeProfile, ...rest } = response;
+          const {
+            tokens,
+            profiles: uProfiles = [],
+            activeProfile,
+            active_profile,
+            ...rest
+          } = response;
           const accessToken = tokens?.accessToken ?? null;
           const refreshToken = tokens?.refreshToken ?? null;
+          const resolvedActiveProfile = activeProfile ?? active_profile ?? null;
+          const normalizedProfiles = Array.isArray(uProfiles) ? uProfiles : [];
+          const resolvedDefaultProfile =
+            normalizedProfiles.find((profile: Record<string, any>) => profile?.default === true) ??
+            resolvedActiveProfile ??
+            null;
 
           if (accessToken) {
             options?.onAccessTokenChange?.(accessToken);
@@ -72,9 +86,9 @@ export const createJBAuthStore = (options?: CreateJBAuthStoreOptions) => {
           set({
             isAuthenticated: true,
             user: rest,
-            profiles: (Array.isArray(uProfiles) ? uProfiles : []).filter((profile: Record<string, any>) => profile?.default === false),
-            defaultProfile: (Array.isArray(uProfiles) ? uProfiles : []).find((profile: Record<string, any>) => profile?.default === true) ?? null,
-            activeProfile: activeProfile ?? null,
+            profiles: normalizedProfiles.filter((profile: Record<string, any>) => profile?.default === false),
+            defaultProfile: resolvedDefaultProfile,
+            activeProfile: resolvedActiveProfile,
             accessToken,
             refreshToken
           });

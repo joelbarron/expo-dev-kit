@@ -5,10 +5,14 @@ export type JBApiHostConfig = Partial<Record<JBAppStage, string>> &
   Partial<Record<JBAppStageLowercase, string>>;
 
 export type JBSocialProviderName = 'google' | 'facebook' | 'apple';
+export type JBSocialAuthMode = 'native' | 'expo';
+export type JBSocialFallbackMode = 'expo' | 'none';
 
 export type JBSocialProviderConfig = {
   enabled: boolean;
+  mode?: JBSocialAuthMode;
   clientId?: string;
+  clientToken?: string;
   redirectUri?: string;
   scopes?: string[];
 };
@@ -19,9 +23,19 @@ export type JBGoogleSocialProviderConfig = JBSocialProviderConfig & {
 };
 
 export type JBAuthSocialConfig = {
+  strategy: {
+    defaultMode: JBSocialAuthMode;
+    fallbackMode: JBSocialFallbackMode;
+  };
   google: JBGoogleSocialProviderConfig;
   facebook: JBSocialProviderConfig;
   apple: JBSocialProviderConfig;
+};
+
+export type JBAuthProfileRoleOption = {
+  value: string;
+  label: string;
+  allowSignup?: boolean;
 };
 
 export type JBAppConfig = {
@@ -45,6 +59,8 @@ export type JBAppConfig = {
     signUp: {
       minimumAge: number;
     };
+    profileRoles: JBAuthProfileRoleOption[];
+    defaultProfileRole?: string;
     social: JBAuthSocialConfig;
   };
   userDebug: {

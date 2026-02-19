@@ -1,6 +1,13 @@
 import { defaultJBExpoConfig } from './defaults';
 import { deepMerge } from './merge';
-import { JBApiHostConfig, JBAppConfig, JBAppConfigOverrides, JBAppStage, JBAppStageLowercase, JBSocialProviderName } from './types';
+import {
+  JBApiHostConfig,
+  JBAppConfig,
+  JBAppConfigOverrides,
+  JBAppStage,
+  JBAppStageLowercase,
+  JBSocialProviderName
+} from './types';
 
 let lastCreatedJBExpoConfig: JBAppConfig = defaultJBExpoConfig;
 
@@ -55,7 +62,8 @@ const validateSocialConfig = (config: JBAppConfig) => {
     return;
   }
 
-  (Object.keys(socialConfig) as JBSocialProviderName[]).forEach((providerName) => {
+  const providers: JBSocialProviderName[] = ['google', 'facebook', 'apple'];
+  providers.forEach((providerName) => {
     const providerConfig = socialConfig[providerName];
     if (
       providerName === 'google' &&
@@ -70,6 +78,12 @@ const validateSocialConfig = (config: JBAppConfig) => {
       throw new Error(`[jb-expo-config] auth.social.${providerName}.clientId is required when enabled=true.`);
     }
   });
+
+  const profileRoles = config.auth?.profileRoles ?? [];
+  const defaultProfileRole = config.auth?.defaultProfileRole;
+  if (defaultProfileRole && !profileRoles.some((roleOption) => roleOption.value === defaultProfileRole)) {
+    throw new Error('[jb-expo-config] auth.defaultProfileRole must exist in auth.profileRoles.');
+  }
 };
 
 export const createJBExpoConfig = (

@@ -1,14 +1,31 @@
+import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { Platform } from "react-native";
 
 import { LoginSocialPayload } from "../types";
-import { JBAuthSocialConfig, JBSocialProviderName } from "../../config";
+import {
+  JBAuthSocialConfig,
+  JBSocialAuthMode,
+  JBSocialFallbackMode,
+  JBSocialProviderName
+} from "../../config";
 
 type SocialProviderRuntimeConfig = JBAuthSocialConfig[JBSocialProviderName] & {
   provider: JBSocialProviderName;
   resolvedClientId: string;
 };
+
+type SocialAuthStrategyConfig = {
+  defaultMode?: JBSocialAuthMode;
+  fallbackMode?: JBSocialFallbackMode;
+};
+
+type AuthenticateWithProviderOptions = {
+  strategy?: SocialAuthStrategyConfig;
+};
+
+WebBrowser.maybeCompleteAuthSession();
 
 const logSocialDebug = (enabled: boolean, message: string, payload?: unknown) => {
   if (!enabled) {
@@ -29,30 +46,32 @@ const parseQueryAndFragment = (url: string) => {
   return { queryParams, fragmentParams };
 };
 
+const GOOGLE_DISCOVERY: AuthSession.DiscoveryDocument = {
+  authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+  tokenEndpoint: "https://oauth2.googleapis.com/token",
+  revocationEndpoint: "https://oauth2.googleapis.com/revoke"
+};
+
+const buildGoogleInstalledAppRedirectUri = (clientId: string): string => {
+  const prefix = clientId.replace(".apps.googleusercontent.com", "").trim();
+  return `com.googleusercontent.apps.${prefix}:/oauth2redirect/google`;
+};
+
 const resolveRedirectUri = (
   config: SocialProviderRuntimeConfig,
   provider: "google" | "facebook"
 ): string => {
   const configured = config.redirectUri?.trim();
   if (configured) {
+    if (provider === "google" && !configured.startsWith("com.googleusercontent.apps.")) {
+      return buildGoogleInstalledAppRedirectUri(config.resolvedClientId);
+    }
     return configured;
   }
+  if (provider === "google") {
+    return buildGoogleInstalledAppRedirectUri(config.resolvedClientId);
+  }
   return Linking.createURL(`auth/${provider}`);
-};
-
-const buildGoogleAuthUrl = (config: SocialProviderRuntimeConfig) => {
-  const redirectUri = resolveRedirectUri(config, "google");
-  const scopes = config.scopes?.length ? config.scopes : ["openid", "profile", "email"];
-  const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const params = new URLSearchParams({
-    client_id: config.resolvedClientId,
-    redirect_uri: redirectUri,
-    response_type: "id_token",
-    scope: scopes.join(" "),
-    nonce,
-    prompt: "select_account"
-  });
-  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 };
 
 const buildFacebookAuthUrl = (config: SocialProviderRuntimeConfig) => {
@@ -67,28 +86,117 @@ const buildFacebookAuthUrl = (config: SocialProviderRuntimeConfig) => {
   return `https://www.facebook.com/v20.0/dialog/oauth?${params.toString()}`;
 };
 
+const authenticateWithGoogleNative = async (
+  config: SocialProviderRuntimeConfig,
+  debug = false
+): Promise<LoginSocialPayload> => {
+  let GoogleSignin: any;
+  try {
+    const googleSigninModule = require("@react-native-google-signin/google-signin");
+    GoogleSignin = googleSigninModule.GoogleSignin;
+  } catch {
+    throw new Error("Google native sdk not installed.");
+  }
+
+  if (!GoogleSignin?.configure || !GoogleSignin?.signIn) {
+    throw new Error("Google native sdk is unavailable.");
+  }
+
+  GoogleSignin.configure({
+    webClientId: config.clientId?.trim() || undefined,
+    iosClientId:
+      Platform.OS === "ios"
+        ? (config as JBAuthSocialConfig["google"])?.iosClientId?.trim() || undefined
+        : undefined,
+    offlineAccess: false
+  });
+
+  if (GoogleSignin.hasPlayServices && Platform.OS === "android") {
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  }
+
+  try {
+    await GoogleSignin.signOut?.();
+  } catch {
+    // Ignore signOut failures before signIn.
+  }
+
+  logSocialDebug(debug, "google native auth start");
+  const signInResult = await GoogleSignin.signIn();
+  const idToken = signInResult?.idToken ?? signInResult?.data?.idToken;
+  if (!idToken) {
+    throw new Error("Google native authentication did not return idToken.");
+  }
+
+  return {
+    provider: "google",
+    idToken,
+    clientId: config.resolvedClientId
+  };
+};
+
 const authenticateWithGoogle = async (
   config: SocialProviderRuntimeConfig,
   debug = false
 ): Promise<LoginSocialPayload> => {
   const redirectUri = resolveRedirectUri(config, "google");
-
-  const authUrl = buildGoogleAuthUrl(config);
+  const scopes = config.scopes?.length ? config.scopes : ["openid", "profile", "email"];
+  const request = new AuthSession.AuthRequest({
+    clientId: config.resolvedClientId,
+    redirectUri,
+    responseType: AuthSession.ResponseType.Code,
+    scopes,
+    usePKCE: true,
+    extraParams: {
+      prompt: "select_account"
+    }
+  });
   logSocialDebug(debug, "google auth session start", { redirectUri });
-  const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-  if (result.type !== "success" || !result.url) {
+  const result = await request.promptAsync(GOOGLE_DISCOVERY);
+  if (result.type !== "success") {
     throw new Error("Google authentication cancelled.");
   }
+  const code = result.params?.code;
+  if (!code) {
+    const errorDescription =
+      result.params?.error_description || result.params?.error || "Google authentication did not return authorization code.";
+    throw new Error(errorDescription);
+  }
 
-  const { queryParams, fragmentParams } = parseQueryAndFragment(result.url);
-  const idToken = queryParams.get("id_token") || fragmentParams.get("id_token");
-  if (!idToken) {
-    throw new Error("Google authentication did not return idToken.");
+  const tokenResponse = await fetch(GOOGLE_DISCOVERY.tokenEndpoint!, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      client_id: config.resolvedClientId,
+      redirect_uri: redirectUri,
+      code_verifier: request.codeVerifier ?? ""
+    }).toString()
+  });
+
+  const tokenPayload = (await tokenResponse.json()) as {
+    id_token?: string;
+    access_token?: string;
+    error?: string;
+    error_description?: string;
+  };
+  if (!tokenResponse.ok) {
+    throw new Error(tokenPayload.error_description || tokenPayload.error || "Google token exchange failed.");
+  }
+  if (!tokenPayload.id_token) {
+    throw new Error("Google token exchange did not return idToken.");
   }
 
   return {
     provider: "google",
-    idToken
+    idToken: tokenPayload.id_token,
+    accessToken: tokenPayload.access_token,
+    redirectUri,
+    codeVerifier: request.codeVerifier,
+    clientId: config.resolvedClientId
   };
 };
 
@@ -118,6 +226,52 @@ const authenticateWithFacebook = async (
   };
 };
 
+const authenticateWithFacebookNative = async (
+  config: SocialProviderRuntimeConfig,
+  debug = false
+): Promise<LoginSocialPayload> => {
+  let LoginManager: any;
+  let AccessToken: any;
+  let Settings: any;
+  try {
+    const facebookModule = require("react-native-fbsdk-next");
+    LoginManager = facebookModule.LoginManager;
+    AccessToken = facebookModule.AccessToken;
+    Settings = facebookModule.Settings;
+  } catch {
+    throw new Error("Facebook native sdk not installed.");
+  }
+
+  if (!LoginManager?.logInWithPermissions || !AccessToken?.getCurrentAccessToken) {
+    throw new Error("Facebook native sdk is unavailable.");
+  }
+
+  if (Settings?.setAppID) {
+    Settings.setAppID(config.resolvedClientId);
+  }
+  if (config.clientToken?.trim() && Settings?.setClientToken) {
+    Settings.setClientToken(config.clientToken.trim());
+  }
+
+  logSocialDebug(debug, "facebook native auth start");
+  const loginResult = await LoginManager.logInWithPermissions(["public_profile", "email"]);
+  if (loginResult?.isCancelled) {
+    throw new Error("Facebook authentication cancelled.");
+  }
+
+  const tokenResult = await AccessToken.getCurrentAccessToken();
+  const accessToken = tokenResult?.accessToken?.toString?.() ?? tokenResult?.accessToken;
+  if (!accessToken) {
+    throw new Error("Facebook native authentication did not return accessToken.");
+  }
+
+  return {
+    provider: "facebook",
+    accessToken,
+    clientId: config.resolvedClientId
+  };
+};
+
 const authenticateWithApple = async (
   config: SocialProviderRuntimeConfig,
   debug = false
@@ -134,11 +288,12 @@ const authenticateWithApple = async (
         AppleAuthentication.AppleAuthenticationScope.EMAIL
       ]
     });
+    logSocialDebug(debug, "apple using idToken flow");
 
     return {
       provider: "apple",
       idToken: credential?.identityToken ?? undefined,
-      code: credential?.authorizationCode ?? undefined
+      clientId: config.resolvedClientId
     };
   } catch (error: any) {
     if (error?.code === "ERR_REQUEST_CANCELED") {
@@ -151,7 +306,8 @@ const authenticateWithApple = async (
 export const authenticateWithExpoSocialProvider = async (
   provider: JBSocialProviderName,
   config: JBAuthSocialConfig[JBSocialProviderName],
-  debug = false
+  debug = false,
+  options?: AuthenticateWithProviderOptions
 ): Promise<LoginSocialPayload | null> => {
   const resolvedClientId =
     provider === "google"
@@ -180,15 +336,48 @@ export const authenticateWithExpoSocialProvider = async (
     resolvedClientId
   };
 
-  if (provider === "google") {
-    return authenticateWithGoogle(runtimeConfig, debug);
-  }
-  if (provider === "facebook") {
-    return authenticateWithFacebook(runtimeConfig, debug);
-  }
-  if (provider === "apple") {
-    return authenticateWithApple(runtimeConfig, debug);
-  }
+  const providerMode = config?.mode;
+  const strategyMode = options?.strategy?.defaultMode;
+  const primaryMode: JBSocialAuthMode = providerMode ?? strategyMode ?? "expo";
+  const fallbackMode: JBSocialFallbackMode = options?.strategy?.fallbackMode ?? "expo";
 
-  return null;
+  const withFallback = async (
+    mode: JBSocialAuthMode,
+    run: () => Promise<LoginSocialPayload>
+  ): Promise<LoginSocialPayload> => {
+    try {
+      return await run();
+    } catch (error) {
+      if (mode === "native" && fallbackMode === "expo") {
+        logSocialDebug(debug, `${provider} native auth failed, falling back to expo`, error);
+        return runWithMode("expo");
+      }
+      throw error;
+    }
+  };
+
+  const runWithMode = async (mode: JBSocialAuthMode): Promise<LoginSocialPayload> => {
+    if (provider === "google") {
+      return withFallback(
+        mode,
+        mode === "native"
+          ? () => authenticateWithGoogleNative(runtimeConfig, debug)
+          : () => authenticateWithGoogle(runtimeConfig, debug)
+      );
+    }
+    if (provider === "facebook") {
+      return withFallback(
+        mode,
+        mode === "native"
+          ? () => authenticateWithFacebookNative(runtimeConfig, debug)
+          : () => authenticateWithFacebook(runtimeConfig, debug)
+      );
+    }
+    if (provider === "apple") {
+      return authenticateWithApple(runtimeConfig, debug);
+    }
+    throw new Error(`Unsupported social provider: ${provider}`);
+  };
+
+  return runWithMode(primaryMode);
 };

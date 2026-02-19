@@ -1,10 +1,11 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import Toast from "react-native-toast-message";
+import { useForm } from "react-hook-form";
 
 import { getLastCreatedJBExpoConfig } from "../../config";
 import { JBSocialProviderName } from "../../config/types";
-import { JBFormButton } from "../../forms";
+import { JBFormButton, JBFormPicker, JBSelectOption } from "../../forms";
 import { useAppConfigStore } from "../../runtime";
 import { Box, Button, ButtonText, VStack } from "../../ui";
 import { getColor } from "../../utils";
@@ -12,6 +13,7 @@ import { authenticateWithExpoSocialProvider } from "../expo";
 import { JBAuthOtpSignInForm, JBAuthPasswordSignInForm } from "../forms";
 import { useJBAuth } from "../provider";
 import { LoginSocialPayload } from "../types";
+import { shouldSelectRoleForSocialLogin } from "../utils";
 import {
   AuthScreenLayout,
   JBAuthSocialFooterActions,
@@ -45,6 +47,15 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const authConfig = (appConfig?.auth ?? baseConfig?.auth ?? {}) as any;
   const socialConfig = authConfig?.social ?? {};
+  const socialRoleOptions = useMemo<Array<JBSelectOption<string>>>(
+    () =>
+      (authConfig?.profileRoles ?? [])
+        .filter((roleOption: any) => roleOption?.allowSignup !== false)
+        .map((roleOption: any) => ({ value: roleOption.value, label: roleOption.label })),
+    [authConfig?.profileRoles]
+  );
+  const defaultSocialRole = authConfig?.defaultProfileRole ?? socialRoleOptions[0]?.value;
+  const hasRoleOptions = socialRoleOptions.length > 0;
   const showDebugSocial = Boolean(authConfig?.showDebugSocial ?? false);
   const hasSocialClientIdForCurrentPlatform = (
     provider: JBSocialProviderName,
@@ -90,6 +101,36 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
           password: debugPassword,
         }
       : undefined;
+  const rolePickerOpenRef = useRef<(() => void) | null>(null);
+  const [pendingSocialPayload, setPendingSocialPayload] = useState<LoginSocialPayload | null>(null);
+  const { control: socialRoleControl } = useForm<{ role?: JBSelectOption<string> | string }>({
+    mode: "onChange",
+    defaultValues: {
+      role: socialRoleOptions.find((roleOption) => roleOption.value === defaultSocialRole)
+    }
+  });
+
+  const completeSocialLogin = useCallback(
+    async (payload: LoginSocialPayload, role?: string) => {
+      try {
+        setIsSocialLoading(true);
+        await auth.signInSocial({
+          ...payload,
+          role: role ?? payload.role
+        });
+        navigator.onSignedIn?.();
+      } catch (error: any) {
+        Toast.show({
+          type: "error",
+          text1: "Error de autenticación",
+          text2: error?.message || "No se pudo iniciar sesión con el proveedor social."
+        });
+      } finally {
+        setIsSocialLoading(false);
+      }
+    },
+    [auth, navigator]
+  );
   const handlePasswordSignIn = useCallback(
     async (values: { login: string; password: string }) => {
       await auth.signIn(values);
@@ -118,27 +159,37 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
 
   const signInWithProvider = async (provider: string) => {
     try {
-      const payload = socialAuthenticator
+      const tokenPayload = socialAuthenticator
         ? await socialAuthenticator(provider)
         : await authenticateWithExpoSocialProvider(
             provider as JBSocialProviderName,
             socialConfig?.[provider],
-            showDebugSocial
+            showDebugSocial,
+            { strategy: socialConfig?.strategy }
           );
-      if (!payload) {
+      if (!tokenPayload) {
         return;
       }
-      setIsSocialLoading(true);
-      await auth.signInSocial(payload);
-      navigator.onSignedIn?.();
+      const baseSocialPayload: LoginSocialPayload = {
+        ...tokenPayload,
+        provider,
+        client: "mobile",
+        termsAndConditionsAccepted: true
+      };
+      const precheckResponse = await auth.signInSocialPrecheck(baseSocialPayload);
+      const shouldSelectRole = shouldSelectRoleForSocialLogin(precheckResponse, hasRoleOptions);
+      if (shouldSelectRole) {
+        setPendingSocialPayload(baseSocialPayload);
+        rolePickerOpenRef.current?.();
+        return;
+      }
+      await completeSocialLogin(baseSocialPayload);
     } catch (error: any) {
       Toast.show({
         type: "error",
         text1: "Error de autenticación",
         text2: error?.message || "No se pudo iniciar sesión con el proveedor social."
       });
-    } finally {
-      setIsSocialLoading(false);
     }
   };
   const [passwordFormState, setPasswordFormState] = useState<{
@@ -250,6 +301,31 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
           />
         </Box>
       )}
+      {hasRoleOptions ? (
+        <Box className="h-0 w-0 overflow-hidden">
+          <JBFormPicker
+            control={socialRoleControl}
+            fieldName="role"
+            label="Rol"
+            items={socialRoleOptions}
+            sheetTitle="Selecciona un rol para continuar"
+            renderTrigger={({ open }) => {
+              rolePickerOpenRef.current = open;
+              return <Box className="h-0 w-0" />;
+            }}
+            onChangeCustom={(option: JBSelectOption<string>, onChange: (value: unknown) => void) => {
+              onChange(option);
+              if (!pendingSocialPayload) {
+                return;
+              }
+              const roleValue = typeof option === "string" ? option : option?.value;
+              const pendingPayload = pendingSocialPayload;
+              setPendingSocialPayload(null);
+              void completeSocialLogin(pendingPayload, roleValue ?? defaultSocialRole);
+            }}
+          />
+        </Box>
+      ) : null}
     </AuthScreenLayout>
   );
 }

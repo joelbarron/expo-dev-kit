@@ -105,10 +105,57 @@ export function JBAuthProvider(props: JBAuthProviderProps) {
     });
   }, [authStatus, onAuthStateChanged, user]);
 
-  const setAuthenticatedSession = useCallback((authResponse: { user?: unknown }) => {
-    setUser(authResponse.user ?? null);
+  const setAuthenticatedSession = useCallback((authResponse: Record<string, any>) => {
+    const wrappedUser =
+      authResponse?.user && typeof authResponse.user === 'object'
+        ? (authResponse.user as Record<string, unknown>)
+        : null;
+
+    // Mobile responses can be flat (no "user" key). In that case we treat the response itself as user payload.
+    const rawUser = wrappedUser ?? (() => {
+      if (!authResponse || typeof authResponse !== 'object') {
+        return null;
+      }
+
+      const { tokens, deviceRegistered, device_registered, ...rest } = authResponse;
+      void tokens;
+      void deviceRegistered;
+      void device_registered;
+      return rest as Record<string, unknown>;
+    })();
+
+    if (!rawUser || Object.keys(rawUser).length === 0) {
+      setUser(null);
+      setAuthStatus('authenticated');
+      return null;
+    }
+
+    const normalizedUser: Record<string, unknown> = {
+      ...rawUser
+    };
+
+    const topLevelProfiles = authResponse?.profiles ?? authResponse?.uProfiles;
+    if (
+      topLevelProfiles !== undefined &&
+      normalizedUser.profiles === undefined &&
+      normalizedUser.uProfiles === undefined
+    ) {
+      normalizedUser.profiles = topLevelProfiles;
+    }
+
+    const topLevelActiveProfile = authResponse?.activeProfile ?? authResponse?.active_profile;
+    if (topLevelActiveProfile !== undefined) {
+      if (normalizedUser.activeProfile === undefined) {
+        normalizedUser.activeProfile = topLevelActiveProfile;
+      }
+      if (normalizedUser.active_profile === undefined) {
+        normalizedUser.active_profile = topLevelActiveProfile;
+      }
+    }
+
+    setUser(normalizedUser);
     setAuthStatus('authenticated');
-    return authResponse.user ?? null;
+    return normalizedUser;
   }, []);
 
   const signIn = useCallback(

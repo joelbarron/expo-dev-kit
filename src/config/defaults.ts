@@ -26,7 +26,13 @@ export const defaultJBExpoConfig: JBAppConfig = {
     signUp: {
       minimumAge: 18
     },
+    profileRoles: [],
+    defaultProfileRole: undefined,
     social: {
+      strategy: {
+        defaultMode: 'expo',
+        fallbackMode: 'expo'
+      },
       google: {
         enabled: false,
         clientId: '',
@@ -38,6 +44,7 @@ export const defaultJBExpoConfig: JBAppConfig = {
       facebook: {
         enabled: false,
         clientId: '',
+        clientToken: '',
         redirectUri: '',
         scopes: ['public_profile', 'email']
       },

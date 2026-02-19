@@ -97,6 +97,16 @@ const withClientPayload = <TPayload extends { client?: 'web' | 'mobile'; device?
   return { ...payload, client };
 };
 
+const normalizeSocialPayload = <TPayload extends LoginSocialPayload | LinkSocialPayload>(payload: TPayload): TPayload => {
+  const normalized = { ...payload } as TPayload & { authorizationCode?: string };
+  const authorizationCode = normalized.authorizationCode ?? payload.code;
+  if (authorizationCode) {
+    normalized.authorizationCode = authorizationCode;
+    normalized.code = authorizationCode;
+  }
+  return normalized as TPayload;
+};
+
 export type AuthClient = {
   endpoints: JbDrfAuthEndpoints;
   tokenStorage: TokenStorage;
@@ -291,7 +301,7 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
   const loginSocial = async (payload: LoginSocialPayload): Promise<JbDrfWebAuthResponse> => {
     const response = await createPublicAxios().post<JbDrfWebAuthResponse>(
       withBaseUrl(endpoints.loginSocial),
-      withClientPayload(payload, defaultClient)
+      withClientPayload(normalizeSocialPayload(payload), defaultClient)
     );
 
     const accessToken = response.data.tokens?.accessToken;
@@ -307,7 +317,7 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
   const loginSocialPrecheck = async (payload: LoginSocialPayload): Promise<LoginSocialPrecheckResponse> => {
     const response = await createPublicAxios().post<LoginSocialPrecheckResponse>(
       withBaseUrl(endpoints.loginSocialPrecheck),
-      withClientPayload(payload, defaultClient)
+      withClientPayload(normalizeSocialPayload(payload), defaultClient)
     );
 
     return response.data;
@@ -316,7 +326,7 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
   const linkSocial = async (payload: LinkSocialPayload): Promise<Record<string, unknown>> => {
     const response = await createAuthenticatedAxiosWithRefresh().post<Record<string, unknown>>(
       withBaseUrl(endpoints.loginSocialLink),
-      payload
+      normalizeSocialPayload(payload)
     );
 
     return response.data;

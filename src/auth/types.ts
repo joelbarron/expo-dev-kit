@@ -69,9 +69,15 @@ export type LoginBasicPayload = {
 
 export type LoginSocialPayload = {
   provider: string;
+  role?: string;
+  termsAndConditionsAccepted?: boolean;
   idToken?: string;
   accessToken?: string;
   code?: string;
+  authorizationCode?: string;
+  redirectUri?: string;
+  codeVerifier?: string;
+  clientId?: string;
   client?: 'web' | 'mobile';
   device?: unknown;
 };
@@ -80,13 +86,25 @@ export type LoginSocialPrecheckResponse = {
   shouldLink?: boolean;
   providerExists?: boolean;
   email?: string;
+  userExists?: boolean;
+  user_exists?: boolean;
+  wouldCreateUser?: boolean;
+  would_create_user?: boolean;
+  socialAccountExists?: boolean;
+  social_account_exists?: boolean;
+  linkedExistingUser?: boolean;
+  linked_existing_user?: boolean;
 };
 
 export type LinkSocialPayload = {
   provider: string;
   code?: string;
+  authorizationCode?: string;
   idToken?: string;
   accessToken?: string;
+  redirectUri?: string;
+  codeVerifier?: string;
+  clientId?: string;
 };
 
 export type UnlinkSocialPayload = {
