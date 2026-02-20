@@ -9,7 +9,6 @@ import {
 import {
   AuthScreenLayout,
   JBAuthPrimaryButton,
-  JBAuthSecondaryButton,
 } from "../ui";
 import { JBAuthNavigator } from "./types";
 
@@ -47,14 +46,7 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
             </View>
 
             <View style={styles.actions}>
-              <JBAuthPrimaryButton
-                label="Ingresar"
-                onPress={navigator.goToSignIn}
-              />
-              <JBAuthSecondaryButton
-                label="Crear cuenta"
-                onPress={navigator.goToSignUp}
-              />
+              <JBAuthPrimaryButton label="Empezar" onPress={navigator.goToSignIn} />
             </View>
           </View>
         </View>
@@ -64,11 +56,7 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
 
   return (
     <AuthScreenLayout useMainLayout={false} title={appName ?? "Bienvenido"} subtitle={subtitle}>
-      <JBAuthPrimaryButton label="Ingresar" onPress={navigator.goToSignIn} />
-      <JBAuthSecondaryButton
-        label="Crear cuenta"
-        onPress={navigator.goToSignUp}
-      />
+      <JBAuthPrimaryButton label="Empezar" onPress={navigator.goToSignIn} />
     </AuthScreenLayout>
   );
 }

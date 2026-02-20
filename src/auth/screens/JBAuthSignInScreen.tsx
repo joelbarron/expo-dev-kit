@@ -1,23 +1,22 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Platform } from "react-native";
 import Toast from "react-native-toast-message";
-import { useForm } from "react-hook-form";
 
 import { getLastCreatedJBExpoConfig } from "../../config";
 import { JBSocialProviderName } from "../../config/types";
 import { JBFormButton, JBFormPicker, JBSelectOption } from "../../forms";
 import { useAppConfigStore } from "../../runtime";
-import { Box, Button, ButtonText, VStack } from "../../ui";
-import { getColor } from "../../utils";
+import { Box, Button, ButtonText, Text, VStack } from "../../ui";
 import { authenticateWithExpoSocialProvider } from "../expo";
 import { JBAuthOtpSignInForm, JBAuthPasswordSignInForm } from "../forms";
 import { useJBAuth } from "../provider";
 import { LoginSocialPayload } from "../types";
-import { shouldSelectRoleForSocialLogin } from "../utils";
 import {
   AuthScreenLayout,
-  JBAuthSocialFooterActions,
+  JBAuthSocialActions,
 } from "../ui";
+import { shouldSelectRoleForSocialLogin } from "../utils";
 import { JBAuthNavigator } from "./types";
 
 export type JBAuthSignInScreenProps = {
@@ -42,8 +41,8 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
   const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const baseConfig = getLastCreatedJBExpoConfig();
   const isConfigDebug = Boolean(appConfig?.debug ?? baseConfig.debug);
-  const primaryColor = getColor("primary") ?? {};
   const [mode, setMode] = useState<"password" | "otp">(initialMode);
+  const [showCredentialsForm, setShowCredentialsForm] = useState(true);
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const authConfig = (appConfig?.auth ?? baseConfig?.auth ?? {}) as any;
   const socialConfig = authConfig?.social ?? {};
@@ -230,46 +229,17 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
         onPress={passwordFormState.submit}
       />
 
-
-      <JBFormButton
-        variant="outline"
-        action="primary"
-        size="xl"
-        className="px-4"
-        buttonType="add"
-        iconName="account-plus-outline"
-        text="Crear cuenta"
-        iconColor={primaryColor[500] ?? "#10b981"}
-        textClassName="text-[14px] font-semibold text-primary-600 dark:text-primary-300"
-        onPress={navigator.goToSignUp}
-      />
-
-       <Button
+      <Button
         variant="link"
         action="primary"
-        size="md"
+        size="sm"
         className="self-center px-0"
-        onPress={navigator.goToForgotPassword}
+        onPress={navigator.goToSignUp}
       >
-        <ButtonText className="text-sm font-semibold text-primary-600 dark:text-primary-300">
-          ¿Olvidaste tu contraseña?
+        <ButtonText className="text-sm">
+          ¿No tienes cuenta? Crear cuenta
         </ButtonText>
       </Button>
-
-      <JBAuthSocialFooterActions
-        googleEnabled={hasProvider("google")}
-        showApple={Platform.OS === "ios"}
-        appleEnabled={Platform.OS === "ios" && hasProvider("apple")}
-        facebookEnabled={hasProvider("facebook")}
-        smsEnabled={enableOtp}
-        smsActive={mode === "otp"}
-        isSocialLoading={isSocialLoading}
-        smsColor={primaryColor[500] ?? "#10b981"}
-        onGooglePress={() => signInWithProvider("google")}
-        onApplePress={() => signInWithProvider("apple")}
-        onFacebookPress={() => signInWithProvider("facebook")}
-        onSmsPress={() => setMode("otp")}
-      />
     </VStack>
   );
 
@@ -278,9 +248,37 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
       footer={mode === "password" ? passwordFooter : undefined}
       footerAdjustableHeight={mode === "password"}
       footerClassName={mode === "password" ? "pt-4 pb-6" : undefined}
-      contentAlign={mode === "password" ? "center" : "top"}
+      contentAlign="top"
     >
-      {mode === "password" ? (
+      <JBAuthSocialActions
+        title="Acceso rápido"
+        googleEnabled={hasProvider("google")}
+        showApple={Platform.OS === "ios"}
+        appleEnabled={Platform.OS === "ios" && hasProvider("apple")}
+        facebookEnabled={hasProvider("facebook")}
+        smsEnabled={enableOtp}
+        smsActive={mode === "otp"}
+        isSocialLoading={isSocialLoading}
+        onGooglePress={() => signInWithProvider("google")}
+        onApplePress={() => signInWithProvider("apple")}
+        onFacebookPress={() => signInWithProvider("facebook")}
+        onSmsPress={() => {
+          setMode("otp");
+          setShowCredentialsForm(true);
+        }}
+      />
+
+      <VStack className="mb-4 mt-8 w-full items-center" space="xs">
+        <Box className="w-full flex-row items-center">
+          <Box className="h-px flex-1 bg-outline-700" />
+          <Text size="xl" className="px-3 text-center text-primary-500">
+            O usar email y contraseña
+          </Text>
+          <Box className="h-px flex-1 bg-outline-700" />
+        </Box>
+      </VStack>
+
+      {showCredentialsForm && mode === "password" ? (
         <Box className="w-full">
           <JBAuthPasswordSignInForm
             defaultValues={signInDefaultValues}
@@ -293,14 +291,14 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
             onSubmit={handlePasswordSignIn}
           />
         </Box>
-      ) : (
+      ) : showCredentialsForm ? (
         <Box className="w-full">
           <JBAuthOtpSignInForm
             onRequestOtp={handleOtpRequest}
             onVerifyOtp={handleOtpVerify}
           />
         </Box>
-      )}
+      ) : null}
       {hasRoleOptions ? (
         <Box className="h-0 w-0 overflow-hidden">
           <JBFormPicker

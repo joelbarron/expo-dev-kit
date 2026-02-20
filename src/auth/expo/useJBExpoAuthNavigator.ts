@@ -32,6 +32,7 @@ export const useJBExpoAuthNavigator = (paths?: JBExpoAuthNavigatorPaths): JBAuth
 
   return {
     goToSignIn: () => nav.push(resolved.signIn),
+    goToSignInReplace: () => nav.replace(resolved.signIn),
     goToSignUp: () => nav.push(resolved.signUp),
     goToForgotPassword: () => nav.push(resolved.forgotPassword),
     goToResetPassword: (params?: { uid?: string; token?: string }) =>

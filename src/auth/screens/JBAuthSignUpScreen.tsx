@@ -7,14 +7,13 @@ import { getLastCreatedJBExpoConfig } from '../../config';
 import { JBSocialProviderName } from '../../config/types';
 import { JBFormButton, JBFormPicker, JBSelectOption } from '../../forms';
 import { useAppConfigStore } from '../../runtime';
-import { Box, VStack } from '../../ui';
-import { getColor } from '../../utils';
+import { Box, Button, ButtonText, Text, VStack } from '../../ui';
 import { authenticateWithExpoSocialProvider } from '../expo';
 import { JBAuthSignUpForm } from '../forms';
 import { useJBAuth } from '../provider';
 import { LoginSocialPayload, RegisterPayload } from '../types';
 import { shouldSelectRoleForSocialLogin } from '../utils';
-import { AuthScreenLayout, JBAuthAlert, JBAuthSocialFooterActions } from '../ui';
+import { AuthScreenLayout, JBAuthAlert, JBAuthSocialActions } from '../ui';
 import { JBAuthNavigator } from './types';
 
 export type JBAuthSignUpScreenProps = {
@@ -31,7 +30,7 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
   const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const baseConfig = getLastCreatedJBExpoConfig();
   const isConfigDebug = Boolean(appConfig?.debug ?? baseConfig?.debug);
-  const primaryColor = getColor('primary') ?? {};
+  const [showEmailSignUp, setShowEmailSignUp] = useState(false);
   const authConfig = (appConfig?.auth ?? baseConfig?.auth ?? {}) as any;
   const minimumSignUpAge = Number(authConfig?.signUp?.minimumAge ?? 18);
   const signUpRoleOptions = useMemo<Array<JBSelectOption<string> & { allowSignup?: boolean }>>(
@@ -219,49 +218,66 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
             className="px-4"
             buttonType="add"
             text="Crear cuenta"
-            loading={formState.isLoading}
-            isDisabled={!formState.canSubmit}
-            onPress={formState.submit}
-          />
-          <JBFormButton
-            variant="outline"
-            action="primary"
-            size="xl"
-            className="px-4"
-            iconName="login"
-            text="Ya tengo cuenta"
-            iconColor={primaryColor[500] ?? "#10b981"}
-            textClassName="text-[14px] font-semibold text-primary-600 dark:text-primary-300"
-            onPress={navigator.goToSignIn}
+            loading={showEmailSignUp ? formState.isLoading : false}
+            isDisabled={showEmailSignUp ? !formState.canSubmit : false}
+            onPress={showEmailSignUp ? formState.submit : () => setShowEmailSignUp(true)}
           />
 
-          <JBAuthSocialFooterActions
-            googleEnabled={hasProvider("google")}
-            showApple={Platform.OS === "ios"}
-            appleEnabled={Platform.OS === "ios" && hasProvider("apple")}
-            facebookEnabled={hasProvider("facebook")}
-            showSms
-            smsEnabled
-            isSocialLoading={isSocialLoading}
-            onGooglePress={() => signInWithProvider("google")}
-            onApplePress={() => signInWithProvider("apple")}
-            onFacebookPress={() => signInWithProvider("facebook")}
-            onSmsPress={navigator.goToSignIn}
-          />
+          <Button
+            variant="link"
+            action="primary"
+            size="sm"
+            className="self-center px-0"
+            onPress={navigator.goToSignIn}
+          >
+            <ButtonText className="text-sm">¿Ya tienes cuenta? Iniciar sesión</ButtonText>
+          </Button>
         </VStack>
       )}
     >
       {createdEmail ? <JBAuthAlert type="success" message="Cuenta creada. Verifica tu correo para activar tu cuenta." /> : null}
 
-      <JBAuthSignUpForm
-        defaultValues={signUpDefaultValues}
-        roleOptions={signUpRoleOptions}
-        defaultRole={defaultSignUpRole}
-        minimumAge={minimumSignUpAge}
-        showSubmitButton={false}
-        onFormStateChange={handleFormStateChange}
-        onSubmit={handleSignUpSubmit}
+      <JBAuthSocialActions
+        googleEnabled={hasProvider("google")}
+        showApple={Platform.OS === "ios"}
+        appleEnabled={Platform.OS === "ios" && hasProvider("apple")}
+        facebookEnabled={hasProvider("facebook")}
+        isSocialLoading={isSocialLoading}
+        onGooglePress={() => signInWithProvider("google")}
+        onApplePress={() => signInWithProvider("apple")}
+        onFacebookPress={() => signInWithProvider("facebook")}
+        showSms={false}
       />
+
+      <VStack className="my-4 w-full items-center" space="xs">
+        <Box className="w-full flex-row items-center">
+          <Box className="h-px flex-1 bg-outline-700" />
+          <Text className="px-3 text-sm text-muted">o</Text>
+          <Box className="h-px flex-1 bg-outline-700" />
+        </Box>
+        <JBFormButton
+          variant="outline"
+          action="secondary"
+          size="lg"
+          className="w-full"
+          buttonType="email"
+          text="Crear cuenta con email"
+          showIcon={false}
+          onPress={() => setShowEmailSignUp(true)}
+        />
+      </VStack>
+
+      {showEmailSignUp ? (
+        <JBAuthSignUpForm
+          defaultValues={signUpDefaultValues}
+          roleOptions={signUpRoleOptions}
+          defaultRole={defaultSignUpRole}
+          minimumAge={minimumSignUpAge}
+          showSubmitButton={false}
+          onFormStateChange={handleFormStateChange}
+          onSubmit={handleSignUpSubmit}
+        />
+      ) : null}
       {hasRoleOptions ? (
         <Box className="h-0 w-0 overflow-hidden">
           <JBFormPicker

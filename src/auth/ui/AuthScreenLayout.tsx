@@ -74,7 +74,12 @@ export const AuthScreenLayout = ({
           footerStyle={footerStyle}
           footerAdjustableHeight={footerAdjustableHeight}
         >
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+          >
             {content}
           </ScrollView>
         </JBMainLayout>
@@ -90,7 +95,12 @@ export const AuthScreenLayout = ({
       ]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+      >
         {content}
       </ScrollView>
     </KeyboardAvoidingView>

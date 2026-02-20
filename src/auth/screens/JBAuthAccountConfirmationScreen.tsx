@@ -19,7 +19,7 @@ export function JBAuthAccountConfirmationScreen(props: JBAuthAccountConfirmation
       <JBAuthAccountConfirmationForm
         defaultValues={{ uid, token }}
         defaultEmail={email}
-        onGoToSignIn={navigator.goToSignIn}
+        onGoToSignIn={() => navigator.goToSignInReplace?.() ?? navigator.goToSignIn()}
         onSubmit={(values) => auth.confirmAccountEmail(values)}
         onResend={(values) => auth.resendAccountConfirmation(values)}
       />

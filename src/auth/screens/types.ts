@@ -1,5 +1,6 @@
 export type JBAuthNavigator = {
   goToSignIn: () => void;
+  goToSignInReplace?: () => void;
   goToSignUp: () => void;
   goToForgotPassword: () => void;
   goToResetPassword?: (params?: { uid?: string; token?: string }) => void;

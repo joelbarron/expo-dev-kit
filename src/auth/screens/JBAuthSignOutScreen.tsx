@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 
 import { useJBAuth } from '../provider';
-import { Loading } from '../../shared';
 import { AuthScreenLayout } from '../ui';
 import { JBAuthNavigator } from './types';
 
@@ -25,7 +24,7 @@ export function JBAuthSignOutScreen(props: JBAuthSignOutScreenProps) {
 
   return (
     <AuthScreenLayout useMainLayout contentAlign="center">
-      <Loading />
+      <></>
     </AuthScreenLayout>
   );
 }
