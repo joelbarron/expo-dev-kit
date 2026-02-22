@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
 
 import { JBAuthPrimaryButton, JBAuthSecondaryButton } from '../../ui';
@@ -15,6 +15,24 @@ export type JBAuthAccountConfirmationFormProps = {
   onGoToSignIn?: () => void;
   resendCooldownSeconds?: number;
   signInRedirectSeconds?: number;
+  startResendCooldownOnMount?: boolean;
+  showActionButtons?: boolean;
+  onActionStateChange?: (state: {
+    isSuccess: boolean;
+    showRetryVerification: boolean;
+    retryLabel: string;
+    retryLoading: boolean;
+    retryDisabled: boolean;
+    onRetryVerification: () => void;
+    showResend: boolean;
+    resendLabel: string;
+    resendLoading: boolean;
+    resendDisabled: boolean;
+    onResend: () => void;
+    showGoToSignIn: boolean;
+    goToSignInLabel: string;
+    onGoToSignIn?: () => void;
+  }) => void;
   autoSubmit?: boolean;
   onSubmit: (values: JBAuthAccountConfirmationFormValues) => unknown | Promise<unknown>;
   onResend?: (values: { email: string }) => unknown | Promise<unknown>;
@@ -27,6 +45,9 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
     onGoToSignIn,
     resendCooldownSeconds = 30,
     signInRedirectSeconds = 5,
+    startResendCooldownOnMount = true,
+    showActionButtons = true,
+    onActionStateChange,
     autoSubmit = true,
     onSubmit,
     onResend
@@ -38,6 +59,7 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
   const hasValues = Boolean(uid && token);
 
   const hasAutoSubmittedRef = useRef(false);
+  const hasInitializedResendCooldownRef = useRef(false);
 
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -60,7 +82,7 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
     return normalized.includes('expir') || normalized.includes('invalid') || normalized.includes('invalido');
   };
 
-  const submit = async () => {
+  const submit = useCallback(async () => {
     if (!hasValues) {
       setErrorMessage('El enlace no es válido o está incompleto.');
       Toast.show({
@@ -97,9 +119,9 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
     } finally {
       setLoading(false);
     }
-  };
+  }, [hasValues, onSubmit, uid, token, signInRedirectSeconds]);
 
-  const resend = async () => {
+  const resend = useCallback(async () => {
     if (!onResend || !email || resendCooldown > 0) {
       return;
     }
@@ -126,7 +148,7 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
     } finally {
       setResending(false);
     }
-  };
+  }, [onResend, email, resendCooldown, resendCooldownSeconds]);
 
   useEffect(() => {
     if (resendCooldown <= 0) {
@@ -165,7 +187,15 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
 
     hasAutoSubmittedRef.current = true;
     void submit();
-  }, [autoSubmit, hasValues, uid, token]);
+  }, [autoSubmit, hasValues, submit]);
+
+  useEffect(() => {
+    if (!startResendCooldownOnMount || !canResendFromSignup || hasInitializedResendCooldownRef.current) {
+      return;
+    }
+    hasInitializedResendCooldownRef.current = true;
+    setResendCooldown(resendCooldownSeconds);
+  }, [startResendCooldownOnMount, canResendFromSignup, resendCooldownSeconds]);
 
   const formatCooldown = (seconds: number) => {
     const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -173,50 +203,87 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
     return `${minutes}:${remainingSeconds}`;
   };
 
+  const resendLabel =
+    resending
+      ? 'Reenviando...'
+      : resendCooldown > 0
+        ? `Reenviar verificación (${formatCooldown(resendCooldown)})`
+        : 'Reenviar verificación';
+  const retryLabel = 'Reintentar verificación';
+  const handleRetryVerification = useCallback(() => {
+    void submit();
+  }, [submit]);
+  const handleResend = useCallback(() => {
+    void resend();
+  }, [resend]);
+  const goToSignInLabel = `Ir a iniciar sesión${
+    typeof signInRedirectCountdown === 'number' && signInRedirectCountdown > 0
+      ? ` (${signInRedirectCountdown}s)`
+      : ''
+  }`;
+
+  useEffect(() => {
+    onActionStateChange?.({
+      isSuccess,
+      showRetryVerification: !isSuccess && hasValues && !canResendFromExpiredLink,
+      retryLabel,
+      retryLoading: loading,
+      retryDisabled: loading,
+      onRetryVerification: handleRetryVerification,
+      showResend: canResendFromSignup || canResendFromExpiredLink,
+      resendLabel,
+      resendLoading: resending,
+      resendDisabled: resending || resendCooldown > 0,
+      onResend: handleResend,
+      showGoToSignIn: Boolean(onGoToSignIn) && (canResendFromSignup || (isSuccess && !canResendFromExpiredLink && !canResendFromSignup)),
+      goToSignInLabel,
+      onGoToSignIn
+    });
+  }, [
+    onActionStateChange,
+    isSuccess,
+    hasValues,
+    canResendFromExpiredLink,
+    canResendFromSignup,
+    retryLabel,
+    loading,
+    handleRetryVerification,
+    resendLabel,
+    resending,
+    resendCooldown,
+    handleResend,
+    onGoToSignIn,
+    goToSignInLabel
+  ]);
+
   return (
     <>
-      {!isSuccess && hasValues && !canResendFromExpiredLink ? (
-        <JBAuthPrimaryButton label="Reintentar verificación" loading={loading} onPress={() => void submit()} />
+      {showActionButtons && !isSuccess && hasValues && !canResendFromExpiredLink ? (
+        <JBAuthPrimaryButton label="Reintentar verificación" loading={loading} onPress={handleRetryVerification} />
       ) : null}
 
-      {canResendFromSignup ? (
+      {showActionButtons && canResendFromSignup ? (
         <>
-          <JBAuthPrimaryButton label="Ir a iniciar sesión" onPress={onGoToSignIn} />
           <JBAuthSecondaryButton
-            label={
-              resending
-                ? 'Reenviando...'
-                : resendCooldown > 0
-                  ? `Reenviar verificación (${formatCooldown(resendCooldown)})`
-                  : 'Reenviar verificación'
-            }
+            label={resendLabel}
             disabled={resending || resendCooldown > 0}
-            onPress={() => void resend()}
+            onPress={handleResend}
           />
+          <JBAuthPrimaryButton label="Ir a iniciar sesión" onPress={onGoToSignIn} />
         </>
       ) : null}
 
-      {canResendFromExpiredLink ? (
+      {showActionButtons && canResendFromExpiredLink ? (
         <JBAuthSecondaryButton
-          label={
-            resending
-              ? 'Reenviando...'
-              : resendCooldown > 0
-                ? `Reenviar verificación (${formatCooldown(resendCooldown)})`
-                : 'Reenviar verificación'
-          }
+          label={resendLabel}
           disabled={resending || resendCooldown > 0}
-          onPress={() => void resend()}
+          onPress={handleResend}
         />
       ) : null}
 
-      {isSuccess && !canResendFromSignup && !canResendFromExpiredLink ? (
+      {showActionButtons && isSuccess && !canResendFromSignup && !canResendFromExpiredLink ? (
         <JBAuthPrimaryButton
-          label={`Ir a iniciar sesión${
-            typeof signInRedirectCountdown === 'number' && signInRedirectCountdown > 0
-              ? ` (${signInRedirectCountdown}s)`
-              : ''
-          }`}
+          label={goToSignInLabel}
           onPress={onGoToSignIn}
         />
       ) : null}

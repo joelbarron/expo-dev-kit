@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 
 import { JBAuthNavigator } from '../screens/types';
@@ -25,22 +26,68 @@ const defaultPaths: Required<JBExpoAuthNavigatorPaths> = {
 export const useJBExpoAuthNavigator = (paths?: JBExpoAuthNavigatorPaths): JBAuthNavigator => {
   const router = useRouter();
   const nav = router as any;
-  const resolved = {
-    ...defaultPaths,
-    ...(paths ?? {})
-  };
+  const resolved = useMemo(
+    () => ({
+      ...defaultPaths,
+      ...(paths ?? {}),
+    }),
+    [paths],
+  );
 
-  return {
-    goToSignIn: () => nav.push(resolved.signIn),
-    goToSignInReplace: () => nav.replace(resolved.signIn),
-    goToSignUp: () => nav.push(resolved.signUp),
-    goToForgotPassword: () => nav.push(resolved.forgotPassword),
-    goToResetPassword: (params?: { uid?: string; token?: string }) =>
+  const goToSignIn = useCallback(
+    (params?: { initialMode?: "password" | "otp" }) =>
+      nav.push({ pathname: resolved.signIn, params }),
+    [nav, resolved.signIn],
+  );
+  const goToSignInReplace = useCallback(() => nav.replace(resolved.signIn), [nav, resolved.signIn]);
+  const goToSignUp = useCallback(() => nav.push(resolved.signUp), [nav, resolved.signUp]);
+  const goToForgotPassword = useCallback(
+    () => nav.push(resolved.forgotPassword),
+    [nav, resolved.forgotPassword],
+  );
+  const goToResetPassword = useCallback(
+    (params?: { uid?: string; token?: string }) =>
       nav.push({ pathname: resolved.resetPassword, params }),
-    goToVerifyEmail: (params?: { email?: string; uid?: string; token?: string }) =>
+    [nav, resolved.resetPassword],
+  );
+  const goToVerifyEmail = useCallback(
+    (params?: { email?: string; uid?: string; token?: string }) =>
       nav.push({ pathname: resolved.verifyEmail, params }),
-    goToWelcome: () => nav.replace(resolved.welcome),
-    onSignedIn: () => nav.replace(resolved.signedIn),
-    onSignedOut: () => nav.replace(resolved.signIn)
-  };
+    [nav, resolved.verifyEmail],
+  );
+  const goToVerifyEmailReplace = useCallback(
+    (params?: { email?: string; uid?: string; token?: string }) =>
+      nav.replace({ pathname: resolved.verifyEmail, params }),
+    [nav, resolved.verifyEmail],
+  );
+  const goToWelcome = useCallback(() => nav.replace(resolved.welcome), [nav, resolved.welcome]);
+  const onSignedIn = useCallback(() => nav.replace(resolved.signedIn), [nav, resolved.signedIn]);
+  const onSignedOut = useCallback(() => nav.replace(resolved.signIn), [nav, resolved.signIn]);
+
+  return useMemo(
+    () => ({
+      goToSignIn,
+      goToSignInReplace,
+      goToSignUp,
+      goToForgotPassword,
+      goToResetPassword,
+      goToVerifyEmail,
+      goToVerifyEmailReplace,
+      goToWelcome,
+      onSignedIn,
+      onSignedOut,
+    }),
+    [
+      goToSignIn,
+      goToSignInReplace,
+      goToSignUp,
+      goToForgotPassword,
+      goToResetPassword,
+      goToVerifyEmail,
+      goToVerifyEmailReplace,
+      goToWelcome,
+      onSignedIn,
+      onSignedOut,
+    ],
+  );
 };

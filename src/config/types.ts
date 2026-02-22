@@ -38,6 +38,20 @@ export type JBAuthProfileRoleOption = {
   allowSignup?: boolean;
 };
 
+export type JBLottieSource = Record<string, unknown> | string | { uri: string };
+
+export type JBAuthVerifyEmailVisualConfig = {
+  showAnimation: boolean;
+  pendingAnimationSource?: JBLottieSource;
+  successAnimationSource?: JBLottieSource;
+  animationSource?: JBLottieSource;
+  animationAutoPlay?: boolean;
+  animationLoop?: boolean;
+  successAnimationLoop?: boolean;
+  animationSpeed?: number;
+  animationSize?: number;
+};
+
 export type JBAppConfig = {
   debug: boolean;
   forceHideStage: boolean;
@@ -58,6 +72,9 @@ export type JBAppConfig = {
     showDebugSocial: boolean;
     signUp: {
       minimumAge: number;
+    };
+    visuals: {
+      verifyEmail: JBAuthVerifyEmailVisualConfig;
     };
     profileRoles: JBAuthProfileRoleOption[];
     defaultProfileRole?: string;

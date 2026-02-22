@@ -50,9 +50,25 @@ export function JBExpoAuthStackLayout(props: JBExpoAuthStackLayoutProps) {
         options={{ headerShown: true, title: 'Iniciar sesión' }}
       />
       <Stack.Screen name="sign-up" options={{ headerShown: true, title: 'Crear cuenta' }} />
-      <Stack.Screen name="forgot-password" options={{ headerShown: true }} />
+      <Stack.Screen
+        name="forgot-password"
+        options={{ headerShown: true, title: "Recuperar contraseña" }}
+      />
       <Stack.Screen name="reset-password" options={{ headerShown: true }} />
-      <Stack.Screen name="verify-email" options={{ headerShown: true }} />
+      <Stack.Screen
+        name="verify-email"
+        options={{
+          headerShown: true,
+          gestureEnabled: false,
+          headerLeft: () => (
+            <View>
+              <TouchableOpacity onPress={() => router.replace('/sign-in' as any)}>
+                <Entypo name="chevron-small-left" size={40} color={headerTintColor} />
+              </TouchableOpacity>
+            </View>
+          ),
+        }}
+      />
       <Stack.Screen name="sign-out" options={{ headerShown: false }} />
     </Stack>
   );

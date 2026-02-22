@@ -132,7 +132,10 @@ export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
   } = props;
 
   const signupRoleOptions = useMemo(
-    () => (roleOptions ?? []).filter((roleOption) => roleOption.allowSignup !== false),
+    () =>
+      (roleOptions ?? []).filter(
+        (roleOption) => roleOption.allowSignup === true || (roleOption as any).allowSignUp === true,
+      ),
     [roleOptions]
   );
   const maximumBirthDate = useMemo(() => getMaximumBirthDate(minimumAge), [minimumAge]);
@@ -147,17 +150,25 @@ export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
     () => signupRoleOptions.find((option) => option.value === resolvedDefaultRoleValue) ?? undefined,
     [resolvedDefaultRoleValue, signupRoleOptions]
   );
-
-  const { control, formState, handleSubmit, setError, clearErrors, trigger, watch } = useForm<JBAuthSignUpFormValues>({
-    mode: 'onChange',
-    defaultValues: {
+  const resolvedInitialValues = useMemo(
+    () => ({
       ...defaults,
+      ...(defaultValues ?? {}),
       gender: resolvedDefaultGender as any,
       role: resolvedDefaultRole as any,
-      ...(defaultValues ?? {})
-    },
+    }),
+    [defaultValues, resolvedDefaultGender, resolvedDefaultRole]
+  );
+
+  const { control, formState, handleSubmit, setError, clearErrors, trigger, watch, reset } = useForm<JBAuthSignUpFormValues>({
+    mode: 'onChange',
+    defaultValues: resolvedInitialValues,
     resolver: zodResolver(signUpSchema)
   });
+
+  useEffect(() => {
+    reset(resolvedInitialValues);
+  }, [reset, resolvedInitialValues]);
 
   const password = useWatch({ control, name: 'password' });
   const passwordConfirm = useWatch({ control, name: 'passwordConfirm' });
@@ -261,7 +272,7 @@ export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
         isDisabled={disabled || isLoading}
       />
 
-      {signupRoleOptions.length > 0 ? (
+      {signupRoleOptions.length > 1 ? (
         <JBFormPicker
           control={control}
           fieldName="role"

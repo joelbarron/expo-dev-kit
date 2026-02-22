@@ -8,6 +8,7 @@ import { JBSocialProviderName } from '../../config/types';
 import { JBFormButton, JBFormPicker, JBSelectOption } from '../../forms';
 import { useAppConfigStore } from '../../runtime';
 import { Box, Button, ButtonText, Text, VStack } from '../../ui';
+import { getColor } from '../../utils';
 import { authenticateWithExpoSocialProvider } from '../expo';
 import { JBAuthSignUpForm } from '../forms';
 import { useJBAuth } from '../provider';
@@ -27,24 +28,29 @@ export type JBAuthSignUpScreenProps = {
 export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
   const { navigator, socialProviders, socialAuthenticator } = props;
   const auth = useJBAuth();
+  const primary = getColor("primary") ?? {};
   const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const baseConfig = getLastCreatedJBExpoConfig();
   const isConfigDebug = Boolean(appConfig?.debug ?? baseConfig?.debug);
-  const [showEmailSignUp, setShowEmailSignUp] = useState(false);
+  const [showEmailSignUp] = useState(true);
   const authConfig = (appConfig?.auth ?? baseConfig?.auth ?? {}) as any;
   const minimumSignUpAge = Number(authConfig?.signUp?.minimumAge ?? 18);
+  const isRoleAllowedForSignup = (roleOption: any) =>
+    roleOption?.allowSignup === true || roleOption?.allowSignUp === true;
   const signUpRoleOptions = useMemo<Array<JBSelectOption<string> & { allowSignup?: boolean }>>(
     () =>
       (authConfig?.profileRoles ?? [])
-        .filter((roleOption: any) => roleOption?.allowSignup !== false)
+        .filter((roleOption: any) => isRoleAllowedForSignup(roleOption))
         .map((roleOption: any) => ({
           value: roleOption.value,
           label: roleOption.label,
-          allowSignup: roleOption.allowSignup
+          allowSignup: true
         })),
     [authConfig?.profileRoles]
   );
-  const defaultSignUpRole = authConfig?.defaultProfileRole ?? signUpRoleOptions[0]?.value;
+  const defaultSignUpRole =
+    signUpRoleOptions.find((roleOption) => roleOption.value === authConfig?.defaultProfileRole)?.value ??
+    signUpRoleOptions[0]?.value;
   const debugSignUp = appConfig?.userDebug?.signUp ?? baseConfig?.userDebug?.signUp ?? {};
   const socialConfig = authConfig?.social ?? {};
   const showDebugSocial = Boolean(authConfig?.showDebugSocial ?? false);
@@ -52,7 +58,7 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
     () => signUpRoleOptions.map((roleOption) => ({ value: roleOption.value, label: roleOption.label })),
     [signUpRoleOptions]
   );
-  const hasRoleOptions = socialRoleOptions.length > 0;
+  const hasRoleOptions = socialRoleOptions.length > 1;
   const hasSocialClientIdForCurrentPlatform = (
     provider: JBSocialProviderName,
     providerConfig?: {
@@ -134,7 +140,8 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
     async (values: RegisterPayload) => {
       await auth.signUp(values);
       setCreatedEmail(values.email);
-      navigator.goToVerifyEmail?.({ email: values.email });
+      navigator.goToVerifyEmailReplace?.({ email: values.email }) ??
+        navigator.goToVerifyEmail?.({ email: values.email });
     },
     [auth, navigator]
   );
@@ -216,11 +223,13 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
             action="primary"
             size="xl"
             className="px-4"
-            buttonType="add"
+            buttonType="default"
+            showIcon
+            iconName="account-plus-outline"
             text="Crear cuenta"
-            loading={showEmailSignUp ? formState.isLoading : false}
-            isDisabled={showEmailSignUp ? !formState.canSubmit : false}
-            onPress={showEmailSignUp ? formState.submit : () => setShowEmailSignUp(true)}
+            loading={formState.isLoading}
+            isDisabled={!formState.canSubmit}
+            onPress={formState.submit}
           />
 
           <Button
@@ -228,7 +237,7 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
             action="primary"
             size="sm"
             className="self-center px-0"
-            onPress={navigator.goToSignIn}
+            onPress={() => navigator.goToSignIn()}
           >
             <ButtonText className="text-sm">¿Ya tienes cuenta? Iniciar sesión</ButtonText>
           </Button>
@@ -238,46 +247,43 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
       {createdEmail ? <JBAuthAlert type="success" message="Cuenta creada. Verifica tu correo para activar tu cuenta." /> : null}
 
       <JBAuthSocialActions
+        title="Acceso rápido"
         googleEnabled={hasProvider("google")}
         showApple={Platform.OS === "ios"}
         appleEnabled={Platform.OS === "ios" && hasProvider("apple")}
         facebookEnabled={hasProvider("facebook")}
+        showSms
+        smsEnabled
         isSocialLoading={isSocialLoading}
         onGooglePress={() => signInWithProvider("google")}
         onApplePress={() => signInWithProvider("apple")}
         onFacebookPress={() => signInWithProvider("facebook")}
-        showSms={false}
+        onSmsPress={() => navigator.goToSignIn({ initialMode: "otp" })}
       />
 
       <VStack className="my-4 w-full items-center" space="xs">
         <Box className="w-full flex-row items-center">
           <Box className="h-px flex-1 bg-outline-700" />
-          <Text className="px-3 text-sm text-muted">o</Text>
+          <Text
+            size="xl"
+            className="px-3 text-center"
+            style={{ color: primary[500] ?? "#10b981" }}
+          >
+            O completa tus datos
+          </Text>
           <Box className="h-px flex-1 bg-outline-700" />
         </Box>
-        <JBFormButton
-          variant="outline"
-          action="secondary"
-          size="lg"
-          className="w-full"
-          buttonType="email"
-          text="Crear cuenta con email"
-          showIcon={false}
-          onPress={() => setShowEmailSignUp(true)}
-        />
       </VStack>
 
-      {showEmailSignUp ? (
-        <JBAuthSignUpForm
-          defaultValues={signUpDefaultValues}
-          roleOptions={signUpRoleOptions}
-          defaultRole={defaultSignUpRole}
-          minimumAge={minimumSignUpAge}
-          showSubmitButton={false}
-          onFormStateChange={handleFormStateChange}
-          onSubmit={handleSignUpSubmit}
-        />
-      ) : null}
+      <JBAuthSignUpForm
+        defaultValues={signUpDefaultValues}
+        roleOptions={signUpRoleOptions}
+        defaultRole={defaultSignUpRole}
+        minimumAge={minimumSignUpAge}
+        showSubmitButton={false}
+        onFormStateChange={handleFormStateChange}
+        onSubmit={handleSignUpSubmit}
+      />
       {hasRoleOptions ? (
         <Box className="h-0 w-0 overflow-hidden">
           <JBFormPicker

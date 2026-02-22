@@ -65,7 +65,7 @@ export function JBFormPasswordInput(props: JBFormPasswordInputProps) {
     rules,
     isDisabled = false,
     enforceDjangoLikeValidation = false,
-    hideToggleWhenDisabled = false,
+    hideToggleWhenDisabled = true,
     ...rest
   } = props as any;
 

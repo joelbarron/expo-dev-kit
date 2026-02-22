@@ -8,6 +8,7 @@ import { JBSocialProviderName } from "../../config/types";
 import { JBFormButton, JBFormPicker, JBSelectOption } from "../../forms";
 import { useAppConfigStore } from "../../runtime";
 import { Box, Button, ButtonText, Text, VStack } from "../../ui";
+import { getColor } from "../../utils";
 import { authenticateWithExpoSocialProvider } from "../expo";
 import { JBAuthOtpSignInForm, JBAuthPasswordSignInForm } from "../forms";
 import { useJBAuth } from "../provider";
@@ -45,16 +46,21 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
   const [showCredentialsForm, setShowCredentialsForm] = useState(true);
   const [isSocialLoading, setIsSocialLoading] = useState(false);
   const authConfig = (appConfig?.auth ?? baseConfig?.auth ?? {}) as any;
+  const primary = getColor("primary") ?? {};
   const socialConfig = authConfig?.social ?? {};
+  const isRoleAllowedForSignup = (roleOption: any) =>
+    roleOption?.allowSignup === true || roleOption?.allowSignUp === true;
   const socialRoleOptions = useMemo<Array<JBSelectOption<string>>>(
     () =>
       (authConfig?.profileRoles ?? [])
-        .filter((roleOption: any) => roleOption?.allowSignup !== false)
+        .filter((roleOption: any) => isRoleAllowedForSignup(roleOption))
         .map((roleOption: any) => ({ value: roleOption.value, label: roleOption.label })),
     [authConfig?.profileRoles]
   );
-  const defaultSocialRole = authConfig?.defaultProfileRole ?? socialRoleOptions[0]?.value;
-  const hasRoleOptions = socialRoleOptions.length > 0;
+  const defaultSocialRole =
+    socialRoleOptions.find((roleOption) => roleOption.value === authConfig?.defaultProfileRole)?.value ??
+    socialRoleOptions[0]?.value;
+  const hasRoleOptions = socialRoleOptions.length > 1;
   const showDebugSocial = Boolean(authConfig?.showDebugSocial ?? false);
   const hasSocialClientIdForCurrentPlatform = (
     provider: JBSocialProviderName,
@@ -215,6 +221,43 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
     },
     []
   );
+  const [otpFormState, setOtpFormState] = useState<{
+    submit: () => void;
+    canSubmit: boolean;
+    isLoading: boolean;
+    submitLabel: string;
+  }>({
+    submit: () => {},
+    canSubmit: false,
+    isLoading: false,
+    submitLabel: "Solicitar código OTP",
+  });
+  const onOtpFormStateChange = useCallback(
+    ({
+      submit,
+      canSubmit,
+      isLoading,
+      submitLabel,
+    }: {
+      submit: () => void;
+      canSubmit: boolean;
+      isLoading: boolean;
+      submitLabel: string;
+    }) => {
+      setOtpFormState((prev) => {
+        if (
+          prev.submit === submit &&
+          prev.canSubmit === canSubmit &&
+          prev.isLoading === isLoading &&
+          prev.submitLabel === submitLabel
+        ) {
+          return prev;
+        }
+        return { submit, canSubmit, isLoading, submitLabel };
+      });
+    },
+    []
+  );
 
   const passwordFooter = (
     <VStack space="md" className="pt-6">
@@ -242,12 +285,40 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
       </Button>
     </VStack>
   );
+  const otpFooter = (
+    <VStack space="md" className="pt-6">
+      <JBFormButton
+        variant="solid"
+        size="xl"
+        className="px-4"
+        buttonType="default"
+        showIcon
+        iconName="message-processing-outline"
+        text={otpFormState.submitLabel}
+        loading={otpFormState.isLoading}
+        isDisabled={!otpFormState.canSubmit}
+        onPress={otpFormState.submit}
+      />
+
+      <Button
+        variant="link"
+        action="primary"
+        size="sm"
+        className="self-center px-0"
+        onPress={navigator.goToSignUp}
+      >
+        <ButtonText className="text-sm">
+          ¿No tienes cuenta? Crear cuenta
+        </ButtonText>
+      </Button>
+    </VStack>
+  );
 
   return (
     <AuthScreenLayout
-      footer={mode === "password" ? passwordFooter : undefined}
-      footerAdjustableHeight={mode === "password"}
-      footerClassName={mode === "password" ? "pt-4 pb-6" : undefined}
+      footer={mode === "password" ? passwordFooter : otpFooter}
+      footerAdjustableHeight
+      footerClassName="pt-4 pb-6"
       contentAlign="top"
     >
       <JBAuthSocialActions
@@ -263,7 +334,7 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
         onApplePress={() => signInWithProvider("apple")}
         onFacebookPress={() => signInWithProvider("facebook")}
         onSmsPress={() => {
-          setMode("otp");
+          setMode((prev) => (prev === "otp" ? "password" : "otp"));
           setShowCredentialsForm(true);
         }}
       />
@@ -271,8 +342,12 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
       <VStack className="mb-4 mt-8 w-full items-center" space="xs">
         <Box className="w-full flex-row items-center">
           <Box className="h-px flex-1 bg-outline-700" />
-          <Text size="xl" className="px-3 text-center text-primary-500">
-            O usar email y contraseña
+          <Text
+            size="xl"
+            className="px-3 text-center"
+            style={{ color: primary[500] ?? "#10b981" }}
+          >
+            {mode === "otp" ? "O usar tu número" : "O usar tu contraseña"}
           </Text>
           <Box className="h-px flex-1 bg-outline-700" />
         </Box>
@@ -283,9 +358,12 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
           <JBAuthPasswordSignInForm
             defaultValues={signInDefaultValues}
             showSubmitButton={false}
-            showForgotPasswordLink={false}
+            showForgotPasswordLink
+            forgotPasswordLabel="¿Olvidaste tu contraseña? Restablecer"
+            onPressForgotPassword={navigator.goToForgotPassword}
             onFormStateChange={onPasswordFormStateChange}
             onPressVerifyAccount={(email) =>
+              navigator.goToVerifyEmailReplace?.({ email }) ??
               navigator.goToVerifyEmail?.({ email })
             }
             onSubmit={handlePasswordSignIn}
@@ -294,6 +372,8 @@ export function JBAuthSignInScreen(props: JBAuthSignInScreenProps) {
       ) : showCredentialsForm ? (
         <Box className="w-full">
           <JBAuthOtpSignInForm
+            showSubmitButton={false}
+            onFormStateChange={onOtpFormStateChange}
             onRequestOtp={handleOtpRequest}
             onVerifyOtp={handleOtpVerify}
           />

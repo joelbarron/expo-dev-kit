@@ -27,6 +27,18 @@ type AuthenticateWithProviderOptions = {
 
 WebBrowser.maybeCompleteAuthSession();
 
+const isExpoGoRuntime = (): boolean => {
+  try {
+    const Constants = require("expo-constants")?.default ?? require("expo-constants");
+    return (
+      Constants?.appOwnership === "expo" ||
+      Constants?.executionEnvironment === "storeClient"
+    );
+  } catch {
+    return false;
+  }
+};
+
 const logSocialDebug = (enabled: boolean, message: string, payload?: unknown) => {
   if (!enabled) {
     return;
@@ -338,8 +350,21 @@ export const authenticateWithExpoSocialProvider = async (
 
   const providerMode = config?.mode;
   const strategyMode = options?.strategy?.defaultMode;
-  const primaryMode: JBSocialAuthMode = providerMode ?? strategyMode ?? "expo";
+  const requestedPrimaryMode: JBSocialAuthMode = providerMode ?? strategyMode ?? "expo";
   const fallbackMode: JBSocialFallbackMode = options?.strategy?.fallbackMode ?? "expo";
+  const primaryMode: JBSocialAuthMode =
+    requestedPrimaryMode === "native" &&
+    (provider === "google" || provider === "facebook") &&
+    isExpoGoRuntime()
+      ? "expo"
+      : requestedPrimaryMode;
+
+  if (primaryMode !== requestedPrimaryMode) {
+    logSocialDebug(
+      debug,
+      `${provider} native auth disabled in Expo Go, using expo auth flow`
+    );
+  }
 
   const withFallback = async (
     mode: JBSocialAuthMode,

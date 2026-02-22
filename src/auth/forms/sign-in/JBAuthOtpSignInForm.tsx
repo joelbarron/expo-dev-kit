@@ -1,20 +1,21 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import Toast from "react-native-toast-message";
 import { z } from "zod";
 
-import { JBFormInput, JBFormSelect, JBSelectOption } from "../../../forms";
+import { JBFormInput, JBFormPicker, JBSelectOption } from "../../../forms";
 import { VStack } from "../../../ui";
 import {
   COUNTRY_CALLING_CODE_OPTIONS,
   DEFAULT_OTP_COUNTRY_CODE,
 } from "../../constants";
+import { buildE164Phone, isValidE164Phone, resolveCountryCodeValue } from "../../utils";
 import { JBAuthPrimaryButton, JBAuthSecondaryButton } from "../../ui";
 import { parseAuthError } from "../errorParser";
 
 export type JBAuthOtpSignInFormValues = {
-  countryCode: string;
+  countryCode: JBSelectOption<string> | string;
   phone: string;
   code?: string;
 };
@@ -24,6 +25,13 @@ export type JBAuthOtpSignInFormProps = {
   countryCodeOptions?: JBSelectOption<string>[];
   requestRoleSelection?: () => Promise<string | undefined>;
   loading?: boolean;
+  showSubmitButton?: boolean;
+  onFormStateChange?: (state: {
+    submit: () => void;
+    canSubmit: boolean;
+    isLoading: boolean;
+    submitLabel: string;
+  }) => void;
   onRequestOtp: (values: { phone: string }) => unknown | Promise<unknown>;
   onVerifyOtp: (values: {
     phone: string;
@@ -34,7 +42,12 @@ export type JBAuthOtpSignInFormProps = {
 };
 
 const otpSchema = z.object({
-  countryCode: z.string().nonempty("Selecciona la lada"),
+  countryCode: z
+    .any()
+    .refine(
+      (value) => Boolean(resolveCountryCodeValue(value)?.trim()),
+      "Selecciona la lada",
+    ),
   phone: z.string().nonempty("Debes ingresar tu teléfono"),
   code: z.string().optional(),
 });
@@ -71,17 +84,30 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
     countryCodeOptions,
     requestRoleSelection,
     loading = false,
+    showSubmitButton = true,
+    onFormStateChange,
     onRequestOtp,
     onVerifyOtp,
     onBackToPassword,
   } = props;
 
   const resolvedOptions = countryCodeOptions ?? COUNTRY_CALLING_CODE_OPTIONS;
-  const defaultCountryCode = resolvedOptions.some(
+  const fallbackCountryCode = resolvedOptions.some(
     (item) => item.value === DEFAULT_OTP_COUNTRY_CODE,
   )
     ? DEFAULT_OTP_COUNTRY_CODE
     : (resolvedOptions[0]?.value ?? DEFAULT_OTP_COUNTRY_CODE);
+  const resolvedDefaultCountryCode = resolveCountryCodeValue(
+    defaultValues?.countryCode,
+  );
+  const defaultCountryCode = resolvedOptions.find(
+    (item) =>
+      item.value ===
+      (resolvedDefaultCountryCode || fallbackCountryCode),
+  ) ?? {
+    value: fallbackCountryCode,
+    label: fallbackCountryCode,
+  };
 
   const [otpRequested, setOtpRequested] = useState(false);
   const [shouldSelectRoleOnVerify, setShouldSelectRoleOnVerify] =
@@ -91,7 +117,7 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
     useForm<JBAuthOtpSignInFormValues>({
       mode: "onChange",
       defaultValues: {
-        countryCode: defaultValues?.countryCode ?? defaultCountryCode,
+        countryCode: defaultCountryCode,
         phone: defaultValues?.phone ?? "",
         code: defaultValues?.code ?? "",
       },
@@ -114,6 +140,15 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
   }, [watch, clearErrors]);
 
   const isLoading = loading || formState.isSubmitting;
+  const selectedCountryCode = resolveCountryCodeValue(countryCode);
+  const normalizedE164Phone = buildE164Phone(countryCode, phone);
+  const isValidPhoneNumber = isValidE164Phone(normalizedE164Phone);
+  const canSubmit =
+    !!selectedCountryCode.trim() &&
+    !!phone?.trim() &&
+    isValidPhoneNumber &&
+    (!otpRequested || !!code?.trim());
+  const submitLabel = otpRequested ? "Validar código OTP" : "Solicitar código OTP";
 
   const applySubmitError = (error: unknown) => {
     const parsed = parseAuthError(error);
@@ -127,11 +162,21 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
     });
   };
 
-  const onSubmitForm = async (values: JBAuthOtpSignInFormValues) => {
+  const onSubmitForm = useCallback(async (values: JBAuthOtpSignInFormValues) => {
     try {
+      const fullPhone = buildE164Phone(values.countryCode, values.phone);
+      if (!isValidE164Phone(fullPhone)) {
+        setError("phone", {
+          type: "manual",
+          message:
+            "Número no válido. Usa un número real con lada en formato internacional.",
+        });
+        return;
+      }
+
       if (!otpRequested) {
         const response = await onRequestOtp({
-          phone: `${values.countryCode}${values.phone}`.replace(/\s+/g, ""),
+          phone: fullPhone,
         });
         const userExists = getUserExistsFromResponse(response);
         setShouldSelectRoleOnVerify(
@@ -163,22 +208,43 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
       }
 
       await onVerifyOtp({
-        phone: `${values.countryCode}${values.phone}`.replace(/\s+/g, ""),
+        phone: fullPhone,
         code: values.code,
         role: selectedRole,
       });
     } catch (error) {
       applySubmitError(error);
     }
-  };
+  }, [
+    otpRequested,
+    onRequestOtp,
+    requestRoleSelection,
+    onVerifyOtp,
+    shouldSelectRoleOnVerify,
+    setError,
+  ]);
+  const submitHandler = useCallback(() => {
+    void handleSubmit(onSubmitForm)();
+  }, [handleSubmit, onSubmitForm]);
+
+  useEffect(() => {
+    onFormStateChange?.({
+      submit: submitHandler,
+      canSubmit,
+      isLoading,
+      submitLabel,
+    });
+  }, [onFormStateChange, submitHandler, canSubmit, isLoading, submitLabel]);
 
   return (
     <VStack space="lg">
-      <JBFormSelect
+      <JBFormPicker
         control={control}
         fieldName="countryCode"
         label="Lada"
-        options={resolvedOptions}
+        items={resolvedOptions}
+        valueField="iso2"
+        sheetTitle="Selecciona la lada"
         isDisabled={isLoading || otpRequested}
       />
 
@@ -202,17 +268,15 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
         />
       ) : null}
 
-      <JBAuthPrimaryButton
-        className="mt-6"
-        label={otpRequested ? "Validar código OTP" : "Solicitar código OTP"}
-        loading={isLoading}
-        disabled={
-          !countryCode?.trim() ||
-          !phone?.trim() ||
-          (otpRequested && !code?.trim())
-        }
-        onPress={handleSubmit(onSubmitForm)}
-      />
+      {showSubmitButton ? (
+        <JBAuthPrimaryButton
+          className="mt-6"
+          label={submitLabel}
+          loading={isLoading}
+          disabled={!canSubmit}
+          onPress={submitHandler}
+        />
+      ) : null}
 
       {otpRequested ? (
         <JBAuthSecondaryButton

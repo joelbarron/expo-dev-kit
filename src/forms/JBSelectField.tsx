@@ -29,8 +29,12 @@ export function JBSelectField<TFieldValues extends FieldValues, TName extends Fi
               selectedValue={value ?? ''}
               onValueChange={(itemValue) => onChange(itemValue)}
             >
-              {options.map((option) => (
-                <Picker.Item key={option.value} label={option.label} value={option.value} />
+              {options.map((option, index) => (
+                <Picker.Item
+                  key={`${option.value}-${index}`}
+                  label={option.label}
+                  value={option.value}
+                />
               ))}
             </Picker>
           </View>

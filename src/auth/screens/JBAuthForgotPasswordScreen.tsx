@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { JBFormButton } from '../../forms';
+import { Button, ButtonText } from '../../ui';
 import { JBAuthForgotPasswordForm } from '../forms';
 import { useJBAuth } from '../provider';
 import { AuthScreenLayout } from '../ui';
@@ -13,6 +14,13 @@ export type JBAuthForgotPasswordScreenProps = {
 export function JBAuthForgotPasswordScreen(props: JBAuthForgotPasswordScreenProps) {
   const { navigator } = props;
   const auth = useJBAuth();
+  const handleForgotPasswordSubmit = useCallback(
+    (values: { email: string }) => auth.requestPasswordReset(values),
+    [auth]
+  );
+  const handleEmailSentSuccess = useCallback(() => {
+    navigator.goToSignInReplace?.() ?? navigator.goToSignIn();
+  }, [navigator]);
   const [formState, setFormState] = useState<{
     submit: () => void;
     canSubmit: boolean;
@@ -36,8 +44,7 @@ export function JBAuthForgotPasswordScreen(props: JBAuthForgotPasswordScreenProp
 
   return (
     <AuthScreenLayout
-      title="Recuperar contraseña"
-      subtitle="Te enviaremos un enlace de recuperación"
+      subtitle="Ingresa el correo asociado a tu cuenta y te enviaremos un enlace para restablecer tu contraseña."
       footerAdjustableHeight
       footerClassName="pt-4 pb-6"
       footer={(
@@ -53,22 +60,25 @@ export function JBAuthForgotPasswordScreen(props: JBAuthForgotPasswordScreenProp
             isDisabled={!formState.canSubmit}
             onPress={formState.submit}
           />
-          <JBFormButton
-            variant="outline"
+          <Button
+            variant="link"
             action="primary"
-            size="xl"
-            className="mt-3 px-4"
-            iconName="login"
-            text="Regresar a iniciar sesión"
-            onPress={navigator.goToSignIn}
-          />
+            size="sm"
+            className="mt-2 self-center px-0"
+            onPress={() => navigator.goToSignIn()}
+          >
+            <ButtonText className="text-sm">
+              Regresar a iniciar sesión
+            </ButtonText>
+          </Button>
         </>
       )}
     >
       <JBAuthForgotPasswordForm
         showSubmitButton={false}
         onFormStateChange={handleFormStateChange}
-        onSubmit={(values) => auth.requestPasswordReset(values)}
+        onEmailSentSuccess={handleEmailSentSuccess}
+        onSubmit={handleForgotPasswordSubmit}
       />
     </AuthScreenLayout>
   );

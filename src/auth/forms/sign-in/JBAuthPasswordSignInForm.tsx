@@ -66,7 +66,7 @@ export function JBAuthPasswordSignInForm(props: JBAuthPasswordSignInFormProps) {
     forgotPasswordLabel = "¿Olvidaste tu contraseña?",
     loginLabel = "Usuario o correo",
     passwordLabel = "Contraseña",
-    verifyAccountLabel = "Ir a verificar cuenta",
+    verifyAccountLabel = "Reenviar verificación de cuenta",
     onPressForgotPassword,
     onPressVerifyAccount,
     onSubmit,
@@ -179,7 +179,7 @@ export function JBAuthPasswordSignInForm(props: JBAuthPasswordSignInFormProps) {
           size="md"
           onPress={onPressForgotPassword}
           isDisabled={disabled || isLoading}
-          className="mb-4 self-end px-0"
+          className="-mt-4 mb-2 self-end px-0"
         >
           <ButtonText className="text-sm font-semibold text-primary-600 dark:text-primary-300">
             {forgotPasswordLabel}

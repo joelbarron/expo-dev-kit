@@ -235,7 +235,9 @@ export const CustomFormPicker = ({
       >
         <BottomSheetFlatList
           data={items}
-          keyExtractor={(i, idx) => String(i?.[valueField] ?? `${idx}`)}
+          keyExtractor={(i, idx) =>
+            `${String(i?.[valueField] ?? i?.value ?? i?.id ?? "item")}-${idx}`
+          }
           renderItem={({ item, index }) =>
             renderOption(item, index, value, onChange)
           }

@@ -26,6 +26,16 @@ export const defaultJBExpoConfig: JBAppConfig = {
     signUp: {
       minimumAge: 18
     },
+    visuals: {
+      verifyEmail: {
+        showAnimation: true,
+        animationAutoPlay: true,
+        animationLoop: true,
+        successAnimationLoop: false,
+        animationSpeed: 1,
+        animationSize: 180
+      }
+    },
     profileRoles: [],
     defaultProfileRole: undefined,
     social: {

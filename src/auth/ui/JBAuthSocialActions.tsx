@@ -52,7 +52,7 @@ export function JBAuthSocialActions({
     if (icon === "facebook") {
       return "#1877f2";
     }
-    if (icon === "message-processing-outline") {
+    if (icon === "message-processing-outline" || icon === "email-outline") {
       return primary[500] ?? neutralIconColor;
     }
     return neutralIconColor;
@@ -95,7 +95,11 @@ export function JBAuthSocialActions({
   return (
     <VStack space="sm" className="w-full">
       {title ? (
-        <Text size="xl" className="pb-1 text-center text-primary-500">
+        <Text
+          size="xl"
+          className="pb-1 text-center mb-2"
+          style={{ color: primary[500] ?? "#10b981" }}
+        >
           {title}
         </Text>
       ) : null}
@@ -121,9 +125,11 @@ export function JBAuthSocialActions({
       })}
       {showSms
         ? renderAction({
-            label: "Continuar con SMS",
-            icon: "message-processing-outline",
-            enabled: smsEnabled && !smsActive,
+            label: smsActive
+              ? "Continuar con contraseña"
+              : "Continuar con SMS",
+            icon: smsActive ? "email-outline" : "message-processing-outline",
+            enabled: smsEnabled,
             onPress: onSmsPress,
           })
         : null}

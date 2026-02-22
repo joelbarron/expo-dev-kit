@@ -111,6 +111,10 @@ export const CustomFormInput = ({
           const isNonInteractive = isDisabled || isReadOnly;
           const displayValue =
             typeof value === "string" ? value.replace(/\r?\n/g, " ") : value;
+          const maskedDisplayValue =
+            typeof displayValue === "string" && secureTextEntry
+              ? "•".repeat(displayValue.length)
+              : displayValue;
           return (
             <FormControl
               isInvalid={error ? true : false}
@@ -136,7 +140,7 @@ export const CustomFormInput = ({
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
-                    {displayValue ?? ""}
+                    {maskedDisplayValue ?? ""}
                   </Text>
                 ) : (
                   <InputField
@@ -174,7 +178,7 @@ export const CustomFormInput = ({
                     }}
                   />
                 )}
-                {slotAfter}
+                {isNonInteractive ? null : slotAfter}
               </Input>
 
               {helperText && (
