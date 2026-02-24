@@ -4,9 +4,8 @@ import { useForm } from "react-hook-form";
 import Toast from "react-native-toast-message";
 import { z } from "zod";
 
-import { JBFormInput, JBFormPasswordInput } from "../../../forms";
-import { Button, ButtonText, VStack } from "../../../ui";
-import { JBAuthPrimaryButton, JBAuthSecondaryButton } from "../../ui";
+import { JBFormButton, JBFormInput, JBFormPasswordInput } from "../../../forms";
+import { VStack } from "../../../ui";
 import { parseAuthError } from "../errorParser";
 import { getDjangoLikePasswordError } from "../password/passwordValidation";
 
@@ -173,33 +172,33 @@ export function JBAuthPasswordSignInForm(props: JBAuthPasswordSignInFormProps) {
       />
 
       {showForgotPasswordLink && onPressForgotPassword ? (
-        <Button
+        <JBFormButton
           variant="link"
           action="primary"
           size="md"
           onPress={onPressForgotPassword}
           isDisabled={disabled || isLoading}
           className="-mt-4 mb-2 self-end px-0"
-        >
-          <ButtonText className="text-sm font-semibold text-primary-600 dark:text-primary-300">
-            {forgotPasswordLabel}
-          </ButtonText>
-        </Button>
+          text={forgotPasswordLabel}
+          textClassName="text-sm font-semibold text-primary-600 dark:text-primary-300"
+        />
       ) : null}
 
       {showSubmitButton ? (
-        <JBAuthPrimaryButton
+        <JBFormButton
           className="mt-6"
-          label={submitLabel}
+          text={submitLabel}
           loading={isLoading}
-          disabled={!canSubmit}
+          isDisabled={!canSubmit}
           onPress={submitHandler}
         />
       ) : null}
 
       {shouldShowVerifyAccountCta && onPressVerifyAccount ? (
-        <JBAuthSecondaryButton
-          label={verifyAccountLabel}
+        <JBFormButton
+          variant="outline"
+          action="primary"
+          text={verifyAccountLabel}
           className="mt-6"
           onPress={() => onPressVerifyAccount(loginValue)}
         />

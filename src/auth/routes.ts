@@ -11,8 +11,8 @@ export type JBAuthRoutePaths = Record<JBAuthRouteKey, string>;
 
 const defaultPaths: JBAuthRoutePaths = {
   welcome: '/welcome',
-  signIn: '/sign-in',
-  signUp: '/sign-up',
+  signIn: '/auth-entry',
+  signUp: '/sign-up-form',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
   signOut: '/sign-out',

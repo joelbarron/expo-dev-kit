@@ -10,6 +10,7 @@ import {
   JBSocialFallbackMode,
   JBSocialProviderName
 } from "../../config";
+import { appendSocialDebugLog } from "./socialDebugLogStore";
 
 type SocialProviderRuntimeConfig = JBAuthSocialConfig[JBSocialProviderName] & {
   provider: JBSocialProviderName;
@@ -43,6 +44,7 @@ const logSocialDebug = (enabled: boolean, message: string, payload?: unknown) =>
   if (!enabled) {
     return;
   }
+  appendSocialDebugLog(message, payload);
   if (typeof payload === "undefined") {
     console.info(`[jb-auth][social] ${message}`);
     return;
@@ -352,10 +354,17 @@ export const authenticateWithExpoSocialProvider = async (
   const strategyMode = options?.strategy?.defaultMode;
   const requestedPrimaryMode: JBSocialAuthMode = providerMode ?? strategyMode ?? "expo";
   const fallbackMode: JBSocialFallbackMode = options?.strategy?.fallbackMode ?? "expo";
+  const isExpoGo = isExpoGoRuntime();
+
+  if (provider === "facebook" && requestedPrimaryMode === "native" && isExpoGo) {
+    logSocialDebug(debug, "facebook native auth unavailable in Expo Go");
+    throw new Error("Facebook login requires a native build (Expo Go no es compatible).");
+  }
+
   const primaryMode: JBSocialAuthMode =
     requestedPrimaryMode === "native" &&
-    (provider === "google" || provider === "facebook") &&
-    isExpoGoRuntime()
+    provider === "google" &&
+    isExpoGo
       ? "expo"
       : requestedPrimaryMode;
 
@@ -373,7 +382,11 @@ export const authenticateWithExpoSocialProvider = async (
     try {
       return await run();
     } catch (error) {
-      if (mode === "native" && fallbackMode === "expo") {
+      const canFallbackToExpo =
+        provider !== "facebook" &&
+        mode === "native" &&
+        fallbackMode === "expo";
+      if (canFallbackToExpo) {
         logSocialDebug(debug, `${provider} native auth failed, falling back to expo`, error);
         return runWithMode("expo");
       }

@@ -4,8 +4,7 @@ import { useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
-import { JBFormInput } from '../../../forms';
-import { JBAuthPrimaryButton } from '../../ui';
+import { JBFormButton, JBFormInput } from '../../../forms';
 import { parseAuthError } from '../errorParser';
 
 export type JBAuthForgotPasswordFormValues = {
@@ -164,10 +163,10 @@ export function JBAuthForgotPasswordForm(props: JBAuthForgotPasswordFormProps) {
       ) : null}
 
       {showSubmitButton ? (
-        <JBAuthPrimaryButton
-          label={isResendCooldownActive ? `${resendLabel} (${resendSecondsLeft}s)` : isEmailSentSuccessfully ? resendLabel : submitLabel}
+        <JBFormButton
+          text={isResendCooldownActive ? `${resendLabel} (${resendSecondsLeft}s)` : isEmailSentSuccessfully ? resendLabel : submitLabel}
           loading={isLoading}
-          disabled={isResendCooldownActive || !email?.trim() || !formState.isValid}
+          isDisabled={isResendCooldownActive || !email?.trim() || !formState.isValid}
           onPress={handleSubmit(submitForm)}
         />
       ) : null}

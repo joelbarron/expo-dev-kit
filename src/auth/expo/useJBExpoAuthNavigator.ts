@@ -5,7 +5,10 @@ import { JBAuthNavigator } from '../screens/types';
 
 export type JBExpoAuthNavigatorPaths = {
   signIn?: string;
+  signInPassword?: string;
+  signInOtp?: string;
   signUp?: string;
+  signUpForm?: string;
   forgotPassword?: string;
   resetPassword?: string;
   verifyEmail?: string;
@@ -14,8 +17,11 @@ export type JBExpoAuthNavigatorPaths = {
 };
 
 const defaultPaths: Required<JBExpoAuthNavigatorPaths> = {
-  signIn: '/sign-in',
-  signUp: '/sign-up',
+  signIn: '/auth-entry',
+  signInPassword: '/sign-in-password',
+  signInOtp: '/sign-in-otp',
+  signUp: '/sign-up-form',
+  signUpForm: '/sign-up-form',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
   verifyEmail: '/verify-email',
@@ -35,12 +41,26 @@ export const useJBExpoAuthNavigator = (paths?: JBExpoAuthNavigatorPaths): JBAuth
   );
 
   const goToSignIn = useCallback(
-    (params?: { initialMode?: "password" | "otp" }) =>
-      nav.push({ pathname: resolved.signIn, params }),
-    [nav, resolved.signIn],
+    (params?: { initialMode?: "password" | "otp" }) => {
+      const initialMode = params?.initialMode;
+      if (initialMode === "otp") {
+        return nav.push(resolved.signInOtp);
+      }
+      if (initialMode === "password") {
+        return nav.push(resolved.signInPassword);
+      }
+      return nav.push({ pathname: resolved.signIn, params });
+    },
+    [nav, resolved.signIn, resolved.signInOtp, resolved.signInPassword],
   );
   const goToSignInReplace = useCallback(() => nav.replace(resolved.signIn), [nav, resolved.signIn]);
+  const goToSignInPassword = useCallback(() => nav.push(resolved.signInPassword), [nav, resolved.signInPassword]);
+  const goToSignInPasswordReplace = useCallback(() => nav.replace(resolved.signInPassword), [nav, resolved.signInPassword]);
+  const goToSignInOtp = useCallback(() => nav.push(resolved.signInOtp), [nav, resolved.signInOtp]);
+  const goToSignInOtpReplace = useCallback(() => nav.replace(resolved.signInOtp), [nav, resolved.signInOtp]);
   const goToSignUp = useCallback(() => nav.push(resolved.signUp), [nav, resolved.signUp]);
+  const goToSignUpForm = useCallback(() => nav.push(resolved.signUpForm), [nav, resolved.signUpForm]);
+  const goToSignUpFormReplace = useCallback(() => nav.replace(resolved.signUpForm), [nav, resolved.signUpForm]);
   const goToForgotPassword = useCallback(
     () => nav.push(resolved.forgotPassword),
     [nav, resolved.forgotPassword],
@@ -68,7 +88,13 @@ export const useJBExpoAuthNavigator = (paths?: JBExpoAuthNavigatorPaths): JBAuth
     () => ({
       goToSignIn,
       goToSignInReplace,
+      goToSignInPassword,
+      goToSignInPasswordReplace,
+      goToSignInOtp,
+      goToSignInOtpReplace,
       goToSignUp,
+      goToSignUpForm,
+      goToSignUpFormReplace,
       goToForgotPassword,
       goToResetPassword,
       goToVerifyEmail,
@@ -80,7 +106,13 @@ export const useJBExpoAuthNavigator = (paths?: JBExpoAuthNavigatorPaths): JBAuth
     [
       goToSignIn,
       goToSignInReplace,
+      goToSignInPassword,
+      goToSignInPasswordReplace,
+      goToSignInOtp,
+      goToSignInOtpReplace,
       goToSignUp,
+      goToSignUpForm,
+      goToSignUpFormReplace,
       goToForgotPassword,
       goToResetPassword,
       goToVerifyEmail,

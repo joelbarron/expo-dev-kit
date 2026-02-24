@@ -4,8 +4,7 @@ import { useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
-import { JBFormPasswordInput } from '../../../forms';
-import { JBAuthPrimaryButton, JBAuthSecondaryButton } from '../../ui';
+import { JBFormButton, JBFormPasswordInput } from '../../../forms';
 import { parseAuthError } from '../errorParser';
 import { getDjangoLikePasswordError } from './passwordValidation';
 
@@ -161,17 +160,22 @@ export function JBAuthPasswordResetConfirmForm(props: JBAuthPasswordResetConfirm
             isDisabled={isLoading}
           />
 
-          <JBAuthPrimaryButton
-            label={submitLabel}
+          <JBFormButton
+            text={submitLabel}
             loading={isLoading}
-            disabled={!formState.isValid || !hasValidRecoveryLink}
+            isDisabled={!formState.isValid || !hasValidRecoveryLink}
             onPress={handleSubmit(submitForm)}
           />
         </>
       ) : null}
 
       {formState.isSubmitSuccessful && onGoToSignIn ? (
-        <JBAuthSecondaryButton label={goToSignInLabel} onPress={onGoToSignIn} />
+        <JBFormButton
+          variant="outline"
+          action="primary"
+          text={goToSignInLabel}
+          onPress={onGoToSignIn}
+        />
       ) : null}
     </>
   );

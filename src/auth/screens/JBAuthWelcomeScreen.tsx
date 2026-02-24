@@ -6,10 +6,8 @@ import {
   View,
 } from "react-native";
 
-import {
-  AuthScreenLayout,
-  JBAuthPrimaryButton,
-} from "../ui";
+import { JBFormButton } from "../../forms";
+import { AuthScreenLayout } from "../ui";
 import { JBAuthNavigator } from "./types";
 
 export type JBAuthWelcomeScreenProps = {
@@ -46,7 +44,7 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
             </View>
 
             <View style={styles.actions}>
-              <JBAuthPrimaryButton label="Empezar" onPress={() => navigator.goToSignIn()} />
+              <JBFormButton text="Comenzar" onPress={() => navigator.goToSignIn()} />
             </View>
           </View>
         </View>
@@ -56,7 +54,7 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
 
   return (
     <AuthScreenLayout useMainLayout={false} title={appName ?? "Bienvenido"} subtitle={subtitle}>
-      <JBAuthPrimaryButton label="Empezar" onPress={() => navigator.goToSignIn()} />
+      <JBFormButton text="Comenzar" onPress={() => navigator.goToSignIn()} />
     </AuthScreenLayout>
   );
 }

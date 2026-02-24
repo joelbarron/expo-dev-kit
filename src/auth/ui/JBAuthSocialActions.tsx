@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-import { Box, Button, ButtonText, Text, VStack } from "../../ui";
+import { JBFormButton } from "../../forms";
+import { Box, ButtonText, Text, VStack } from "../../ui";
 import { getColor } from "../../utils";
 
 type JBAuthSocialActionsProps = {
@@ -69,13 +70,15 @@ export function JBAuthSocialActions({
     enabled: boolean;
     onPress?: () => void;
   }) => (
-    <Button
+    <JBFormButton
       // variant="outline"
       action="default"
       size="xl"
       className="w-full bg-background-200"
       isDisabled={!enabled || isSocialLoading}
       onPress={onPress}
+      showText={false}
+      showIcon={false}
     >
       <Box className="w-full flex-row items-center px-12">
         <Box className="w-7 items-center justify-center">
@@ -89,7 +92,7 @@ export function JBAuthSocialActions({
           {label}
         </ButtonText>
       </Box>
-    </Button>
+    </JBFormButton>
   );
 
   return (

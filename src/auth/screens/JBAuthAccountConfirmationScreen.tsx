@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { getLastCreatedJBExpoConfig } from '../../config';
 import { JBFormButton } from '../../forms';
 import { useAppConfigStore } from '../../runtime';
-import { Button, ButtonText, VStack } from '../../ui';
+import { VStack } from '../../ui';
 import { JBAuthAccountConfirmationForm } from '../forms';
 import { useJBAuth } from '../provider';
 import { AuthScreenLayout, JBAuthVerifyEmailVisual } from '../ui';
@@ -24,7 +24,21 @@ export function JBAuthAccountConfirmationScreen(props: JBAuthAccountConfirmation
   const verifyEmailVisualConfig =
     appConfig?.auth?.visuals?.verifyEmail ?? baseConfig.auth.visuals.verifyEmail;
   const handleGoToSignIn = useCallback(
-    () => navigator.goToSignInReplace?.() ?? navigator.goToSignIn(),
+    () => {
+      if (navigator.goToSignInPasswordReplace) {
+        navigator.goToSignInPasswordReplace();
+        return;
+      }
+      if (navigator.goToSignInReplace) {
+        navigator.goToSignInReplace();
+        return;
+      }
+      if (navigator.goToSignInPassword) {
+        navigator.goToSignInPassword();
+        return;
+      }
+      navigator.goToSignIn({ initialMode: 'password' });
+    },
     [navigator]
   );
   const handleConfirmAccountEmail = useCallback(
@@ -126,15 +140,15 @@ export function JBAuthAccountConfirmationScreen(props: JBAuthAccountConfirmation
             />
           ) : null}
           {actionState.showGoToSignIn ? (
-            <Button
+            <JBFormButton
               variant="link"
               action="primary"
               size="sm"
               className="self-center px-0"
+              text={actionState.goToSignInLabel}
+              textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
               onPress={actionState.onGoToSignIn ?? handleGoToSignIn}
-            >
-              <ButtonText className="text-sm">{actionState.goToSignInLabel}</ButtonText>
-            </Button>
+            />
           ) : null}
         </VStack>
       }

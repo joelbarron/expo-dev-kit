@@ -1,7 +1,6 @@
 import { useForm } from 'react-hook-form';
 
-import { JBFormPasswordInput } from '../../../forms';
-import { JBAuthPrimaryButton } from '../../ui';
+import { JBFormButton, JBFormPasswordInput } from '../../../forms';
 
 export type JBAuthResetPasswordFormValues = {
   newPassword: string;
@@ -48,7 +47,7 @@ export function JBAuthResetPasswordForm(props: JBAuthResetPasswordFormProps) {
         }}
       />
 
-      <JBAuthPrimaryButton label={submitLabel} loading={loading} onPress={handleSubmit(onSubmit)} />
+      <JBFormButton text={submitLabel} loading={loading} onPress={handleSubmit(onSubmit)} />
     </>
   );
 }

@@ -1,7 +1,8 @@
 // @ts-nocheck
-import React from "react";
 import { Controller } from "react-hook-form";
+import { Pressable, ScrollView } from "react-native";
 
+import { Box } from "../ui/box";
 import {
   FormControl,
   FormControlError,
@@ -14,8 +15,6 @@ import {
 } from "../ui/form-control";
 import { AlertCircleIcon } from "../ui/icon";
 import { materialPalette } from "../utils/colors";
-import ColorPicker from "react-native-wheel-color-picker";
-import { Box } from "../ui/box";
 
 type CustomFormColorSelectorProps = {
   control: any;
@@ -26,6 +25,7 @@ type CustomFormColorSelectorProps = {
   size?: "sm" | "md" | "lg";
   defaultValue?: any;
   rules?: any;
+  showLabel?: boolean;
   showPreview?: boolean;
   isDisabled?: boolean;
   isReadOnly?: boolean;
@@ -50,6 +50,7 @@ export const CustomFormColorSelector = ({
   defaultValue = undefined,
   isDisabled = false,
   isReadOnly = false,
+  showLabel = true,
   showPreview = true,
   rules = {},
   onChangeCustom = null,
@@ -76,41 +77,66 @@ export const CustomFormColorSelector = ({
           isRequired={rules?.required ? true : false}
           className={`${className} ${containerClassName}`}
         >
-          <FormControlLabel className="mb-6">
-            <FormControlLabelText className={`text-white ${labelClassName}`}>
-              {label}
-            </FormControlLabelText>
-          </FormControlLabel>
+          {
+            showLabel && (
+              <FormControlLabel className="mb-6">
+                <FormControlLabelText className={`text-white ${labelClassName}`}>
+                  {label}
+                </FormControlLabelText>
+              </FormControlLabel>
+            )
+          }
+          
 
           <Box className={pickerContainerClassName}>
             {/* <Box className="border border-gray-400 rounded-md p-2 pb-5"> */}
-            <Box
-              className={previewClassName}
-              style={{ backgroundColor: value }}
-            ></Box>
+            {
+              showPreview && (
+                <Box
+                  className={previewClassName}
+                  style={{ backgroundColor: value }}/>
+              )
+
+            }
+            
 
             {!isDisabled && (
-              <ColorPicker
-                color={value}
-                swatchesOnly={true}
-                onColorChangeComplete={(color) => {
-                  // console.log("color", color);
-                  if (onChangeCustom) {
-                    onChangeCustom(color, onChange);
-                  } else {
-                    onChange(color);
-                  }
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 4,
+                  paddingRight: 6,
                 }}
-                thumbSize={30}
-                sliderSize={20}
-                noSnap={true}
-                row={false}
-                swatchesLast={true}
-                swatches={true}
-                discrete={false}
-                gapSize={5}
-                palette={materialPalette}
-              />
+              >
+                {materialPalette.map((color, index) => {
+                  const isSelected = value?.toLowerCase?.() === color.toLowerCase();
+
+                  return (
+                    <Pressable
+                      key={color}
+                      onPress={() => {
+                        if (onChangeCustom) {
+                          onChangeCustom(color, onChange);
+                        } else {
+                          onChange(color);
+                        }
+                      }}
+                      style={{
+                        width: 25,
+                        height: 25,
+                        marginRight: index === materialPalette.length - 1 ? 0 : 10,
+                        borderRadius: 12.5,
+                        backgroundColor: color,
+                        borderWidth: isSelected ? 3 : 1,
+                        borderColor: isSelected ? "#FFFFFF" : "rgba(255,255,255,0.25)",
+                      }}
+                    />
+                  );
+                })}
+              </ScrollView>
             )}
           </Box>
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
 
-import { JBAuthPrimaryButton, JBAuthSecondaryButton } from '../../ui';
+import { JBFormButton } from '../../../forms';
 import { parseAuthError } from '../errorParser';
 
 export type JBAuthAccountConfirmationFormValues = {
@@ -259,31 +259,35 @@ export function JBAuthAccountConfirmationForm(props: JBAuthAccountConfirmationFo
   return (
     <>
       {showActionButtons && !isSuccess && hasValues && !canResendFromExpiredLink ? (
-        <JBAuthPrimaryButton label="Reintentar verificación" loading={loading} onPress={handleRetryVerification} />
+        <JBFormButton text="Reintentar verificación" loading={loading} onPress={handleRetryVerification} />
       ) : null}
 
       {showActionButtons && canResendFromSignup ? (
         <>
-          <JBAuthSecondaryButton
-            label={resendLabel}
-            disabled={resending || resendCooldown > 0}
+          <JBFormButton
+            variant="outline"
+            action="primary"
+            text={resendLabel}
+            isDisabled={resending || resendCooldown > 0}
             onPress={handleResend}
           />
-          <JBAuthPrimaryButton label="Ir a iniciar sesión" onPress={onGoToSignIn} />
+          <JBFormButton text="Ir a iniciar sesión" onPress={onGoToSignIn} />
         </>
       ) : null}
 
       {showActionButtons && canResendFromExpiredLink ? (
-        <JBAuthSecondaryButton
-          label={resendLabel}
-          disabled={resending || resendCooldown > 0}
+        <JBFormButton
+          variant="outline"
+          action="primary"
+          text={resendLabel}
+          isDisabled={resending || resendCooldown > 0}
           onPress={handleResend}
         />
       ) : null}
 
       {showActionButtons && isSuccess && !canResendFromSignup && !canResendFromExpiredLink ? (
-        <JBAuthPrimaryButton
-          label={goToSignInLabel}
+        <JBFormButton
+          text={goToSignInLabel}
           onPress={onGoToSignIn}
         />
       ) : null}

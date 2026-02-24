@@ -21,7 +21,7 @@ import {
   FormControlLabelText,
 } from "../ui/form-control";
 import { HStack } from "../ui/hstack";
-import { AlertCircleIcon, ChevronDownIcon, Icon } from "../ui/icon";
+import { AlertCircleIcon, ChevronDownIcon, Icon, LockIcon } from "../ui/icon";
 import { Text } from "../ui/text";
 import { getColor } from "../utils/colors";
 
@@ -305,7 +305,11 @@ export const CustomFormPicker = ({
             >
               {value?.[labelField] ?? value?.label ?? "Seleccionar un elemento"}
             </Text>
-            <Icon as={ChevronDownIcon} size="md" className={iconClassName} />
+            <Icon
+              as={isDisabled ? LockIcon : ChevronDownIcon}
+              size="md"
+              className={iconClassName}
+            />
           </HStack>
         </TouchableOpacity>
       )}

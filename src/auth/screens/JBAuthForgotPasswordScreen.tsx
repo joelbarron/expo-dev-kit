@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 
 import { JBFormButton } from '../../forms';
-import { Button, ButtonText } from '../../ui';
 import { JBAuthForgotPasswordForm } from '../forms';
 import { useJBAuth } from '../provider';
 import { AuthScreenLayout } from '../ui';
@@ -19,7 +18,19 @@ export function JBAuthForgotPasswordScreen(props: JBAuthForgotPasswordScreenProp
     [auth]
   );
   const handleEmailSentSuccess = useCallback(() => {
-    navigator.goToSignInReplace?.() ?? navigator.goToSignIn();
+    if (navigator.goToSignInPasswordReplace) {
+      navigator.goToSignInPasswordReplace();
+      return;
+    }
+    if (navigator.goToSignInReplace) {
+      navigator.goToSignInReplace();
+      return;
+    }
+    if (navigator.goToSignInPassword) {
+      navigator.goToSignInPassword();
+      return;
+    }
+    navigator.goToSignIn({ initialMode: 'password' });
   }, [navigator]);
   const [formState, setFormState] = useState<{
     submit: () => void;
@@ -60,17 +71,21 @@ export function JBAuthForgotPasswordScreen(props: JBAuthForgotPasswordScreenProp
             isDisabled={!formState.canSubmit}
             onPress={formState.submit}
           />
-          <Button
+          <JBFormButton
             variant="link"
             action="primary"
             size="sm"
             className="mt-2 self-center px-0"
-            onPress={() => navigator.goToSignIn()}
-          >
-            <ButtonText className="text-sm">
-              Regresar a iniciar sesión
-            </ButtonText>
-          </Button>
+            text="Regresar a iniciar sesión"
+            textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
+            onPress={() => {
+              if (navigator.goToSignInPassword) {
+                navigator.goToSignInPassword();
+                return;
+              }
+              navigator.goToSignIn({ initialMode: 'password' });
+            }}
+          />
         </>
       )}
     >

@@ -7,7 +7,7 @@ import { getLastCreatedJBExpoConfig } from '../../config';
 import { JBSocialProviderName } from '../../config/types';
 import { JBFormButton, JBFormPicker, JBSelectOption } from '../../forms';
 import { useAppConfigStore } from '../../runtime';
-import { Box, Button, ButtonText, Text, VStack } from '../../ui';
+import { Box, Text, VStack } from '../../ui';
 import { getColor } from '../../utils';
 import { authenticateWithExpoSocialProvider } from '../expo';
 import { JBAuthSignUpForm } from '../forms';
@@ -19,6 +19,7 @@ import { JBAuthNavigator } from './types';
 
 export type JBAuthSignUpScreenProps = {
   navigator: JBAuthNavigator;
+  screenVariant?: 'combined' | 'hub' | 'form';
   socialProviders?: string[];
   socialAuthenticator?: (
     provider: string,
@@ -26,7 +27,7 @@ export type JBAuthSignUpScreenProps = {
 };
 
 export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
-  const { navigator, socialProviders, socialAuthenticator } = props;
+  const { navigator, screenVariant = 'combined', socialProviders, socialAuthenticator } = props;
   const auth = useJBAuth();
   const primary = getColor("primary") ?? {};
   const appConfig = useAppConfigStore((state: any) => state?.appConfig);
@@ -140,8 +141,11 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
     async (values: RegisterPayload) => {
       await auth.signUp(values);
       setCreatedEmail(values.email);
-      navigator.goToVerifyEmailReplace?.({ email: values.email }) ??
+      if (navigator.goToVerifyEmailReplace) {
+        navigator.goToVerifyEmailReplace({ email: values.email });
+      } else {
         navigator.goToVerifyEmail?.({ email: values.email });
+      }
     },
     [auth, navigator]
   );
@@ -211,79 +215,123 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
     },
     [auth, navigator, showDebugSocial, socialAuthenticator, socialConfig, hasRoleOptions]
   );
+  const isHubVariant = screenVariant === 'hub';
+  const isFormVariant = screenVariant === 'form';
+  const isCombinedVariant = screenVariant === 'combined';
+  const showSocialSection = isHubVariant || isCombinedVariant;
+  const showFormSection = !isHubVariant;
+  const showDivider = isCombinedVariant;
+  const hubFooter = (
+    <VStack space="md" className="pt-2">
+      <JBFormButton
+        variant="solid"
+        action="primary"
+        size="xl"
+        className="px-4"
+        buttonType="default"
+        showIcon
+        iconName="account-plus-outline"
+        text="Crear cuenta"
+        onPress={navigator.goToSignUpForm ?? navigator.goToSignUp}
+      />
+
+      <JBFormButton
+        variant="link"
+        action="primary"
+        size="sm"
+        className="self-center px-0"
+        text="¿Ya tienes cuenta? Iniciar sesión"
+        textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
+        onPress={navigator.goToSignInPassword ?? (() => navigator.goToSignIn({ initialMode: 'password' }))}
+      />
+    </VStack>
+  );
+  const formFooter = (
+    <VStack space="md" className="pt-2">
+      <JBFormButton
+        variant="solid"
+        action="primary"
+        size="xl"
+        className="px-4"
+        buttonType="default"
+        showIcon
+        iconName="account-plus-outline"
+        text="Crear cuenta"
+        loading={formState.isLoading}
+        isDisabled={!formState.canSubmit}
+        onPress={formState.submit}
+      />
+
+      <JBFormButton
+        variant="link"
+        action="primary"
+        size="sm"
+        className="self-center px-0"
+        text="¿Ya tienes cuenta? Iniciar sesión"
+        textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
+        onPress={navigator.goToSignInPassword ?? (() => navigator.goToSignIn({ initialMode: 'password' }))}
+      />
+    </VStack>
+  );
 
   return (
     <AuthScreenLayout
       footerAdjustableHeight
       footerClassName="pt-4 pb-6"
-      footer={(
-        <VStack space="md" className="pt-2">
-          <JBFormButton
-            variant="solid"
-            action="primary"
-            size="xl"
-            className="px-4"
-            buttonType="default"
-            showIcon
-            iconName="account-plus-outline"
-            text="Crear cuenta"
-            loading={formState.isLoading}
-            isDisabled={!formState.canSubmit}
-            onPress={formState.submit}
-          />
-
-          <Button
-            variant="link"
-            action="primary"
-            size="sm"
-            className="self-center px-0"
-            onPress={() => navigator.goToSignIn()}
-          >
-            <ButtonText className="text-sm">¿Ya tienes cuenta? Iniciar sesión</ButtonText>
-          </Button>
-        </VStack>
-      )}
+      footer={isHubVariant ? hubFooter : formFooter}
     >
       {createdEmail ? <JBAuthAlert type="success" message="Cuenta creada. Verifica tu correo para activar tu cuenta." /> : null}
 
-      <JBAuthSocialActions
-        title="Acceso rápido"
-        googleEnabled={hasProvider("google")}
-        showApple={Platform.OS === "ios"}
-        appleEnabled={Platform.OS === "ios" && hasProvider("apple")}
-        facebookEnabled={hasProvider("facebook")}
-        showSms
-        smsEnabled
-        isSocialLoading={isSocialLoading}
-        onGooglePress={() => signInWithProvider("google")}
-        onApplePress={() => signInWithProvider("apple")}
-        onFacebookPress={() => signInWithProvider("facebook")}
-        onSmsPress={() => navigator.goToSignIn({ initialMode: "otp" })}
-      />
+      {showSocialSection ? (
+        <JBAuthSocialActions
+          title="Acceso rápido"
+          googleEnabled={hasProvider("google")}
+          showApple={Platform.OS === "ios"}
+          appleEnabled={Platform.OS === "ios" && hasProvider("apple")}
+          facebookEnabled={hasProvider("facebook")}
+          showSms
+          smsEnabled
+          isSocialLoading={isSocialLoading}
+          onGooglePress={() => signInWithProvider("google")}
+          onApplePress={() => signInWithProvider("apple")}
+          onFacebookPress={() => signInWithProvider("facebook")}
+          onSmsPress={() => {
+            if (navigator.goToSignInOtp) {
+              navigator.goToSignInOtp();
+            } else {
+              navigator.goToSignIn({ initialMode: "otp" });
+            }
+          }}
+        />
+      ) : null}
 
-      <VStack className="my-4 w-full items-center" space="xs">
-        <Box className="w-full flex-row items-center">
-          <Box className="h-px flex-1 bg-outline-700" />
-          <Text
-            size="xl"
-            className="px-3 text-center"
-            style={{ color: primary[500] ?? "#10b981" }}
-          >
-            O completa tus datos
-          </Text>
-          <Box className="h-px flex-1 bg-outline-700" />
-        </Box>
-      </VStack>
+      {showDivider ? (
+        <VStack className="my-4 w-full items-center" space="xs">
+          <Box className="w-full flex-row items-center">
+            <Box className="h-px flex-1 bg-outline-700" />
+            <Text
+              size="xl"
+              className="px-3 text-center"
+              style={{ color: primary[500] ?? "#10b981" }}
+            >
+              O completa tus datos
+            </Text>
+            <Box className="h-px flex-1 bg-outline-700" />
+          </Box>
+        </VStack>
+      ) : null}
 
-      <JBAuthSignUpForm
-        defaultValues={signUpDefaultValues}
-        roleOptions={signUpRoleOptions}
-        defaultRole={defaultSignUpRole}
-        minimumAge={minimumSignUpAge}
-        showSubmitButton={false}
-        onFormStateChange={handleFormStateChange}
-        onSubmit={handleSignUpSubmit}
-      />
+      {showFormSection ? (
+        <JBAuthSignUpForm
+          defaultValues={signUpDefaultValues}
+          roleOptions={signUpRoleOptions}
+          defaultRole={defaultSignUpRole}
+          minimumAge={minimumSignUpAge}
+          showSubmitButton={false}
+          onFormStateChange={handleFormStateChange}
+          onSubmit={handleSignUpSubmit}
+        />
+      ) : null}
       {hasRoleOptions ? (
         <Box className="h-0 w-0 overflow-hidden">
           <JBFormPicker

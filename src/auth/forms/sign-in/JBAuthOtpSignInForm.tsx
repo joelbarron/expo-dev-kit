@@ -4,14 +4,13 @@ import { useForm } from "react-hook-form";
 import Toast from "react-native-toast-message";
 import { z } from "zod";
 
-import { JBFormInput, JBFormPicker, JBSelectOption } from "../../../forms";
+import { JBFormButton, JBFormInput, JBFormPicker, JBSelectOption } from "../../../forms";
 import { VStack } from "../../../ui";
 import {
   COUNTRY_CALLING_CODE_OPTIONS,
   DEFAULT_OTP_COUNTRY_CODE,
 } from "../../constants";
 import { buildE164Phone, isValidE164Phone, resolveCountryCodeValue } from "../../utils";
-import { JBAuthPrimaryButton, JBAuthSecondaryButton } from "../../ui";
 import { parseAuthError } from "../errorParser";
 
 export type JBAuthOtpSignInFormValues = {
@@ -269,19 +268,21 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
       ) : null}
 
       {showSubmitButton ? (
-        <JBAuthPrimaryButton
+        <JBFormButton
           className="mt-6"
-          label={submitLabel}
+          text={submitLabel}
           loading={isLoading}
-          disabled={!canSubmit}
+          isDisabled={!canSubmit}
           onPress={submitHandler}
         />
       ) : null}
 
       {otpRequested ? (
-        <JBAuthSecondaryButton
+        <JBFormButton
+          variant="outline"
+          action="primary"
           className="mt-6"
-          label="Cambiar teléfono"
+          text="Cambiar teléfono"
           onPress={() => {
             setOtpRequested(false);
             setShouldSelectRoleOnVerify(false);
@@ -290,8 +291,11 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
       ) : null}
 
       {onBackToPassword ? (
-        <JBAuthSecondaryButton
-          label="Regresar a contraseña"
+        <JBFormButton
+          variant="link"
+          action="primary"
+          text="Regresar a contraseña"
+          textClassName="text-sm font-semibold text-primary-600 dark:text-primary-300"
           onPress={onBackToPassword}
         />
       ) : null}

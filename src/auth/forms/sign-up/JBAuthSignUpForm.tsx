@@ -5,6 +5,7 @@ import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
 import {
+  JBFormButton,
   JBFormCheckbox,
   JBFormDateTimePicker,
   JBFormInput,
@@ -14,7 +15,6 @@ import {
 } from '../../../forms';
 import { GENDERS, GENDER_SELECT_OPTIONS } from '../../constants';
 import { RegisterPayload } from '../../types';
-import { JBAuthPrimaryButton } from '../../ui';
 import { getFormattedDate } from '../../../utils/data-format';
 import { parseAuthError } from '../errorParser';
 import { getDjangoLikePasswordError, isPasswordTooSimilar } from '../password/passwordValidation';
@@ -306,10 +306,10 @@ export function JBAuthSignUpForm(props: JBAuthSignUpFormProps) {
       />
 
       {showSubmitButton ? (
-        <JBAuthPrimaryButton
-          label={submitLabel}
+        <JBFormButton
+          text={submitLabel}
           loading={isLoading}
-          disabled={disabled || !formState.isValid}
+          isDisabled={disabled || !formState.isValid}
           onPress={submitHandler}
         />
       ) : null}

@@ -46,15 +46,36 @@ export function JBExpoAuthStackLayout(props: JBExpoAuthStackLayoutProps) {
     >
       <Stack.Screen name="welcome" options={{ headerShown: false }} />
       <Stack.Screen
-        name="sign-in"
+        name="auth-entry"
+        options={{ headerShown: true, title: 'Comenzar' }}
+      />
+      <Stack.Screen
+        name="sign-in-password"
         options={{ headerShown: true, title: 'Iniciar sesión' }}
       />
-      <Stack.Screen name="sign-up" options={{ headerShown: true, title: 'Crear cuenta' }} />
+      <Stack.Screen
+        name="sign-in-otp"
+        options={{ headerShown: true, title: 'Continuar con SMS' }}
+      />
+      <Stack.Screen name="sign-up-form" options={{ headerShown: true, title: 'Crear cuenta' }} />
       <Stack.Screen
         name="forgot-password"
         options={{ headerShown: true, title: "Recuperar contraseña" }}
       />
-      <Stack.Screen name="reset-password" options={{ headerShown: true }} />
+      <Stack.Screen
+        name="reset-password"
+        options={{
+          headerShown: true,
+          gestureEnabled: false,
+          headerLeft: () => (
+            <View>
+              <TouchableOpacity onPress={() => router.replace('/sign-in-password' as any)}>
+                <Entypo name="chevron-small-left" size={40} color={headerTintColor} />
+              </TouchableOpacity>
+            </View>
+          ),
+        }}
+      />
       <Stack.Screen
         name="verify-email"
         options={{
@@ -62,7 +83,7 @@ export function JBExpoAuthStackLayout(props: JBExpoAuthStackLayoutProps) {
           gestureEnabled: false,
           headerLeft: () => (
             <View>
-              <TouchableOpacity onPress={() => router.replace('/sign-in' as any)}>
+              <TouchableOpacity onPress={() => router.replace('/sign-in-password' as any)}>
                 <Entypo name="chevron-small-left" size={40} color={headerTintColor} />
               </TouchableOpacity>
             </View>

@@ -17,7 +17,11 @@ export function JBAuthResetPasswordScreen(props: JBAuthResetPasswordScreenProps)
     <AuthScreenLayout title="Restablecer contraseña" subtitle="Define una nueva contraseña">
       <JBAuthPasswordResetConfirmForm
         defaultValues={{ uid, token }}
-        onGoToSignIn={navigator.goToSignIn}
+        onGoToSignIn={
+          navigator.goToSignInPasswordReplace ??
+          navigator.goToSignInPassword ??
+          (() => navigator.goToSignIn({ initialMode: 'password' }))
+        }
         onSubmit={(values) =>
           auth.confirmPasswordReset({
             uid: values.uid,
