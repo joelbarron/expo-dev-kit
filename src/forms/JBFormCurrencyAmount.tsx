@@ -81,7 +81,7 @@ export function CustomFormCurrencyAmount({
             <FormControlLabelText className="text-white">{label}</FormControlLabelText>
           </FormControlLabel>
 
-          <VStack className="rounded-2xl bg-background-200 p-4" space="md">
+          <VStack className="rounded-2xl bg-background-200 p-4 pb-5" space="md">
             <HStack className="justify-start">
               <HStack className="rounded-full bg-background-400 px-3 py-1.5">
                 <Text size="sm" className="font-semibold">
@@ -90,8 +90,9 @@ export function CustomFormCurrencyAmount({
               </HStack>
             </HStack>
 
-            <HStack className="items-end justify-end" space="sm">
+            <HStack className="w-full min-h-[76px] items-end justify-end" space="sm">
               <Text
+                className="shrink-0"
                 style={{ color: amountColor, fontSize: 48, lineHeight: 52, fontWeight: "700" }}
               >
                 {sign}
@@ -103,7 +104,11 @@ export function CustomFormCurrencyAmount({
                   {formattedValue}
                 </Text>
               ) : (
-                <Input variant="outline" size="xl" className="min-w-[110px] border-0 bg-transparent">
+                <Input
+                  variant="outline"
+                  size="xl"
+                  className="min-w-0 flex-1 border-0 bg-transparent"
+                >
                   <InputField
                     value={isFocused ? String(rawValue) : formattedValue}
                     onBlur={() => {
@@ -116,12 +121,17 @@ export function CustomFormCurrencyAmount({
                     placeholderTextColor="rgba(255,255,255,0.4)"
                     keyboardType={Platform.OS === "android" ? "numeric" : "decimal-pad"}
                     autoFocus={autoFocus && !isDisabled}
-                    className="text-right py-0"
+                    className="px-0 py-0 text-right"
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.55}
                     style={{
                       color: amountColor,
                       fontSize: 48,
-                      lineHeight: 52,
+                      lineHeight: 58,
                       fontWeight: "700",
+                      paddingVertical: 0,
+                      minHeight: 64,
+                      includeFontPadding: false,
                     }}
                   />
                 </Input>

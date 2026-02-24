@@ -16,9 +16,11 @@ export function JBAuthSignInOtpScreen(props: JBAuthSignInOtpScreenProps) {
   const auth = useJBAuth();
   const [formState, setFormState] = useState({
     submit: () => {},
+    resetPhoneStep: () => {},
     canSubmit: false,
     isLoading: false,
     submitLabel: "Solicitar código OTP",
+    otpRequested: false,
   });
 
   const handleOtpRequest = useCallback(
@@ -45,19 +47,25 @@ export function JBAuthSignInOtpScreen(props: JBAuthSignInOtpScreenProps) {
       canSubmit,
       isLoading,
       submitLabel,
+      otpRequested,
+      resetPhoneStep,
     }: {
       submit: () => void;
       canSubmit: boolean;
       isLoading: boolean;
       submitLabel: string;
+      otpRequested: boolean;
+      resetPhoneStep: () => void;
     }) => {
       setFormState((prev) =>
         prev.submit === submit &&
+        prev.resetPhoneStep === resetPhoneStep &&
         prev.canSubmit === canSubmit &&
         prev.isLoading === isLoading &&
-        prev.submitLabel === submitLabel
+        prev.submitLabel === submitLabel &&
+        prev.otpRequested === otpRequested
           ? prev
-          : { submit, canSubmit, isLoading, submitLabel }
+          : { submit, resetPhoneStep, canSubmit, isLoading, submitLabel, otpRequested }
       );
     },
     []
@@ -81,6 +89,17 @@ export function JBAuthSignInOtpScreen(props: JBAuthSignInOtpScreenProps) {
             isDisabled={!formState.canSubmit}
             onPress={formState.submit}
           />
+          {formState.otpRequested ? (
+            <JBFormButton
+              variant="link"
+              action="primary"
+              size="sm"
+              className="self-center px-0"
+              text="Cambiar número"
+              textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
+              onPress={formState.resetPhoneStep}
+            />
+          ) : null}
           {/* <JBFormButton
             variant="link"
             action="primary"

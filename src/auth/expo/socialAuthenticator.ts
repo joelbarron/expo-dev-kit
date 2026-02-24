@@ -267,15 +267,53 @@ const authenticateWithFacebookNative = async (
     Settings.setClientToken(config.clientToken.trim());
   }
 
-  logSocialDebug(debug, "facebook native auth start");
-  const loginResult = await LoginManager.logInWithPermissions(["public_profile", "email"]);
+  logSocialDebug(debug, "facebook native auth start", {
+    platform: Platform.OS,
+    loginTrackingIOS: Platform.OS === "ios" ? "enabled" : undefined,
+  });
+  let loginResult: any;
+  try {
+    loginResult =
+      Platform.OS === "ios"
+        ? await LoginManager.logInWithPermissions(
+            ["public_profile", "email"],
+            "enabled"
+          )
+        : await LoginManager.logInWithPermissions(["public_profile", "email"]);
+    logSocialDebug(debug, "facebook native login result", {
+      isCancelled: Boolean(loginResult?.isCancelled),
+      grantedPermissions:
+        Array.isArray(loginResult?.grantedPermissions)
+          ? loginResult.grantedPermissions
+          : undefined,
+      declinedPermissions:
+        Array.isArray(loginResult?.declinedPermissions)
+          ? loginResult.declinedPermissions
+          : undefined,
+    });
+  } catch (error) {
+    logSocialDebug(debug, "facebook native login error", error);
+    throw error;
+  }
   if (loginResult?.isCancelled) {
     throw new Error("Facebook authentication cancelled.");
   }
 
-  const tokenResult = await AccessToken.getCurrentAccessToken();
+  let tokenResult: any;
+  try {
+    tokenResult = await AccessToken.getCurrentAccessToken();
+    logSocialDebug(debug, "facebook native access token result", {
+      hasToken: Boolean(tokenResult?.accessToken),
+      userID: tokenResult?.userID ?? tokenResult?.userId,
+      expirationTime: tokenResult?.expirationTime,
+    });
+  } catch (error) {
+    logSocialDebug(debug, "facebook native access token error", error);
+    throw error;
+  }
   const accessToken = tokenResult?.accessToken?.toString?.() ?? tokenResult?.accessToken;
   if (!accessToken) {
+    logSocialDebug(debug, "facebook native access token missing");
     throw new Error("Facebook native authentication did not return accessToken.");
   }
 

@@ -5,6 +5,7 @@ import Toast from "react-native-toast-message";
 import { z } from "zod";
 
 import { JBFormButton, JBFormInput, JBFormPicker, JBSelectOption } from "../../../forms";
+import { ConfirmationDialog } from "../../../shared";
 import { VStack } from "../../../ui";
 import {
   COUNTRY_CALLING_CODE_OPTIONS,
@@ -30,6 +31,8 @@ export type JBAuthOtpSignInFormProps = {
     canSubmit: boolean;
     isLoading: boolean;
     submitLabel: string;
+    otpRequested: boolean;
+    resetPhoneStep: () => void;
   }) => void;
   onRequestOtp: (values: { phone: string }) => unknown | Promise<unknown>;
   onVerifyOtp: (values: {
@@ -48,7 +51,13 @@ const otpSchema = z.object({
       "Selecciona la lada",
     ),
   phone: z.string().nonempty("Debes ingresar tu teléfono"),
-  code: z.string().optional(),
+  code: z
+    .string()
+    .optional()
+    .refine(
+      (value) => !value || /^\d{6}$/.test(value.trim()),
+      "El código OTP debe ser numérico de 6 dígitos"
+    ),
 });
 
 const parseBooleanLike = (value: unknown): boolean | undefined => {
@@ -111,6 +120,8 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
   const [otpRequested, setOtpRequested] = useState(false);
   const [shouldSelectRoleOnVerify, setShouldSelectRoleOnVerify] =
     useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingPhoneToConfirm, setPendingPhoneToConfirm] = useState<string | null>(null);
 
   const { control, formState, handleSubmit, setError, clearErrors, watch } =
     useForm<JBAuthOtpSignInFormValues>({
@@ -148,6 +159,10 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
     isValidPhoneNumber &&
     (!otpRequested || !!code?.trim());
   const submitLabel = otpRequested ? "Validar código OTP" : "Solicitar código OTP";
+  const resetPhoneStep = useCallback(() => {
+    setOtpRequested(false);
+    setShouldSelectRoleOnVerify(false);
+  }, []);
 
   const applySubmitError = (error: unknown) => {
     const parsed = parseAuthError(error);
@@ -160,6 +175,22 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
       text2: message,
     });
   };
+
+  const requestOtpAfterConfirmation = useCallback(async (fullPhone: string) => {
+    const response = await onRequestOtp({
+      phone: fullPhone,
+    });
+    const userExists = getUserExistsFromResponse(response);
+    setShouldSelectRoleOnVerify(
+      Boolean(requestRoleSelection) && userExists === false,
+    );
+    setOtpRequested(true);
+    Toast.show({
+      type: "success",
+      text1: "OTP enviado",
+      text2: "Revisa tu teléfono para continuar.",
+    });
+  }, [onRequestOtp, requestRoleSelection]);
 
   const onSubmitForm = useCallback(async (values: JBAuthOtpSignInFormValues) => {
     try {
@@ -174,19 +205,8 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
       }
 
       if (!otpRequested) {
-        const response = await onRequestOtp({
-          phone: fullPhone,
-        });
-        const userExists = getUserExistsFromResponse(response);
-        setShouldSelectRoleOnVerify(
-          Boolean(requestRoleSelection) && userExists === false,
-        );
-        setOtpRequested(true);
-        Toast.show({
-          type: "success",
-          text1: "OTP enviado",
-          text2: "Revisa tu teléfono para continuar.",
-        });
+        setPendingPhoneToConfirm(fullPhone);
+        setConfirmDialogOpen(true);
         return;
       }
 
@@ -194,6 +214,14 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
         setError("code", {
           type: "manual",
           message: "Debes ingresar el código OTP",
+        });
+        return;
+      }
+
+      if (!/^\d{6}$/.test(values.code.trim())) {
+        setError("code", {
+          type: "manual",
+          message: "El código OTP debe ser numérico de 6 dígitos",
         });
         return;
       }
@@ -216,10 +244,10 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
     }
   }, [
     otpRequested,
-    onRequestOtp,
     requestRoleSelection,
     onVerifyOtp,
     shouldSelectRoleOnVerify,
+    requestOtpAfterConfirmation,
     setError,
   ]);
   const submitHandler = useCallback(() => {
@@ -232,11 +260,41 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
       canSubmit,
       isLoading,
       submitLabel,
+      otpRequested,
+      resetPhoneStep,
     });
-  }, [onFormStateChange, submitHandler, canSubmit, isLoading, submitLabel]);
+  }, [onFormStateChange, submitHandler, canSubmit, isLoading, submitLabel, otpRequested, resetPhoneStep]);
 
   return (
-    <VStack space="lg">
+    <>
+      <ConfirmationDialog
+        open={confirmDialogOpen}
+        setOpen={setConfirmDialogOpen}
+        showIcon={false}
+        title="Confirmar número"
+        content={
+          pendingPhoneToConfirm
+            ? `¿Este número es correcto?\n${pendingPhoneToConfirm}`
+            : "¿Este número es correcto?"
+        }
+        agreeText="Enviar código"
+        agreeColor="primary"
+        disagreeText="Cambiar"
+        disagreeColor="secondary"
+        onAgree={() => {
+          const fullPhone = pendingPhoneToConfirm;
+          setConfirmDialogOpen(false);
+          setPendingPhoneToConfirm(null);
+          if (!fullPhone) return;
+          void requestOtpAfterConfirmation(fullPhone).catch((error) => {
+            applySubmitError(error);
+          });
+        }}
+        onDisAgree={() => {
+          setConfirmDialogOpen(false);
+        }}
+      />
+      <VStack space="lg">
       <JBFormPicker
         control={control}
         fieldName="countryCode"
@@ -277,16 +335,13 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
         />
       ) : null}
 
-      {otpRequested ? (
+      {showSubmitButton && otpRequested ? (
         <JBFormButton
           variant="outline"
           action="primary"
           className="mt-6"
           text="Cambiar teléfono"
-          onPress={() => {
-            setOtpRequested(false);
-            setShouldSelectRoleOnVerify(false);
-          }}
+          onPress={resetPhoneStep}
         />
       ) : null}
 
@@ -299,6 +354,7 @@ export function JBAuthOtpSignInForm(props: JBAuthOtpSignInFormProps) {
           onPress={onBackToPassword}
         />
       ) : null}
-    </VStack>
+      </VStack>
+    </>
   );
 }

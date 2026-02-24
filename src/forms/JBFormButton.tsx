@@ -76,6 +76,7 @@ export function JBFormButton({
   iconColor = "white",
   textClassName = "text-[15px] font-bold text-white",
   className,
+  size = "xl",
   disabled,
   isDisabled,
   action,
@@ -93,8 +94,9 @@ export function JBFormButton({
 
   return (
     <Button
+      size={size}
       action={resolvedAction}
-      className={`${className ?? ""} ${loading ? "data-[disabled=true]:opacity-100" : ""}`.trim()}
+      className={`${className ?? "px-4"} ${loading ? "data-[disabled=true]:opacity-100" : ""}`.trim()}
       isDisabled={isButtonVisualDisabled}
       disabled={isButtonDisabled}
       {...rest}

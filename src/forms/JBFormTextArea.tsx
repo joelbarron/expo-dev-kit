@@ -74,7 +74,7 @@ export const CustomFormTextArea = ({
   autoCorrect = false,
   forceLowercase = false,
   capitalizeFirstLetter = false,
-  returnKeyType = "next",
+  returnKeyType = "done",
   inputRef,
   nextRef,
   onSubmitEditing,

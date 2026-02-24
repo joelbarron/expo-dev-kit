@@ -44,7 +44,13 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
             </View>
 
             <View style={styles.actions}>
-              <JBFormButton text="Comenzar" onPress={() => navigator.goToSignIn()} />
+              <JBFormButton
+                variant="solid"
+                size="xl"
+                className="px-4"
+                text="Comenzar"
+                onPress={() => navigator.goToSignIn()}
+              />
             </View>
           </View>
         </View>
@@ -54,7 +60,13 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
 
   return (
     <AuthScreenLayout useMainLayout={false} title={appName ?? "Bienvenido"} subtitle={subtitle}>
-      <JBFormButton text="Comenzar" onPress={() => navigator.goToSignIn()} />
+      <JBFormButton
+        variant="solid"
+        size="xl"
+        className="px-4"
+        text="Comenzar"
+        onPress={() => navigator.goToSignIn()}
+      />
     </AuthScreenLayout>
   );
 }

@@ -1,68 +1,44 @@
-import { BaseToast, ErrorToast, InfoToast } from 'react-native-toast-message';
+import { BaseToast } from 'react-native-toast-message';
 
 import { getColor } from '../../utils/colors';
 
 const DURATION = 2000;
 
 const primaryColor = getColor('primary') ?? {};
+const greenColor = getColor('green') ?? {};
 const redColor = getColor('red') ?? {};
 
+const createSolidToast = (backgroundColor: string, marginTop = 48) => (props: any) => (
+  <BaseToast
+    {...props}
+    style={{
+      marginTop,
+      borderLeftWidth: 0,
+      backgroundColor,
+      borderRadius: 12,
+      minHeight: 72,
+      width: '94%'
+    }}
+    contentContainerStyle={{
+      paddingHorizontal: 16,
+      paddingVertical: 10
+    }}
+    text1Style={{
+      fontSize: 18,
+      fontWeight: '700',
+      color: '#ffffff'
+    }}
+    text2Style={{
+      fontSize: 16,
+      lineHeight: 20,
+      color: '#ffffff'
+    }}
+    visibilityTime={DURATION}
+  />
+);
+
 export const toastConfig = {
-  success: (props: any) => (
-    <BaseToast
-      {...props}
-      style={{
-        borderLeftColor: primaryColor[600] ?? '#059669',
-        marginTop: 40
-      }}
-      contentContainerStyle={{
-        paddingHorizontal: 15,
-        paddingVertical: 5
-      }}
-      text1Style={{
-        fontSize: 17,
-        fontWeight: '400'
-      }}
-      text2Style={{
-        fontSize: 15
-      }}
-      visibilityTime={DURATION}
-    />
-  ),
-  error: (props: any) => (
-    <ErrorToast
-      {...props}
-      style={{ marginTop: 80, borderLeftColor: redColor[500] ?? '#ef4444' }}
-      contentContainerStyle={{
-        paddingHorizontal: 15,
-        paddingVertical: 5
-      }}
-      text1Style={{
-        fontSize: 17,
-        fontWeight: '400'
-      }}
-      text2Style={{
-        fontSize: 15
-      }}
-      visibilityTime={DURATION}
-    />
-  ),
-  info: (props: any) => (
-    <InfoToast
-      {...props}
-      style={{ marginTop: 80, borderLeftColor: primaryColor[950] ?? '#022c22' }}
-      contentContainerStyle={{
-        paddingHorizontal: 15,
-        paddingVertical: 5
-      }}
-      text1Style={{
-        fontSize: 17,
-        fontWeight: '400'
-      }}
-      text2Style={{
-        fontSize: 15
-      }}
-      visibilityTime={DURATION}
-    />
-  )
+  success: createSolidToast(greenColor[600] ?? '#16a34a', 52),
+  error: createSolidToast(redColor[600] ?? '#dc2626', 52),
+  info: createSolidToast(primaryColor[600] ?? '#0ea5e9', 52)
 };

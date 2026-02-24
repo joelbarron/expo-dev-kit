@@ -35,7 +35,7 @@ export function JBExpoAppProviders({
   withFullScreenToast = true,
   withToast = true,
   toastConfig,
-  toastPosition = 'top',
+  toastPosition = 'bottom',
   gestureHandlerRootStyle = { flex: 1 },
   appMeta
 }: JBExpoAppProvidersProps) {
