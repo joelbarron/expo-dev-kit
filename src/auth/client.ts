@@ -14,6 +14,8 @@ import {
   LoginBasicPayload,
   LoginSocialPayload,
   LoginSocialPrecheckResponse,
+  AccountUpdatePayload,
+  CreateProfilePayload,
   PasswordChangePayload,
   PasswordResetConfirmPayload,
   PasswordResetRequestPayload,
@@ -24,6 +26,7 @@ import {
   SwitchProfilePayload,
   TokenPair,
   TokenStorage,
+  UpdateProfilePicturePayload,
   UnlinkSocialPayload,
   VerifyOtpPayload
 } from './types';
@@ -55,6 +58,8 @@ export const createAuthEndpoints = (basePath?: string): JbDrfAuthEndpoints => {
     refresh: `${root}/token/refresh/`,
     switchProfile: `${root}/profile/switch/`,
     profiles: `${root}/profiles/`,
+    profilePicture: `${root}/profile/picture/`,
+    accountUpdate: `${root}/account/update/`,
     passwordResetRequest: `${root}/password-reset/request/`,
     passwordResetConfirm: `${root}/password-reset/confirm/`,
     passwordResetChange: `${root}/password-reset/change/`
@@ -128,6 +133,9 @@ export type AuthClient = {
   resendAccountConfirmation: (payload: AccountConfirmationResendPayload) => Promise<ApiDetailResponse>;
   getMe: () => Promise<JbDrfWebAuthResponse>;
   getProfiles: () => Promise<ProfilesResponse>;
+  createProfile: (payload: CreateProfilePayload) => Promise<Record<string, unknown>>;
+  updateProfilePicture: (payload: UpdateProfilePicturePayload) => Promise<Record<string, unknown>>;
+  updateAccount: (payload: AccountUpdatePayload, method?: 'PATCH' | 'PUT') => Promise<Record<string, unknown>>;
   requestPasswordReset: (payload: PasswordResetRequestPayload) => Promise<Record<string, unknown>>;
   confirmPasswordReset: (payload: PasswordResetConfirmPayload) => Promise<Record<string, unknown>>;
   changePassword: (payload: PasswordChangePayload) => Promise<Record<string, unknown>>;
@@ -419,6 +427,36 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
     return response.data;
   };
 
+  const createProfile = async (payload: CreateProfilePayload): Promise<Record<string, unknown>> => {
+    const response = await createAuthenticatedAxiosWithRefresh().post<Record<string, unknown>>(
+      withBaseUrl(endpoints.profiles),
+      payload
+    );
+    return response.data;
+  };
+
+  const updateProfilePicture = async (
+    payload: UpdateProfilePicturePayload
+  ): Promise<Record<string, unknown>> => {
+    const response = await createAuthenticatedAxiosWithRefresh().patch<Record<string, unknown>>(
+      withBaseUrl(endpoints.profilePicture),
+      payload
+    );
+    return response.data;
+  };
+
+  const updateAccount = async (
+    payload: AccountUpdatePayload,
+    method: 'PATCH' | 'PUT' = 'PATCH'
+  ): Promise<Record<string, unknown>> => {
+    const client = createAuthenticatedAxiosWithRefresh();
+    const response =
+      method === 'PUT'
+        ? await client.put<Record<string, unknown>>(withBaseUrl(endpoints.accountUpdate), payload)
+        : await client.patch<Record<string, unknown>>(withBaseUrl(endpoints.accountUpdate), payload);
+    return response.data;
+  };
+
   const requestPasswordReset = async (
     payload: PasswordResetRequestPayload
   ): Promise<Record<string, unknown>> => {
@@ -500,6 +538,9 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
     resendAccountConfirmation,
     getMe,
     getProfiles,
+    createProfile,
+    updateProfilePicture,
+    updateAccount,
     requestPasswordReset,
     confirmPasswordReset,
     changePassword,

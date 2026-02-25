@@ -7,7 +7,9 @@ import { loginDeviceInfo } from '../utils/device-info';
 import {
   AccountConfirmationPayload,
   AccountConfirmationResendPayload,
+  AccountUpdatePayload,
   ApiDetailResponse,
+  CreateProfilePayload,
   LinkSocialPayload,
   LoginBasicPayload,
   LoginSocialPayload,
@@ -19,6 +21,7 @@ import {
   RegisterPayload,
   RequestOtpPayload,
   SwitchProfilePayload,
+  UpdateProfilePicturePayload,
   UnlinkSocialPayload,
   VerifyOtpPayload
 } from './types';
@@ -54,6 +57,10 @@ export type JBAuthContextValue = {
   confirmPasswordReset: (payload: PasswordResetConfirmPayload) => Promise<Record<string, unknown>>;
   changePassword: (payload: PasswordChangePayload) => Promise<Record<string, unknown>>;
   getProfiles: () => Promise<ProfilesResponse>;
+  createProfile: (payload: CreateProfilePayload) => Promise<Record<string, unknown>>;
+  updateProfilePicture: (payload: UpdateProfilePicturePayload) => Promise<Record<string, unknown>>;
+  updateAccount: (payload: AccountUpdatePayload, method?: 'PATCH' | 'PUT') => Promise<Record<string, unknown>>;
+  getMe: () => Promise<unknown>;
   switchProfile: (payload: SwitchProfilePayload) => Promise<unknown>;
   signOut: () => Promise<void>;
   refreshToken: () => Promise<string | null>;
@@ -277,6 +284,20 @@ export function JBAuthProvider(props: JBAuthProviderProps) {
   );
 
   const getProfiles = useCallback(() => authClient.getProfiles(), [authClient]);
+  const createProfile = useCallback((payload: CreateProfilePayload) => authClient.createProfile(payload), [authClient]);
+  const updateProfilePicture = useCallback(
+    (payload: UpdateProfilePicturePayload) => authClient.updateProfilePicture(payload),
+    [authClient]
+  );
+  const updateAccount = useCallback(
+    (payload: AccountUpdatePayload, method?: 'PATCH' | 'PUT') => authClient.updateAccount(payload, method),
+    [authClient]
+  );
+  const getMe = useCallback(async () => {
+    const response = await authClient.getMe();
+    setAuthenticatedSession(response as Record<string, any>);
+    return response;
+  }, [authClient, setAuthenticatedSession]);
 
   const switchProfile = useCallback(
     async (payload: SwitchProfilePayload) => {
@@ -345,6 +366,10 @@ export function JBAuthProvider(props: JBAuthProviderProps) {
       confirmPasswordReset,
       changePassword,
       getProfiles,
+      createProfile,
+      updateProfilePicture,
+      updateAccount,
+      getMe,
       switchProfile,
       signOut,
       refreshToken
@@ -366,6 +391,10 @@ export function JBAuthProvider(props: JBAuthProviderProps) {
       confirmPasswordReset,
       changePassword,
       getProfiles,
+      createProfile,
+      updateProfilePicture,
+      updateAccount,
+      getMe,
       switchProfile,
       signOut,
       refreshToken

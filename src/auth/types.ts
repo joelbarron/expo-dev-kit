@@ -33,6 +33,8 @@ export type JbDrfAuthEndpoints = {
   refresh: string;
   switchProfile: string;
   profiles: string;
+  profilePicture: string;
+  accountUpdate: string;
   passwordResetRequest: string;
   passwordResetConfirm: string;
   passwordResetChange: string;
@@ -166,6 +168,30 @@ export type PasswordResetConfirmPayload = {
 export type PasswordChangePayload = {
   oldPassword?: string;
   password: string;
+};
+
+export type CreateProfilePayload = {
+  firstName: string;
+  lastName1: string;
+  lastName2?: string;
+  birthday?: string;
+  gender?: string;
+  role?: string;
+  isDefault?: boolean;
+};
+
+export type AccountUpdatePayload = {
+  email?: string;
+  username?: string | null;
+  phone?: string | null;
+  termsAndConditions?: boolean;
+  language?: string;
+  timezone?: string;
+};
+
+export type UpdateProfilePicturePayload = {
+  profile?: number | string;
+  picture: string;
 };
 
 export type ProfilesResponse = {

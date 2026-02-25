@@ -52,6 +52,34 @@ export type JBAuthVerifyEmailVisualConfig = {
   animationSize?: number;
 };
 
+export type JBAuthUserSettingsConfig = {
+  enabled: boolean;
+  routing: {
+    homePathAfterProfileSwitch: string;
+  };
+  screens: {
+    profiles: {
+      enabled: boolean;
+      allowSwitch: boolean;
+      allowCreate: boolean;
+    };
+    changePassword: {
+      enabled: boolean;
+    };
+    photo: {
+      enabled: boolean;
+      crop: {
+        enabled: boolean;
+        allowsEditing: boolean;
+        aspect: [number, number];
+      };
+    };
+    personalData: {
+      enabled: boolean;
+    };
+  };
+};
+
 export type JBAppConfig = {
   debug: boolean;
   forceHideStage: boolean;
@@ -76,6 +104,7 @@ export type JBAppConfig = {
     visuals: {
       verifyEmail: JBAuthVerifyEmailVisualConfig;
     };
+    userSettings: JBAuthUserSettingsConfig;
     profileRoles: JBAuthProfileRoleOption[];
     defaultProfileRole?: string;
     social: JBAuthSocialConfig;

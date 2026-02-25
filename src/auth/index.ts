@@ -10,3 +10,4 @@ export * from './screens';
 export * from './expo';
 export * from './ui';
 export * from './utils';
+export * from './account';

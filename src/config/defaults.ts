@@ -36,6 +36,33 @@ export const defaultJBExpoConfig: JBAppConfig = {
         animationSize: 180
       }
     },
+    userSettings: {
+      enabled: true,
+      routing: {
+        homePathAfterProfileSwitch: '/'
+      },
+      screens: {
+        profiles: {
+          enabled: true,
+          allowSwitch: true,
+          allowCreate: false
+        },
+        changePassword: {
+          enabled: true
+        },
+        photo: {
+          enabled: true,
+          crop: {
+            enabled: true,
+            allowsEditing: true,
+            aspect: [1, 1]
+          }
+        },
+        personalData: {
+          enabled: true
+        }
+      }
+    },
     profileRoles: [],
     defaultProfileRole: undefined,
     social: {

@@ -69,7 +69,8 @@ export function JBAuthSocialActions({
     icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
     enabled: boolean;
     onPress?: () => void;
-  }) => (
+  }) =>
+    enabled ? (
     <JBFormButton
       // variant="outline"
       action="default"
@@ -93,7 +94,7 @@ export function JBAuthSocialActions({
         </ButtonText>
       </Box>
     </JBFormButton>
-  );
+    ) : null;
 
   return (
     <VStack space="sm" className="w-full">
