@@ -54,6 +54,16 @@ type CustomFormPickerProps = {
     index: number,
     meta?: { isSelected: boolean; value: any },
   ) => React.ReactNode;
+  renderOption?: (
+    item: any,
+    index: number,
+    meta?: { isSelected: boolean; value: any },
+  ) => React.ReactNode;
+  renderCustomOption?: (
+    item: any,
+    index: number,
+    meta?: { isSelected: boolean; value: any },
+  ) => React.ReactNode;
   snapPoints?: string[];
   sheetBackgroundColor?: string;
   sheetTitle?: string;
@@ -100,6 +110,8 @@ export const CustomFormPicker = ({
   onManagePress = undefined,
   onRefreshItems = () => {},
   renderItem = null,
+  renderOption = null,
+  renderCustomOption = null,
   snapPoints = ["40%", "65%", "90%"],
   sheetBackgroundColor = backgroundColor[950],
   sheetTitle = "",
@@ -182,7 +194,9 @@ export const CustomFormPicker = ({
   /**
    * renderOption
    */
-  const renderOption = (item, index, value, onChange) => {
+  const renderPickerOption = (item, index, value, onChange) => {
+    const optionRenderer =
+      renderOption || renderCustomOption || renderItem || null;
     const itemValue = item?.[valueField];
     const itemLabel = item?.[labelField];
     const selectedValue = value?.[valueField] ?? value?.value;
@@ -202,8 +216,8 @@ export const CustomFormPicker = ({
             isSelected ? optionSelectedClassName : ""
           }`}
         >
-          {renderItem ? (
-            renderItem(item, index, { isSelected, value })
+          {optionRenderer ? (
+            optionRenderer(item, index, { isSelected, value })
           ) : (
             <Box className="h-10 w-full justify-center">
               <Text size="md" className={optionTextClassName}>
@@ -239,7 +253,7 @@ export const CustomFormPicker = ({
             `${String(i?.[valueField] ?? i?.value ?? i?.id ?? "item")}-${idx}`
           }
           renderItem={({ item, index }) =>
-            renderOption(item, index, value, onChange)
+            renderPickerOption(item, index, value, onChange)
           }
           contentContainerClassName={listContentClassName}
           contentContainerStyle={{ paddingTop: 0, paddingBottom: 50 }}

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { JBFormButton } from '../../../forms';
-import { Avatar, AvatarFallbackText, AvatarImage, Box, HStack, Text, VStack } from '../../../ui';
+import { Avatar, AvatarFallbackText, AvatarImage, Card, HStack, Text, VStack } from '../../../ui';
 
 type JBUserPhotoPickerCardProps = {
   currentPhotoUri?: string | null;
@@ -38,7 +38,7 @@ export const JBUserPhotoPickerCard = ({
   const canRenderImage = Boolean(imageUri && failedImageUri !== imageUri);
 
   return (
-    <Box className="rounded-2xl border border-outline-200 bg-background-100 px-4 py-5">
+    <Card className="px-4 py-5">
       <VStack space="lg" className="items-center">
         <Avatar size="2xl" className="bg-primary-600">
           <AvatarFallbackText>{displayName}</AvatarFallbackText>
@@ -49,10 +49,6 @@ export const JBUserPhotoPickerCard = ({
             />
           ) : null}
         </Avatar>
-
-        <Text size="sm" className="text-center text-typography-300">
-          Se recortará en formato cuadrado (1:1) antes de guardar.
-        </Text>
 
         <VStack className="w-full" space="sm">
           <JBFormButton
@@ -91,6 +87,6 @@ export const JBUserPhotoPickerCard = ({
           </HStack>
         ) : null}
       </VStack>
-    </Box>
+    </Card>
   );
 };

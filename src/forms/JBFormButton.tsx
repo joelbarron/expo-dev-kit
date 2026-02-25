@@ -20,6 +20,7 @@ type JBFormButtonProps = Omit<React.ComponentProps<typeof Button>, "children"> &
   showText?: boolean;
   showIcon?: boolean;
   iconName?: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+  iconPosition?: "start" | "end";
   iconSize?: number;
   iconColor?: string;
   textClassName?: string;
@@ -72,6 +73,7 @@ export function JBFormButton({
   showText,
   showIcon,
   iconName,
+  iconPosition = "end",
   iconSize = 18,
   iconColor = "white",
   textClassName = "text-[15px] font-bold text-white",
@@ -91,6 +93,14 @@ export function JBFormButton({
   const shouldShowIcon = showIcon ?? Boolean(resolvedIcon);
   const isButtonDisabled = Boolean(disabled || isDisabled || loading);
   const isButtonVisualDisabled = Boolean(disabled || isDisabled);
+  const iconElement =
+    !loading && shouldShowIcon && resolvedIcon ? (
+      <MaterialCommunityIcons
+        name={resolvedIcon}
+        size={iconSize}
+        color={iconColor}
+      />
+    ) : null;
 
   return (
     <Button
@@ -102,14 +112,13 @@ export function JBFormButton({
       {...rest}
     >
       {loading ? <ButtonSpinner color="#ffffff" /> : null}
-      {!loading && shouldShowIcon && resolvedIcon ? (
-        <MaterialCommunityIcons name={resolvedIcon} size={iconSize} color={iconColor} />
-      ) : null}
+      {iconPosition === "start" ? iconElement : null}
       {shouldShowText ? (
         <ButtonText className={textClassName}>
           {loading ? resolvedLoadingText : resolvedText}
         </ButtonText>
       ) : null}
+      {iconPosition === "end" ? iconElement : null}
       {children}
     </Button>
   );

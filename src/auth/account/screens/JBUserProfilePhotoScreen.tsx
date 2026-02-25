@@ -170,7 +170,9 @@ export function JBUserProfilePhotoScreen() {
     }
   }, [submitSave]);
 
-  const canSave = Boolean(selectedPhoto?.base64) && !isSaving && formState.isValid;
+  // This screen uses a hidden form value (`pictureBase64`) to keep zod consistency,
+  // but enable/disable should depend on the selected asset itself.
+  const canSave = Boolean(selectedPhoto?.base64) && !isSaving;
 
   return (
     <AuthScreenLayout
@@ -185,23 +187,19 @@ export function JBUserProfilePhotoScreen() {
             isDisabled={!canSave}
             onPress={handleSave}
           />
-          <JBFormButton
-            variant="link"
-            action="primary"
-            text="Actualizar datos del perfil"
-            className="self-center px-0"
-            onPress={() => {
-              void auth.getMe().catch(() => undefined);
-            }}
-          />
         </VStack>
       }
     >
       <Box className="w-full">
         <VStack space="lg">
-          <Text size="sm" className="text-typography-300">
-            Selecciona una foto y recórtala en formato 1:1 para tu perfil activo.
-          </Text>
+          <VStack space="xs">
+            <Text size="lg" className="font-semibold text-white">
+              Actualiza tu foto de perfil
+            </Text>
+            <Text size="sm" className="text-typography-300">
+              Elige una imagen y recórtala en formato cuadrado antes de guardarla.
+            </Text>
+          </VStack>
           <JBUserPhotoPickerCard
             currentPhotoUri={profilePicture}
             previewUri={selectedPhoto?.uri ?? null}

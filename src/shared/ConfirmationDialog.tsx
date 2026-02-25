@@ -122,7 +122,9 @@ export const ConfirmationDialog = ({
   };
 
   const footerLayoutClass =
-    footerLayout === "column" ? "w-full flex-col items-stretch gap-3" : "w-full flex-row justify-end gap-3";
+    footerLayout === "column"
+      ? "w-full flex-col items-stretch gap-3"
+      : "w-full flex-row items-stretch justify-stretch gap-3";
 
   return (
     <AlertDialog isOpen={open} onClose={handleClose}>
@@ -160,7 +162,7 @@ export const ConfirmationDialog = ({
                 disagreeColor,
                 disagreeTextButtonClassName
               )}
-              className={footerLayout === "column" ? "w-full" : "px-6"}
+              className={footerLayout === "column" ? "w-full" : "flex-1"}
               onPress={() => void handleClickDisagree()}
               {...disagreeButtonProps}
             />
@@ -175,7 +177,7 @@ export const ConfirmationDialog = ({
               loading={agreeLoading}
               isDisabled={agreeDisabled}
               textClassName={resolveDialogActionTextClass(agreeVariant, agreeColor)}
-              className={footerLayout === "column" ? "w-full" : "px-6"}
+              className={footerLayout === "column" ? "w-full" : "flex-1"}
               onPress={() => void handleClickAgree()}
               {...agreeButtonProps}
             />
