@@ -170,6 +170,7 @@ export function JBAuthSignInEntryScreen(props: JBAuthSignInEntryScreenProps) {
             buttonType="default"
             showIcon
             iconName="account-plus-outline"
+            iconPosition="start"
             text="Crear cuenta con email"
             onPress={navigator.goToSignUpForm ?? navigator.goToSignUp}
           />

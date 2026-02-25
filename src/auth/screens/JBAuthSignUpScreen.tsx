@@ -231,6 +231,7 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
         buttonType="default"
         showIcon
         iconName="account-plus-outline"
+        iconPosition="start"
         text="Crear cuenta"
         onPress={navigator.goToSignUpForm ?? navigator.goToSignUp}
       />
@@ -256,6 +257,7 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
         buttonType="default"
         showIcon
         iconName="account-plus-outline"
+        iconPosition="start"
         text="Crear cuenta"
         loading={formState.isLoading}
         isDisabled={!formState.canSubmit}

@@ -84,6 +84,7 @@ export function JBAuthSignInOtpScreen(props: JBAuthSignInOtpScreenProps) {
             buttonType="default"
             showIcon
             iconName="message-processing-outline"
+            iconPosition="start"
             text={formState.submitLabel}
             loading={formState.isLoading}
             isDisabled={!formState.canSubmit}

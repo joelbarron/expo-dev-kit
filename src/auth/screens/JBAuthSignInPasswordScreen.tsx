@@ -62,6 +62,7 @@ export function JBAuthSignInPasswordScreen(props: JBAuthSignInPasswordScreenProp
             size="xl"
             className="px-4"
             buttonType="email"
+            iconPosition="start"
             text="Iniciar sesión"
             loading={formState.isLoading}
             isDisabled={!formState.canSubmit}

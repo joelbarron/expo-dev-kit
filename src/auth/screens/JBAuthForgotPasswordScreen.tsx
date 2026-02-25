@@ -65,6 +65,7 @@ export function JBAuthForgotPasswordScreen(props: JBAuthForgotPasswordScreenProp
           size="xl"
           className="px-4"
           buttonType="email"
+          iconPosition="start"
           text="Enviar enlace de recuperación"
           loading={formState.isLoading}
           isDisabled={!formState.canSubmit}
