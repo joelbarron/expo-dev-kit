@@ -75,3 +75,9 @@ npm run install:lib:npm:finzenio
 npm run install:lib -- --source local --target /path/to/your/app
 npm run install:lib -- --source npm --target /path/to/your/app --tag latest
 ```
+
+## Release automation
+
+- CI workflow: `.github/workflows/ci.yml`
+- Release workflow (OIDC + Changesets): `.github/workflows/release.yml`
+- Release runbook: [docs/release.md](./docs/release.md)
