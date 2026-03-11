@@ -49,7 +49,7 @@ jobs:
           title: 'chore: release'
           commit: 'chore: release'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
 
       - name: Version or Publish (rc/next)
@@ -61,5 +61,5 @@ jobs:
           title: 'chore: release (next)'
           commit: 'chore: release (next)'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN || secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
