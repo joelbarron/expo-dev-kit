@@ -3,6 +3,7 @@ import React from "react";
 import { Controller } from "react-hook-form";
 import type { TextInput } from "react-native";
 
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../config";
 import { useColorScheme } from "../hooks";
 import {
   FormControl,
@@ -90,9 +91,28 @@ export const CustomFormInput = ({
   ...rest
 }: CustomFormInputProps) => {
   const scheme = useColorScheme();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const background = getColor("background") ?? {};
+  const typography = getColor("typography") ?? {};
   const redColor = getColor("red") ?? {};
   const resolvedErrorColor =
     scheme === "dark" ? redColor[500] ?? "#ef4444" : redColor[600] ?? "#dc2626";
+  const resolvedInputBackgroundColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.backgroundColor,
+    scheme,
+    scheme === "dark" ? background[200] ?? "#121b26" : background[50] ?? "#ffffff",
+  );
+  const defaultLightTextColor =
+    typography.black ?? typography[900] ?? "#0f172a";
+  const defaultDarkTextColor =
+    typography.white ?? typography[50] ?? "#f8fafc";
+  const resolvedInputTextColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.textColor,
+    scheme,
+    scheme === "dark" ? defaultDarkTextColor : defaultLightTextColor,
+  );
+  const resolvedInputPlaceholderColor =
+    scheme === "dark" ? typography[400] ?? "#94a3b8" : typography[500] ?? "#64748b";
 
   const normalizeText = (val: string) => {
     let next = val ?? "";
@@ -126,17 +146,24 @@ export const CustomFormInput = ({
             >
               <FormControlLabel className="mb-3">
                 <FormControlLabelText
-                  className={`text-zinc-800 dark:text-white ${labelClassName}`}
+                  className={labelClassName}
+                  style={{ color: resolvedInputTextColor }}
                 >
                   {label}
                 </FormControlLabelText>
               </FormControlLabel>
 
-              <Input variant={variant} size="xl" className={inputClassName}>
+              <Input
+                variant={variant}
+                size="xl"
+                className={inputClassName}
+                style={{ backgroundColor: resolvedInputBackgroundColor }}
+              >
                 {slotBefore}
                 {isNonInteractive ? (
                   <Text
-                    className={`px-3 text-typography-900 ${inputFieldClassName}`}
+                    className={`px-3 ${inputFieldClassName}`}
+                    style={{ color: resolvedInputTextColor }}
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
@@ -151,7 +178,9 @@ export const CustomFormInput = ({
                     secureTextEntry={secureTextEntry}
                     keyboardType={keyboardType}
                     placeholder={placeholder}
+                    placeholderTextColor={resolvedInputPlaceholderColor}
                     value={value}
+                    style={{ color: resolvedInputTextColor }}
                     multiline={false}
                     numberOfLines={1}
                     ellipsizeMode="tail"

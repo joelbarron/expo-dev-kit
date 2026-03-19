@@ -3,6 +3,8 @@ import React from "react";
 import { Controller } from "react-hook-form";
 import type { TextInput } from "react-native";
 
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../config";
+import { useColorScheme } from "../hooks";
 import {
   FormControl,
   FormControlError,
@@ -17,6 +19,7 @@ import { AlertCircleIcon } from "../ui/icon";
 import { Textarea, TextareaInput } from "../ui/textarea";
 import { Box } from "../ui/box";
 import { Text } from "../ui/text";
+import { getColor } from "../utils";
 
 type CustomFormTextAreaProps = {
   control: any;
@@ -86,6 +89,27 @@ export const CustomFormTextArea = ({
   textareaInputClassName = "",
   ...rest
 }: CustomFormTextAreaProps) => {
+  const scheme = useColorScheme();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const background = getColor("background") ?? {};
+  const typography = getColor("typography") ?? {};
+  const resolvedInputBackgroundColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.backgroundColor,
+    scheme,
+    scheme === "dark" ? background[200] ?? "#121b26" : background[50] ?? "#ffffff",
+  );
+  const defaultLightTextColor =
+    typography.black ?? typography[900] ?? "#0f172a";
+  const defaultDarkTextColor =
+    typography.white ?? typography[50] ?? "#f8fafc";
+  const resolvedInputTextColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.textColor,
+    scheme,
+    scheme === "dark" ? defaultDarkTextColor : defaultLightTextColor,
+  );
+  const resolvedInputPlaceholderColor =
+    scheme === "dark" ? typography[400] ?? "#94a3b8" : typography[500] ?? "#64748b";
+
   const normalizeText = (val: string) => {
     let next = val ?? "";
     if (forceLowercase) next = next.toLowerCase();
@@ -111,26 +135,39 @@ export const CustomFormTextArea = ({
           className={`${className} ${containerClassName}`}
         >
           <FormControlLabel className="mb-3">
-            <FormControlLabelText className={`text-white ${labelClassName}`}>
+            <FormControlLabelText
+              className={labelClassName}
+              style={{ color: resolvedInputTextColor }}
+            >
               {label}
             </FormControlLabelText>
           </FormControlLabel>
 
           {isDisabled ? (
-            <Box className={`${textareaClassName}`}>
-              <Text size="md" className="text-gray-400">
+            <Box
+              className={`${textareaClassName}`}
+              style={{ backgroundColor: resolvedInputBackgroundColor }}
+            >
+              <Text size="md" style={{ color: resolvedInputTextColor }}>
                 {value}
               </Text>
             </Box>
           ) : (
-            <Textarea {...rest} size={size} className={textareaClassName}>
+            <Textarea
+              {...rest}
+              size={size}
+              className={textareaClassName}
+              style={{ backgroundColor: resolvedInputBackgroundColor }}
+            >
               {slotBefore}
               <TextareaInput
                 ref={inputRef}
                 className={`flex-1 ${textareaInputClassName}`}
                 type={type}
                 placeholder={placeholder}
+                placeholderTextColor={resolvedInputPlaceholderColor}
                 value={value}
+                style={{ color: resolvedInputTextColor }}
                 maxLength={rules?.maxLength?.value}
                 autoCapitalize={autoCapitalize}
                 autoComplete={autoComplete}

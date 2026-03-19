@@ -9,7 +9,7 @@ import React, { useCallback, useEffect } from "react";
 import { Platform } from "react-native";
 
 import { JBAuthProvider, JBAuthStatus } from "../../auth";
-import { getLastCreatedJBExpoConfig } from "../../config";
+import { getLastCreatedJBExpoConfig, JBUIConfig, resolveJBUIColor } from "../../config";
 import { useColorScheme } from "../../hooks";
 import { useAppConfigStore, useAuthStore } from "../../runtime";
 import { getColor } from "../../utils";
@@ -23,6 +23,7 @@ type JBExpoRootLayoutProps = {
   authClient: any;
   appMeta?: JBExpoAppProvidersProps["appMeta"];
   colorMode?: JBExpoAppProvidersProps["colorMode"];
+  uiConfig?: JBUIConfig;
   withStatusBar?: boolean;
   statusBarStyle?: StatusBarStyle;
   manageNativeSplash?: boolean;
@@ -37,12 +38,34 @@ type JBExpoRootLayoutProps = {
   "children" | "colorMode" | "appMeta" | "navigationTheme"
 >;
 
-const resolveNavigationTheme = (mode: "light" | "dark"): Theme => {
+const resolveNavigationTheme = (
+  mode: "light" | "dark",
+  uiConfig?: JBUIConfig,
+): Theme => {
   const primaryColor = getColor("primary");
   const backgroundColor = getColor("background");
   const typographyColor = getColor("typography");
   const mutedColor = getColor("muted");
   const redColor = getColor("red");
+  const defaultBackgroundColor =
+    mode === "dark"
+      ? (backgroundColor[0] ?? "#070b10")
+      : (backgroundColor.light ?? "#f8f9fa");
+  const defaultCardColor =
+    mode === "dark"
+      ? (backgroundColor[200] ?? "#121b26")
+      : (backgroundColor[50] ?? "#ffffff");
+
+  const resolvedBackgroundColor = resolveJBUIColor(
+    uiConfig?.main?.backgroundColor,
+    mode,
+    defaultBackgroundColor,
+  );
+  const resolvedCardColor = resolveJBUIColor(
+    uiConfig?.card?.backgroundColor,
+    mode,
+    defaultCardColor,
+  );
 
   if (mode === "dark") {
     return {
@@ -50,8 +73,8 @@ const resolveNavigationTheme = (mode: "light" | "dark"): Theme => {
       colors: {
         ...DarkTheme.colors,
         primary: primaryColor[500],
-        background: backgroundColor[0],
-        card: backgroundColor[200],
+        background: resolvedBackgroundColor ?? backgroundColor[0],
+        card: resolvedCardColor ?? backgroundColor[200],
         text: typographyColor[50] ?? "#ecf0f1",
         border: mutedColor[700] ?? "#334155",
         notification: redColor[500] ?? "#e74c3c",
@@ -64,8 +87,8 @@ const resolveNavigationTheme = (mode: "light" | "dark"): Theme => {
     colors: {
       ...DefaultTheme.colors,
       primary: primaryColor[500],
-      background: backgroundColor.light ?? "#f8f9fa",
-      card: backgroundColor[50] ?? "#ffffff",
+      background: resolvedBackgroundColor ?? backgroundColor.light ?? "#f8f9fa",
+      card: resolvedCardColor ?? backgroundColor[50] ?? "#ffffff",
       text: typographyColor[900] ?? "#333333",
       border: mutedColor[300] ?? "#dcdcdc",
       notification: redColor[500] ?? "#e74c3c",
@@ -77,6 +100,7 @@ export function JBExpoRootLayout({
   authClient,
   appMeta,
   colorMode,
+  uiConfig,
   withStatusBar = true,
   statusBarStyle = "light",
   manageNativeSplash = true,
@@ -88,9 +112,34 @@ export function JBExpoRootLayout({
   const baseConfig = getLastCreatedJBExpoConfig();
   const scheme = useColorScheme();
   const effectiveMode = colorMode ?? scheme ?? "dark";
+  const resolvedMode =
+    effectiveMode === "dark"
+      ? "dark"
+      : effectiveMode === "light"
+        ? "light"
+        : (scheme ?? "dark");
+  const resolvedUIConfig = uiConfig ?? baseConfig?.ui;
   const navigationTheme = resolveNavigationTheme(
-    effectiveMode === "dark" ? "dark" : "light",
+    resolvedMode,
+    resolvedUIConfig,
   );
+  const primaryColor = getColor("primary");
+  const resolvedHeaderBackgroundColor = resolveJBUIColor(
+    resolvedUIConfig?.header?.backgroundColor,
+    resolvedMode,
+    primaryColor[500],
+  );
+  const resolvedHeaderTintColor = resolveJBUIColor(
+    resolvedUIConfig?.header?.tintColor,
+    resolvedMode,
+    "white",
+  );
+  const effectiveStatusBarStyle =
+    statusBarStyle === "auto"
+      ? resolvedMode === "dark"
+        ? "light"
+        : "dark"
+      : statusBarStyle;
 
   const { isConfigLoaded, fetchAppConfig, appConfig } = useAppConfigStore();
   const setSessionFromJBAuth = useAuthStore(
@@ -181,14 +230,14 @@ export function JBExpoRootLayout({
           authClient={authClient}
           onAuthStateChanged={handleAuthStateChanged}
         >
-          {withStatusBar ? <StatusBar style={statusBarStyle} /> : null}
+          {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}
 
           <Stack
             screenOptions={{
-              headerTintColor: "white",
+              headerTintColor: resolvedHeaderTintColor ?? "white",
               headerBackTitle: "Volver",
               headerStyle: {
-                backgroundColor: getColor("primary")[500],
+                backgroundColor: resolvedHeaderBackgroundColor ?? primaryColor[500],
               },
             }}
           >

@@ -21,7 +21,7 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
   const {
     navigator,
     appName,
-    subtitle = "Tu dinero, tus reglas.",
+    subtitle = "",
     backgroundImageSource,
   } = props;
 

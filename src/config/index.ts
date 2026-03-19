@@ -3,3 +3,4 @@ export * from './defaults';
 export * from './merge';
 export * from './createConfig';
 export * from './env';
+export * from './ui';

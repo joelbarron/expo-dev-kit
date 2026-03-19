@@ -80,6 +80,55 @@ export type JBAuthUserSettingsConfig = {
   };
 };
 
+export type JBUIColorValue = string | (() => string);
+
+export type JBUIColorModeValue = {
+  light?: JBUIColorValue;
+  dark?: JBUIColorValue;
+  default?: JBUIColorValue;
+};
+
+export type JBUIColorConfig = JBUIColorValue | JBUIColorModeValue;
+
+export type JBUIHeaderConfig = {
+  backgroundColor?: JBUIColorConfig;
+  tintColor?: JBUIColorConfig;
+};
+
+export type JBUITabsConfig = {
+  backgroundColor?: JBUIColorConfig;
+  borderTopColor?: JBUIColorConfig;
+  activeTintColor?: JBUIColorConfig;
+  inactiveTintColor?: JBUIColorConfig;
+};
+
+export type JBUISectionBackgroundConfig = {
+  backgroundColor?: JBUIColorConfig;
+};
+
+export type JBUIFormsConfig = {
+  backgroundColor?: JBUIColorConfig;
+  textColor?: JBUIColorConfig;
+  bottomSheetBackgroundColor?: JBUIColorConfig;
+};
+
+export type JBUISocialButtonsConfig = {
+  backgroundColor?: JBUIColorConfig;
+  borderColor?: JBUIColorConfig;
+  textColor?: JBUIColorConfig;
+  iconColor?: JBUIColorConfig;
+};
+
+export type JBUIConfig = {
+  header?: JBUIHeaderConfig;
+  tabs?: JBUITabsConfig;
+  main?: JBUISectionBackgroundConfig;
+  card?: JBUISectionBackgroundConfig;
+  footer?: JBUISectionBackgroundConfig;
+  forms?: JBUIFormsConfig;
+  socialButtons?: JBUISocialButtonsConfig;
+};
+
 export type JBAppConfig = {
   debug: boolean;
   forceHideStage: boolean;
@@ -109,6 +158,7 @@ export type JBAppConfig = {
     defaultProfileRole?: string;
     social: JBAuthSocialConfig;
   };
+  ui: JBUIConfig;
   userDebug: {
     login: string;
     password: string;

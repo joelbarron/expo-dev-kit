@@ -1,6 +1,5 @@
 // @ts-nocheck
 import { getColor } from "../utils/colors";
-import { getColorScheme } from "../utils/config";
 import {
   getFormattedDateTime,
   getFormattedDateTimeExtended,
@@ -15,8 +14,10 @@ import RNDateTimePicker, {
 import React, { useCallback, useMemo, useRef } from "react";
 import { Controller } from "react-hook-form";
 import { Platform, StyleSheet, TouchableOpacity } from "react-native";
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../config";
+import { useColorScheme } from "../hooks";
 import { Box } from "../ui/box";
-import { Button, ButtonIcon, ButtonText } from "../ui/button";
+import { Button, ButtonText } from "../ui/button";
 import {
   FormControl,
   FormControlError,
@@ -30,10 +31,6 @@ import {
 import { HStack } from "../ui/hstack";
 import { AlertCircleIcon, CalendarDaysIcon, Icon } from "../ui/icon";
 import { Text } from "../ui/text";
-
-const colorScheme = getColorScheme();
-const primaryColor = getColor("primary");
-const backgroundColor = getColor("background");
 
 type CustomFormDateTimePickerProps = {
   className?: string;
@@ -88,6 +85,34 @@ export const CustomFormDateTimePicker = ({
   minimumDate,
   maximumDate,
 }: CustomFormDateTimePickerProps) => {
+  const colorScheme = useColorScheme();
+  const primaryColor = getColor("primary") ?? {};
+  const backgroundColor = getColor("background") ?? {};
+  const typography = getColor("typography") ?? {};
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const resolvedFormBackgroundColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.backgroundColor,
+    colorScheme,
+    colorScheme === "dark"
+      ? backgroundColor[200] ?? "#121b26"
+      : backgroundColor[50] ?? "#ffffff",
+  );
+  const resolvedBottomSheetBackgroundColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.bottomSheetBackgroundColor,
+    colorScheme,
+    colorScheme === "dark"
+      ? backgroundColor[950] ?? "#121b26"
+      : backgroundColor[50] ?? "#ffffff",
+  );
+  const defaultLightTextColor =
+    typography.black ?? typography[900] ?? "#0f172a";
+  const defaultDarkTextColor =
+    typography.white ?? typography[50] ?? "#f8fafc";
+  const resolvedFormTextColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.textColor,
+    colorScheme,
+    colorScheme === "dark" ? defaultDarkTextColor : defaultLightTextColor,
+  );
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ["42%"], []);
 
@@ -131,7 +156,10 @@ export const CustomFormDateTimePicker = ({
           isRequired={rules?.required ? true : false}
         >
           <FormControlLabel className="mb-3">
-            <FormControlLabelText className={`text-white ${labelClassName}`}>
+            <FormControlLabelText
+              className={labelClassName}
+              style={{ color: resolvedFormTextColor }}
+            >
               {label}
             </FormControlLabelText>
           </FormControlLabel>
@@ -145,10 +173,14 @@ export const CustomFormDateTimePicker = ({
               openPicker();
             }}
           >
-            <HStack className="h-16 rounded-xl bg-background-200 items-center justify-between px-3">
+            <HStack
+              className="h-16 rounded-xl items-center justify-between px-3"
+              style={{ backgroundColor: resolvedFormBackgroundColor }}
+            >
                 <Text
                   size="md"
-                  className={value ? "text-white" : "text-gray-400"}
+                  className={value ? "" : "text-gray-400"}
+                  style={value ? { color: resolvedFormTextColor } : undefined}
                 >
                   {value
                     ? showTime
@@ -156,7 +188,12 @@ export const CustomFormDateTimePicker = ({
                       : getFormattedDateTimeExtended(value)
                     : "Seleccionar fecha"}
                 </Text>
-              <Icon as={CalendarDaysIcon} size="md" className="text-gray-300" />
+              <Icon
+                as={CalendarDaysIcon}
+                size="md"
+                className="text-gray-300"
+                color={resolvedFormTextColor}
+              />
             </HStack>
           </TouchableOpacity>
 
@@ -167,7 +204,7 @@ export const CustomFormDateTimePicker = ({
             enableDynamicSizing={false}
             enableOverDrag={false}
             backdropComponent={renderBackdrop}
-            backgroundStyle={{ backgroundColor: backgroundColor[950] }}
+            backgroundStyle={{ backgroundColor: resolvedBottomSheetBackgroundColor }}
           >
             <Box className="px-4 pt-2 pb-4">
               {value ? (

@@ -1,6 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../../config";
 import { JBFormButton } from "../../forms";
+import { useColorScheme } from "../../hooks";
 import { Box, ButtonText, Text, VStack } from "../../ui";
 import { getColor } from "../../utils";
 
@@ -37,12 +39,42 @@ export function JBAuthSocialActions({
   title,
   iconStyle = "brand",
 }: JBAuthSocialActionsProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const socialButtonsConfig = baseConfig?.ui?.socialButtons;
   const typography = getColor("typography") ?? {};
+  const background = getColor("background") ?? {};
+  const outline = getColor("outline") ?? {};
   const primary = getColor("primary") ?? {};
-  const neutralIconColor = typography[50] ?? "#f8fafc";
+  const defaultLightTextColor =
+    typography.black ?? typography[900] ?? "#0f172a";
+  const defaultDarkTextColor =
+    typography.white ?? typography[50] ?? "#f8fafc";
+  const neutralTextColor = resolveJBUIColor(
+    socialButtonsConfig?.textColor,
+    colorScheme,
+    isDark ? defaultDarkTextColor : defaultLightTextColor,
+  );
+  const neutralIconColor = neutralTextColor;
+  const socialButtonBackgroundColor = resolveJBUIColor(
+    socialButtonsConfig?.backgroundColor,
+    colorScheme,
+    isDark ? background[200] ?? "#121b26" : background[50] ?? "#ffffff",
+  );
+  const socialButtonBorderColor = resolveJBUIColor(
+    socialButtonsConfig?.borderColor,
+    colorScheme,
+    isDark ? outline[700] ?? "#334155" : outline[200] ?? "#e2e8f0",
+  );
+  const socialButtonIconColor = resolveJBUIColor(
+    socialButtonsConfig?.iconColor,
+    colorScheme,
+    neutralIconColor,
+  );
 
   const resolveIconColor = (
-    icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"]
+    icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"],
   ) => {
     if (iconStyle === "neutral") {
       return neutralIconColor;
@@ -54,9 +86,16 @@ export function JBAuthSocialActions({
       return "#1877f2";
     }
     if (icon === "message-processing-outline" || icon === "email-outline") {
-      return primary[500] ?? neutralIconColor;
+      if (isDark) {
+        return primary[500] ?? neutralIconColor;
+      } else {
+        return socialButtonIconColor;
+      }
     }
-    return neutralIconColor;
+    if (icon === "apple") {
+      return socialButtonIconColor;
+    }
+    return socialButtonIconColor;
   };
 
   const renderAction = ({
@@ -71,29 +110,36 @@ export function JBAuthSocialActions({
     onPress?: () => void;
   }) =>
     enabled ? (
-    <JBFormButton
-      // variant="outline"
-      action="default"
-      size="xl"
-      className="w-full bg-background-200"
-      isDisabled={!enabled || isSocialLoading}
-      onPress={onPress}
-      showText={false}
-      showIcon={false}
-    >
-      <Box className="w-full flex-row items-center px-12">
-        <Box className="w-7 items-center justify-center">
-          <MaterialCommunityIcons
-            name={icon}
-            size={20}
-            color={resolveIconColor(icon)}
-          />
+      <JBFormButton
+        // variant="outline"
+        action="default"
+        size="xl"
+        className="w-full border"
+        style={{
+          backgroundColor: socialButtonBackgroundColor,
+          borderColor: socialButtonBorderColor,
+        }}
+        isDisabled={!enabled || isSocialLoading}
+        onPress={onPress}
+        showText={false}
+        showIcon={false}
+      >
+        <Box className="w-full flex-row items-center px-12">
+          <Box className="w-7 items-center justify-center">
+            <MaterialCommunityIcons
+              name={icon}
+              size={20}
+              color={resolveIconColor(icon)}
+            />
+          </Box>
+          <ButtonText
+            className="ml-3 text-base font-medium"
+            style={{ color: neutralTextColor }}
+          >
+            {label}
+          </ButtonText>
         </Box>
-        <ButtonText className="ml-3 text-base font-medium text-typography-900 dark:text-typography-50">
-          {label}
-        </ButtonText>
-      </Box>
-    </JBFormButton>
+      </JBFormButton>
     ) : null;
 
   return (
@@ -129,9 +175,7 @@ export function JBAuthSocialActions({
       })}
       {showSms
         ? renderAction({
-            label: smsActive
-              ? "Continuar con contraseña"
-              : "Continuar con SMS",
+            label: smsActive ? "Continuar con contraseña" : "Continuar con SMS",
             icon: smsActive ? "email-outline" : "message-processing-outline",
             enabled: smsEnabled,
             onPress: onSmsPress,

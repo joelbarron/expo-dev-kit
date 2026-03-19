@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleProp, StyleSheet, Text, useWindowDimensions, View, ViewStyle } from 'react-native';
 
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from '../../config';
 import { JBMainLayout } from '../../core';
 import { useColorScheme } from '../../hooks';
 import { getColor } from '../../utils/colors';
@@ -31,6 +32,13 @@ export const AuthScreenLayout = ({
   const scheme = useColorScheme();
   const background = getColor('background') ?? {};
   const isDark = scheme === 'dark';
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const uiConfig = baseConfig?.ui;
+  const mainBackgroundColor = resolveJBUIColor(
+    uiConfig?.main?.backgroundColor,
+    scheme,
+    isDark ? background[0] ?? '#070b10' : background.light ?? '#fbfbfb'
+  );
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
 
@@ -91,7 +99,7 @@ export const AuthScreenLayout = ({
     <KeyboardAvoidingView
       style={[
         styles.root,
-        { backgroundColor: isDark ? background[0] ?? '#070b10' : background.light ?? '#fbfbfb' }
+        { backgroundColor: mainBackgroundColor }
       ]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
