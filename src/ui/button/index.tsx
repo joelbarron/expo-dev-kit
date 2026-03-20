@@ -11,6 +11,8 @@ import {
 import { cssInterop } from 'nativewind';
 import React from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from '../../config';
+import { useColorScheme } from '../../hooks';
 
 const SCOPE = 'BUTTON';
 
@@ -285,18 +287,80 @@ type IButtonProps = Omit<
 > &
   VariantProps<typeof buttonStyle> & { className?: string };
 
+const resolveButtonConfigColor = ({
+  uiButtonConfig,
+  mode,
+  action,
+  variant,
+  colorKey,
+}: {
+  uiButtonConfig: any;
+  mode: 'light' | 'dark';
+  action: string;
+  variant: string;
+  colorKey: 'backgroundColor' | 'borderColor' | 'textColor' | 'iconColor';
+}): string | undefined => {
+  if (!uiButtonConfig) {
+    return undefined;
+  }
+
+  const actionConfig =
+    (action ? uiButtonConfig?.[action] : undefined) ?? uiButtonConfig?.default;
+  const actionVariantConfig = actionConfig?.[variant];
+  const globalVariantConfig = uiButtonConfig?.[variant];
+
+  const colorConfig =
+    actionVariantConfig?.[colorKey] ??
+    actionConfig?.[colorKey] ??
+    globalVariantConfig?.[colorKey] ??
+    uiButtonConfig?.[colorKey];
+
+  return resolveJBUIColor(colorConfig, mode);
+};
+
 const Button = React.forwardRef<
   React.ElementRef<typeof UIButton>,
   IButtonProps
 >(
   (
-    { className, variant = 'solid', size = 'md', action = 'primary', ...props },
+    {
+      className,
+      variant = 'solid',
+      size = 'md',
+      action = 'primary',
+      style,
+      ...props
+    },
     ref
   ) => {
+    const scheme = useColorScheme();
+    const baseConfig = getLastCreatedJBExpoConfig();
+    const uiButtonConfig = baseConfig?.ui?.button;
+
+    const resolvedBackgroundColor = resolveButtonConfigColor({
+      uiButtonConfig,
+      mode: scheme,
+      action,
+      variant,
+      colorKey: 'backgroundColor',
+    });
+    const resolvedBorderColor = resolveButtonConfigColor({
+      uiButtonConfig,
+      mode: scheme,
+      action,
+      variant,
+      colorKey: 'borderColor',
+    });
+    const overrideStyle = {
+      ...(resolvedBackgroundColor ? { backgroundColor: resolvedBackgroundColor } : {}),
+      ...(resolvedBorderColor ? { borderColor: resolvedBorderColor } : {}),
+    };
+
     return (
       <UIButton
         ref={ref}
         {...props}
+        style={[style, overrideStyle]}
         className={buttonStyle({ variant, size, action, class: className })}
         context={{ variant, size, action }}
       />
@@ -310,17 +374,29 @@ type IButtonTextProps = React.ComponentPropsWithoutRef<typeof UIButton.Text> &
 const ButtonText = React.forwardRef<
   React.ElementRef<typeof UIButton.Text>,
   IButtonTextProps
->(({ className, variant, size, action, ...props }, ref) => {
+>(({ className, variant, size, action, style, ...props }, ref) => {
   const {
     variant: parentVariant,
     size: parentSize,
     action: parentAction,
   } = useStyleContext(SCOPE);
+  const scheme = useColorScheme();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const effectiveVariant = variant ?? parentVariant ?? 'solid';
+  const effectiveAction = action ?? parentAction ?? 'primary';
+  const resolvedTextColor = resolveButtonConfigColor({
+    uiButtonConfig: baseConfig?.ui?.button,
+    mode: scheme,
+    action: effectiveAction,
+    variant: effectiveVariant,
+    colorKey: 'textColor',
+  });
 
   return (
     <UIButton.Text
       ref={ref}
       {...props}
+      style={[style, resolvedTextColor ? { color: resolvedTextColor } : undefined]}
       className={buttonTextStyle({
         parentVariants: {
           variant: parentVariant,
@@ -349,18 +425,32 @@ type IButtonIcon = React.ComponentPropsWithoutRef<typeof UIButton.Icon> &
 const ButtonIcon = React.forwardRef<
   React.ElementRef<typeof UIButton.Icon>,
   IButtonIcon
->(({ className, size, ...props }, ref) => {
+>(({ className, size, color, ...props }, ref) => {
   const {
     variant: parentVariant,
     size: parentSize,
     action: parentAction,
   } = useStyleContext(SCOPE);
+  const scheme = useColorScheme();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const effectiveVariant = parentVariant ?? 'solid';
+  const effectiveAction = parentAction ?? 'primary';
+  const resolvedIconColor =
+    color ??
+    resolveButtonConfigColor({
+      uiButtonConfig: baseConfig?.ui?.button,
+      mode: scheme,
+      action: effectiveAction,
+      variant: effectiveVariant,
+      colorKey: 'iconColor',
+    });
 
   if (typeof size === 'number') {
     return (
       <UIButton.Icon
         ref={ref}
         {...props}
+        color={resolvedIconColor}
         className={buttonIconStyle({ class: className })}
         size={size}
       />
@@ -373,6 +463,7 @@ const ButtonIcon = React.forwardRef<
       <UIButton.Icon
         ref={ref}
         {...props}
+        color={resolvedIconColor}
         className={buttonIconStyle({ class: className })}
       />
     );
@@ -380,6 +471,7 @@ const ButtonIcon = React.forwardRef<
   return (
     <UIButton.Icon
       {...props}
+      color={resolvedIconColor}
       className={buttonIconStyle({
         parentVariants: {
           size: parentSize,
@@ -433,4 +525,3 @@ ButtonIcon.displayName = 'ButtonIcon';
 ButtonGroup.displayName = 'ButtonGroup';
 
 export { Button, ButtonGroup, ButtonIcon, ButtonSpinner, ButtonText };
-

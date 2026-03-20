@@ -119,6 +119,30 @@ export type JBUISocialButtonsConfig = {
   iconColor?: JBUIColorConfig;
 };
 
+export type JBUIButtonStyleConfig = {
+  backgroundColor?: JBUIColorConfig;
+  borderColor?: JBUIColorConfig;
+  textColor?: JBUIColorConfig;
+  iconColor?: JBUIColorConfig;
+};
+
+export type JBUIButtonVariantConfig = {
+  solid?: JBUIButtonStyleConfig;
+  outline?: JBUIButtonStyleConfig;
+  link?: JBUIButtonStyleConfig;
+};
+
+export type JBUIButtonActionConfig = JBUIButtonStyleConfig &
+  JBUIButtonVariantConfig;
+
+export type JBUIButtonConfig = JBUIButtonActionConfig & {
+  primary?: JBUIButtonActionConfig;
+  secondary?: JBUIButtonActionConfig;
+  positive?: JBUIButtonActionConfig;
+  negative?: JBUIButtonActionConfig;
+  default?: JBUIButtonActionConfig;
+};
+
 export type JBUIConfig = {
   header?: JBUIHeaderConfig;
   tabs?: JBUITabsConfig;
@@ -127,6 +151,7 @@ export type JBUIConfig = {
   footer?: JBUISectionBackgroundConfig;
   forms?: JBUIFormsConfig;
   socialButtons?: JBUISocialButtonsConfig;
+  button?: JBUIButtonConfig;
 };
 
 export type JBAppConfig = {

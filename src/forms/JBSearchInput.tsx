@@ -1,8 +1,10 @@
 // @ts-nocheck
 import { getColor } from "../utils/colors";
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../config";
 import { FontAwesome } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { TouchableOpacity } from "react-native";
+import { useColorScheme } from "../hooks";
 import { CustomLoader } from "../shared/CustomLoader";
 import { Card } from "../ui/card";
 import { Input, InputField } from "../ui/input";
@@ -34,8 +36,27 @@ export function SearchInput({
   onClear,
   className,
 }: Props) {
+  const scheme = useColorScheme();
+  const baseConfig = getLastCreatedJBExpoConfig();
   const zinc = getColor("zinc");
   const primary = getColor("primary");
+  const typography = getColor("typography") ?? {};
+  const background = getColor("background") ?? {};
+
+  const resolvedInputTextColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.textColor,
+    scheme,
+    scheme === "dark"
+      ? typography.white ?? typography[50] ?? "#f8fafc"
+      : typography.black ?? typography[900] ?? "#0f172a"
+  );
+  const resolvedPlaceholderColor =
+    scheme === "dark" ? typography[400] ?? "#94a3b8" : typography[500] ?? "#64748b";
+  const resolvedContainerBackgroundColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.backgroundColor,
+    scheme,
+    scheme === "dark" ? background[200] ?? "#121b26" : background[100] ?? "#f1f5f9"
+  );
 
   const [localValue, setLocalValue] = useState(value);
   const lastExternalValue = useRef(value);
@@ -69,6 +90,7 @@ export function SearchInput({
         paddingHorizontal: 12,
         paddingVertical: 13,
         borderRadius: 13,
+        backgroundColor: resolvedContainerBackgroundColor,
       }}
     >
       <FontAwesome name="search" size={14} color={zinc[300]} />
@@ -78,13 +100,14 @@ export function SearchInput({
           value={localValue}
           onChangeText={setLocalValue}
           placeholder={placeholder}
-          placeholderTextColor={zinc[400]}
+          placeholderTextColor={resolvedPlaceholderColor}
           autoCorrect={false}
           autoCapitalize="none"
           autoFocus={autoFocus}
           returnKeyType="search"
           onSubmitEditing={() => onSubmit?.(localValue)}
-          className="text-white text-sm py-0 px-0"
+          className="text-sm py-0 px-0"
+          style={{ color: resolvedInputTextColor }}
         />
       </Input>
 

@@ -3,16 +3,20 @@ import { ScrollView, StyleProp, ViewStyle } from 'react-native';
 
 import { getLastCreatedJBExpoConfig, resolveJBUIColor } from '../../config';
 import { useColorScheme } from '../../hooks';
-import { getColor } from '../../utils';
 import { Box } from '../../ui/box';
+import { getColor } from '../../utils';
 
 export type JBMainLayoutProps = {
   children: ReactNode;
   scrollable?: boolean;
   className?: string;
   classNameScrollView?: string;
+  contentRoundedTop?: boolean;
+  contentRoundedTopClassName?: string;
   contentContainerStyle?: StyleProp<ViewStyle>;
   footer?: ReactNode;
+  footerRoundedTop?: boolean;
+  footerRoundedTopClassName?: string;
   footerClassName?: string;
   footerStyle?: StyleProp<ViewStyle>;
   footerAdjustableHeight?: boolean;
@@ -26,8 +30,12 @@ export const JBMainLayout = ({
   scrollable = false,
   className,
   classNameScrollView,
+  contentRoundedTop = true,
+  contentRoundedTopClassName = 'rounded-tl-3xl rounded-tr-3xl',
   contentContainerStyle = { paddingBottom: 120 },
   footer = null,
+  footerRoundedTop = true,
+  footerRoundedTopClassName = 'rounded-tl-3xl rounded-tr-3xl',
   footerClassName = '',
   footerStyle,
   footerAdjustableHeight = false,
@@ -56,33 +64,42 @@ export const JBMainLayout = ({
   );
   const backgroundClassName = 'bg-background-light dark:bg-background-0';
   const backgroundHeaderClassName = 'bg-primary-500 dark:bg-background-950';
-  const contentContainerClassName = 'flex-1 rounded-tl-3xl rounded-tr-3xl';
+  const contentRoundedTopClass = contentRoundedTop ? contentRoundedTopClassName : '';
+  const contentClipClass = contentRoundedTop ? 'overflow-hidden' : '';
+  const footerRoundedTopClass = footerRoundedTop ? footerRoundedTopClassName : '';
+  const contentContainerClassName = `flex-1 ${contentRoundedTopClass} ${contentClipClass} ${backgroundClassName}`;
   const rootClassName = `flex-1 ${backgroundHeaderClassName} pt-2 ${className ?? ''}`;
-  const scrollClassName = `pt-0 ${contentContainerClassName} ${backgroundClassName} ${classNameScrollView ?? ''}`;
+  const scrollClassName = `pt-0 flex-1 ${classNameScrollView ?? ''}`;
+  const footerContainerClassName = `${footerAdjustableHeight ? 'py-4' : 'min-h-[96px]'} px-8 justify-center ${footerRoundedTopClass} ${footerClassName}`;
 
   if (scrollable) {
     return (
       <Box className={rootClassName} style={{ backgroundColor: rootBackgroundColor }}>
         <Box className="flex-1">
           {header}
-          <ScrollView
-            {...({ className: scrollClassName } as any)}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={contentContainerStyle}
+          <Box
+            className={contentContainerClassName}
             style={{ backgroundColor: contentBackgroundColor }}
-            onScroll={onScroll as ((event: any) => void) | undefined}
-            refreshControl={refreshControl}
           >
-            {children}
-          </ScrollView>
-          {footer ? (
-            <Box
-              className={`${footerAdjustableHeight ? 'py-4' : 'min-h-[96px]'} px-8 bg-light dark:bg-background-950 justify-center rounded-tl-3xl rounded-tr-3xl ${footerClassName}`}
-              style={[{ backgroundColor: footerBackgroundColor }, footerStyle]}
+            <ScrollView
+              {...({ className: scrollClassName } as any)}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={contentContainerStyle}
+              style={{ backgroundColor: contentBackgroundColor }}
+              onScroll={onScroll as ((event: any) => void) | undefined}
+              refreshControl={refreshControl}
             >
-              {footer}
-            </Box>
-          ) : null}
+              {children}
+            </ScrollView>
+            {footer ? (
+              <Box
+                className={footerContainerClassName}
+                style={[{ backgroundColor: footerBackgroundColor }, footerStyle]}
+              >
+                {footer}
+              </Box>
+            ) : null}
+          </Box>
         </Box>
       </Box>
     );
@@ -93,19 +110,21 @@ export const JBMainLayout = ({
       <Box className="flex-1">
         {header}
         <Box
-          className={`pt-0 ${contentContainerClassName} ${backgroundClassName}`}
+          className={contentContainerClassName}
           style={{ backgroundColor: contentBackgroundColor }}
         >
-          {children}
-        </Box>
-        {footer ? (
-          <Box
-            className={`${footerAdjustableHeight ? 'py-4' : 'min-h-[96px]'} px-8 bg-light dark:bg-background-950 justify-center ${footerClassName}`}
-            style={[{ backgroundColor: footerBackgroundColor }, footerStyle]}
-          >
-            {footer}
+          <Box className="pt-0 flex-1">
+            {children}
           </Box>
-        ) : null}
+          {footer ? (
+            <Box
+              className={footerContainerClassName}
+              style={[{ backgroundColor: footerBackgroundColor }, footerStyle]}
+            >
+              {footer}
+            </Box>
+          ) : null}
+        </Box>
       </Box>
     </Box>
   );

@@ -1,6 +1,8 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import React from "react";
 
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../config";
+import { useColorScheme } from "../hooks";
 import { Button, ButtonSpinner, ButtonText } from "../ui/button";
 
 type JBFormButtonType =
@@ -65,6 +67,37 @@ const typeActionMap: Record<
   add: "primary",
 };
 
+const resolveButtonConfigColor = ({
+  uiButtonConfig,
+  mode,
+  action,
+  variant,
+  colorKey,
+}: {
+  uiButtonConfig: any;
+  mode: "light" | "dark";
+  action: string;
+  variant: string;
+  colorKey: "backgroundColor" | "borderColor" | "textColor" | "iconColor";
+}): string | undefined => {
+  if (!uiButtonConfig) {
+    return undefined;
+  }
+
+  const actionConfig =
+    (action ? uiButtonConfig?.[action] : undefined) ?? uiButtonConfig?.default;
+  const actionVariantConfig = actionConfig?.[variant];
+  const globalVariantConfig = uiButtonConfig?.[variant];
+
+  const colorConfig =
+    actionVariantConfig?.[colorKey] ??
+    actionConfig?.[colorKey] ??
+    globalVariantConfig?.[colorKey] ??
+    uiButtonConfig?.[colorKey];
+
+  return resolveJBUIColor(colorConfig, mode);
+};
+
 export function JBFormButton({
   text,
   loading = false,
@@ -75,10 +108,11 @@ export function JBFormButton({
   iconName,
   iconPosition = "end",
   iconSize = 18,
-  iconColor = "white",
+  iconColor,
   textClassName = "text-[15px] font-bold text-white",
   className,
   size = "xl",
+  variant = "solid",
   disabled,
   isDisabled,
   action,
@@ -93,18 +127,31 @@ export function JBFormButton({
   const shouldShowIcon = showIcon ?? Boolean(resolvedIcon);
   const isButtonDisabled = Boolean(disabled || isDisabled || loading);
   const isButtonVisualDisabled = Boolean(disabled || isDisabled);
+  const scheme = useColorScheme();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const resolvedIconColor =
+    iconColor ??
+    resolveButtonConfigColor({
+      uiButtonConfig: baseConfig?.ui?.button,
+      mode: scheme,
+      action: resolvedAction,
+      variant,
+      colorKey: "iconColor",
+    }) ??
+    "#ffffff";
   const iconElement =
     !loading && shouldShowIcon && resolvedIcon ? (
       <MaterialCommunityIcons
         name={resolvedIcon}
         size={iconSize}
-        color={iconColor}
+        color={resolvedIconColor}
       />
     ) : null;
 
   return (
     <Button
       size={size}
+      variant={variant}
       action={resolvedAction}
       className={`${className ?? "px-4"} ${loading ? "data-[disabled=true]:opacity-100" : ""}`.trim()}
       isDisabled={isButtonVisualDisabled}
