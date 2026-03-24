@@ -5,11 +5,20 @@ import { StatusBar, StatusBarStyle } from "expo-status-bar";
 import moment from "moment";
 import "moment/locale/es";
 import "moment/locale/es-mx";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { Platform } from "react-native";
 
 import { JBAuthProvider, JBAuthStatus } from "../../auth";
-import { getLastCreatedJBExpoConfig, JBUIConfig, resolveJBUIColor } from "../../config";
+import {
+  getLastCreatedJBExpoConfig,
+  JBAppConfig,
+  JBAppStage,
+  JBAppStageLowercase,
+  JBStripeConfig,
+  JBStripePublishableKeyConfig,
+  JBUIConfig,
+  resolveJBUIColor,
+} from "../../config";
 import { useColorScheme } from "../../hooks";
 import { useAppConfigStore, useAuthStore } from "../../runtime";
 import { getColor } from "../../utils";
@@ -19,6 +28,16 @@ import {
   JBExpoAppProvidersProps,
 } from "./JBExpoAppProviders";
 
+type StripeProviderProps = {
+  publishableKey: string;
+  merchantIdentifier?: string;
+  urlScheme?: string;
+  setReturnUrlSchemeOnAndroid?: boolean;
+  children?: React.ReactNode;
+};
+
+type StripeProviderComponentType = React.ComponentType<StripeProviderProps>;
+
 type JBExpoRootLayoutProps = {
   authClient: any;
   appMeta?: JBExpoAppProvidersProps["appMeta"];
@@ -26,6 +45,7 @@ type JBExpoRootLayoutProps = {
   uiConfig?: JBUIConfig;
   withStatusBar?: boolean;
   statusBarStyle?: StatusBarStyle;
+  stripeConfig?: JBStripeConfig;
   manageNativeSplash?: boolean;
   onAuthStateChanged?: (state: {
     authStatus: JBAuthStatus;
@@ -37,6 +57,74 @@ type JBExpoRootLayoutProps = {
   JBExpoAppProvidersProps,
   "children" | "colorMode" | "appMeta" | "navigationTheme"
 >;
+
+const resolveStripePublishableKeyByStage = (
+  publishableKey: JBStripePublishableKeyConfig | undefined,
+  stage: JBAppStage,
+): string => {
+  if (!publishableKey) return "";
+  if (typeof publishableKey === "string") {
+    return publishableKey.trim();
+  }
+
+  const stageUpper = stage;
+  const stageLower = stage.toLowerCase() as JBAppStageLowercase;
+  const resolvedKey =
+    publishableKey[stageUpper] ??
+    publishableKey[stageLower] ??
+    publishableKey.QA ??
+    publishableKey.qa ??
+    publishableKey.DEVELOPMENT ??
+    publishableKey.development ??
+    publishableKey.LOCAL ??
+    publishableKey.local ??
+    publishableKey.PRODUCTION ??
+    publishableKey.production;
+
+  return String(resolvedKey ?? "").trim();
+};
+
+const resolveStripeRuntimeConfig = (
+  baseConfig: JBAppConfig,
+  stripeOverrides?: JBStripeConfig,
+) => {
+  const fromBase = baseConfig?.stripe;
+  const enabled = Boolean(
+    stripeOverrides?.enabled ??
+      stripeOverrides?.useStripe ??
+      fromBase?.enabled ??
+      fromBase?.useStripe,
+  );
+
+  const envKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim() ?? "";
+  const stage = (baseConfig?.stage ?? "LOCAL") as JBAppStage;
+  const publishableKey =
+    envKey ||
+    resolveStripePublishableKeyByStage(
+      stripeOverrides?.publishableKey ?? fromBase?.publishableKey,
+      stage,
+    );
+
+  return {
+    enabled,
+    publishableKey,
+    merchantIdentifier:
+      stripeOverrides?.merchantIdentifier ?? fromBase?.merchantIdentifier,
+    urlScheme: stripeOverrides?.urlScheme ?? fromBase?.urlScheme,
+    setReturnUrlSchemeOnAndroid:
+      stripeOverrides?.setReturnUrlSchemeOnAndroid ??
+      fromBase?.setReturnUrlSchemeOnAndroid,
+  };
+};
+
+const getOptionalStripeProvider = (): StripeProviderComponentType | null => {
+  try {
+    const stripeModule = require("@stripe/stripe-react-native");
+    return (stripeModule?.StripeProvider ?? null) as StripeProviderComponentType | null;
+  } catch {
+    return null;
+  }
+};
 
 const resolveNavigationTheme = (
   mode: "light" | "dark",
@@ -103,6 +191,7 @@ export function JBExpoRootLayout({
   uiConfig,
   withStatusBar = true,
   statusBarStyle = "light",
+  stripeConfig,
   manageNativeSplash = true,
   onAuthStateChanged,
   underMaintenanceFallback,
@@ -110,6 +199,11 @@ export function JBExpoRootLayout({
   ...providersProps
 }: JBExpoRootLayoutProps) {
   const baseConfig = getLastCreatedJBExpoConfig();
+  const StripeProvider = useMemo(() => getOptionalStripeProvider(), []);
+  const resolvedStripeConfig = useMemo(
+    () => resolveStripeRuntimeConfig(baseConfig, stripeConfig),
+    [baseConfig, stripeConfig],
+  );
   const scheme = useColorScheme();
   const effectiveMode = colorMode ?? scheme ?? "dark";
   const resolvedMode =
@@ -210,6 +304,54 @@ export function JBExpoRootLayout({
     return null;
   }
 
+  const rootContent = appConfig?.underMaintenance ? (
+    underMaintenanceFallback ?? <JBUnderMaintenanceScreen />
+  ) : (
+    <JBAuthProvider
+      authClient={authClient}
+      onAuthStateChanged={handleAuthStateChanged}
+    >
+      {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}
+
+      <Stack
+        screenOptions={{
+          headerTintColor: resolvedHeaderTintColor ?? "white",
+          headerBackTitle: "Volver",
+          headerStyle: {
+            backgroundColor: resolvedHeaderBackgroundColor ?? primaryColor[500],
+          },
+        }}
+      >
+        <Stack.Screen
+          name="(app)"
+          options={{ headerShown: false, animation: "none" }}
+        />
+        <Stack.Screen
+          name="(auth)"
+          options={{ headerShown: false, animation: "none" }}
+        />
+      </Stack>
+    </JBAuthProvider>
+  );
+
+  const contentWithOptionalStripe =
+    resolvedStripeConfig.enabled &&
+    resolvedStripeConfig.publishableKey &&
+    StripeProvider ? (
+      <StripeProvider
+        publishableKey={resolvedStripeConfig.publishableKey}
+        merchantIdentifier={resolvedStripeConfig.merchantIdentifier}
+        urlScheme={resolvedStripeConfig.urlScheme}
+        setReturnUrlSchemeOnAndroid={
+          resolvedStripeConfig.setReturnUrlSchemeOnAndroid
+        }
+      >
+        {rootContent}
+      </StripeProvider>
+    ) : (
+      rootContent
+    );
+
   return (
     <JBExpoAppProviders
       {...providersProps}
@@ -223,35 +365,7 @@ export function JBExpoRootLayout({
         ...queryClientOptions,
       }}
     >
-      {appConfig?.underMaintenance ? (
-        (underMaintenanceFallback ?? <JBUnderMaintenanceScreen />)
-      ) : (
-        <JBAuthProvider
-          authClient={authClient}
-          onAuthStateChanged={handleAuthStateChanged}
-        >
-          {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}
-
-          <Stack
-            screenOptions={{
-              headerTintColor: resolvedHeaderTintColor ?? "white",
-              headerBackTitle: "Volver",
-              headerStyle: {
-                backgroundColor: resolvedHeaderBackgroundColor ?? primaryColor[500],
-              },
-            }}
-          >
-            <Stack.Screen
-              name="(app)"
-              options={{ headerShown: false, animation: "none" }}
-            />
-            <Stack.Screen
-              name="(auth)"
-              options={{ headerShown: false, animation: "none" }}
-            />
-          </Stack>
-        </JBAuthProvider>
-      )}
+      {contentWithOptionalStripe}
     </JBExpoAppProviders>
   );
 }

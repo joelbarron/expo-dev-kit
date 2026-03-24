@@ -20,6 +20,19 @@ export const defaultJBExpoConfig: JBAppConfig = {
       LOCAL: "http://localhost:8000",
     },
   },
+  stripe: {
+    enabled: false,
+    useStripe: false,
+    publishableKey: {
+      PRODUCTION: "",
+      QA: "",
+      DEVELOPMENT: "",
+      LOCAL: "",
+    },
+    merchantIdentifier: "",
+    urlScheme: "",
+    setReturnUrlSchemeOnAndroid: false,
+  },
   auth: {
     apiBasePath: "/authentication",
     showDebugSocial: false,

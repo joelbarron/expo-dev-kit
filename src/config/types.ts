@@ -4,6 +4,20 @@ export type JBAppStageLowercase = Lowercase<JBAppStage>;
 export type JBApiHostConfig = Partial<Record<JBAppStage, string>> &
   Partial<Record<JBAppStageLowercase, string>>;
 
+export type JBStripePublishableKeyConfig =
+  | string
+  | (Partial<Record<JBAppStage, string>> &
+      Partial<Record<JBAppStageLowercase, string>>);
+
+export type JBStripeConfig = {
+  enabled?: boolean;
+  useStripe?: boolean;
+  publishableKey?: JBStripePublishableKeyConfig;
+  merchantIdentifier?: string;
+  urlScheme?: string;
+  setReturnUrlSchemeOnAndroid?: boolean;
+};
+
 export type JBSocialProviderName = 'google' | 'facebook' | 'apple';
 export type JBSocialAuthMode = 'native' | 'expo';
 export type JBSocialFallbackMode = 'expo' | 'none';
@@ -169,6 +183,7 @@ export type JBAppConfig = {
     version: string;
     host: JBApiHostConfig;
   };
+  stripe?: JBStripeConfig;
   auth: {
     apiBasePath: string;
     showDebugSocial: boolean;

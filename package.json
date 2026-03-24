@@ -92,6 +92,12 @@
       "import": "./dist/utils/index.js",
       "default": "./dist/utils/index.js"
     },
+    "./payments": {
+      "types": "./dist/payments/index.d.ts",
+      "react-native": "./src/payments/index.ts",
+      "import": "./dist/payments/index.js",
+      "default": "./dist/payments/index.js"
+    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "react-native": "./src/ui/index.ts",
