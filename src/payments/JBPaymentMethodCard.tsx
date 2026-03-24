@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { memo, useCallback } from "react";
 import { Pressable } from "react-native";
 
@@ -16,6 +17,9 @@ export type JBPaymentMethodCardProps = {
   selectable?: boolean;
   className?: string;
   onPress?: (id: JBPaymentMethodId, method: JBPaymentMethod) => void;
+  showDeleteAction?: boolean;
+  onDeletePress?: (method: JBPaymentMethod) => void;
+  deleteDisabled?: boolean;
 };
 
 const getBrand = (method: JBPaymentMethod): string =>
@@ -60,6 +64,9 @@ export const JBPaymentMethodCard = memo(
     selectable = true,
     className = "",
     onPress,
+    showDeleteAction = false,
+    onDeletePress,
+    deleteDisabled = false,
   }: JBPaymentMethodCardProps) => {
     const brand = getBrand(method);
     const last4 = getLast4(method);
@@ -71,6 +78,13 @@ export const JBPaymentMethodCard = memo(
       if (disabled || !onPress) return;
       onPress(method.id, method);
     }, [disabled, method, onPress]);
+
+    const handleDeletePress = useCallback(() => {
+      if (disabled || deleteDisabled || !onDeletePress) return;
+      onDeletePress(method);
+    }, [deleteDisabled, disabled, method, onDeletePress]);
+
+    const canShowDelete = !selectable && showDeleteAction && Boolean(onDeletePress);
 
     return (
       <Pressable
@@ -86,7 +100,7 @@ export const JBPaymentMethodCard = memo(
               : "border-outline-200 dark:border-outline-700"
           } ${disabled ? "opacity-60" : ""} ${className}`}
         >
-          <HStack className="items-start justify-between" space="sm">
+          <HStack className="items-center justify-between" space="sm">
             <HStack className="flex-1 items-center" space="sm">
               <Box className="h-10 w-10 items-center justify-center rounded-xl bg-black/5 dark:bg-white/10">
                 <CardIssuer
@@ -111,7 +125,30 @@ export const JBPaymentMethodCard = memo(
                 </Text>
               </VStack>
             </HStack>
-            {selectable ? <RadioIndicator selected={selected} /> : null}
+            <VStack className="items-end justify-center" space="xs">
+              {selectable ? <RadioIndicator selected={selected} /> : null}
+              {canShowDelete ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Eliminar método de pago"
+                  onPress={(event) => {
+                    event.stopPropagation?.();
+                    handleDeletePress();
+                  }}
+                  disabled={disabled || deleteDisabled}
+                >
+                  <Box
+                    className={`h-8 w-8 items-center justify-center rounded-full border ${
+                      disabled || deleteDisabled
+                        ? "border-outline-200 bg-background-100 opacity-60 dark:border-outline-700 dark:bg-background-200"
+                        : "border-error-300 bg-error-50 dark:border-error-800 dark:bg-error-950/30"
+                    }`}
+                  >
+                    <MaterialCommunityIcons name="trash-can-outline" size={16} color="#ef4444" />
+                  </Box>
+                </Pressable>
+              ) : null}
+            </VStack>
           </HStack>
 
           <Text className="mt-2 text-xs text-typography-600 dark:text-typography-400">

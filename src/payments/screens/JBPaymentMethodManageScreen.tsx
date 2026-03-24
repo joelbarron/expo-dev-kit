@@ -43,20 +43,21 @@ export type JBPaymentMethodManageScreenProps = {
 
 export function JBPaymentMethodManageScreen({
   title,
-  description = "Agrega una tarjeta para pagar de forma rapida y segura.",
+  description = "Agrega una tarjeta para pagar de forma rápida y segura.",
   queryKeySetupIntent,
   loadSetupIntent,
   confirmSetupIntent,
   savePaymentMethod,
   onSaved,
   onCancel,
-  saveButtonText = "Guardar metodo",
+  saveButtonText = "Guardar método",
   savingButtonText = "Guardando...",
   cancelButtonText = "Cancelar",
   renderCardInput,
 }: JBPaymentMethodManageScreenProps) {
   void title;
   const [cardDetails, setCardDetails] = useState<{ complete?: boolean } | null>(null);
+  const showCancel = Boolean(onCancel) && Boolean(cancelButtonText?.trim());
 
   const setupIntentQueryKey = useMemo(
     () => queryKeySetupIntent ?? ["jb-payment-methods", "setup-intent"],
@@ -78,14 +79,14 @@ export function JBPaymentMethodManageScreen({
     onSuccess: (result) => {
       Toast.show({
         type: "success",
-        text1: "Metodo guardado",
+        text1: "Método guardado",
       });
       onSaved?.(result);
     },
     onError: () => {
       Toast.show({
         type: "error",
-        text1: "No se pudo guardar el metodo",
+        text1: "No se pudo guardar el método",
       });
     },
   });
@@ -135,13 +136,15 @@ export function JBPaymentMethodManageScreen({
                 iconPosition="start"
                 onPress={() => refetchSetupIntent()}
               />
-              <JBFormButton
-                text={cancelButtonText}
-                variant="link"
-                className="px-0"
-                textClassName={FOOTER_CANCEL_TEXT_CLASS_NAME}
-                onPress={onCancel}
-              />
+              {showCancel ? (
+                <JBFormButton
+                  text={cancelButtonText}
+                  variant="link"
+                  className="px-0"
+                  textClassName={FOOTER_CANCEL_TEXT_CLASS_NAME}
+                  onPress={onCancel}
+                />
+              ) : null}
             </VStack>
           ) : undefined
         }
@@ -155,7 +158,7 @@ export function JBPaymentMethodManageScreen({
           ) : (
             <Card className="px-4 py-4">
               <Text className="text-typography-700 dark:text-typography-300">
-                No se pudo inicializar el metodo de pago.
+                No se pudo inicializar el método de pago.
               </Text>
             </Card>
           )}
@@ -176,13 +179,15 @@ export function JBPaymentMethodManageScreen({
             isDisabled={isSavingMethod}
             onPress={handleSave}
           />
-          <JBFormButton
-            text={cancelButtonText}
-            variant="link"
-            className="px-0"
-            textClassName={FOOTER_CANCEL_TEXT_CLASS_NAME}
-            onPress={onCancel}
-          />
+          {showCancel ? (
+            <JBFormButton
+              text={cancelButtonText}
+              variant="link"
+              className="px-0"
+              textClassName={FOOTER_CANCEL_TEXT_CLASS_NAME}
+              onPress={onCancel}
+            />
+          ) : null}
         </VStack>
       }
       footerClassName="px-5 py-4"
