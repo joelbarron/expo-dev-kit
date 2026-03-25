@@ -5,11 +5,17 @@ import { useAppConfigStore } from '../runtime';
 import { getLastCreatedJBExpoConfig } from '../config';
 import { loginDeviceInfo } from '../utils/device-info';
 import {
+  AccountSocialAccountsResponse,
   AccountConfirmationPayload,
   AccountConfirmationResendPayload,
   AccountUpdatePayload,
+  AvailabilityResponse,
   ApiDetailResponse,
+  ContactVerificationRequestPayload,
+  ContactVerificationVerifyPayload,
   CreateProfilePayload,
+  DeleteAccountPayload,
+  EmailAvailabilityPayload,
   LinkSocialPayload,
   LoginBasicPayload,
   LoginSocialPayload,
@@ -17,12 +23,15 @@ import {
   PasswordChangePayload,
   PasswordResetConfirmPayload,
   PasswordResetRequestPayload,
+  PhoneAvailabilityPayload,
   ProfilesResponse,
   RegisterPayload,
   RequestOtpPayload,
   SwitchProfilePayload,
+  UpdateProfilePayload,
   UpdateProfilePicturePayload,
   UnlinkSocialPayload,
+  UsernameAvailabilityPayload,
   VerifyOtpPayload
 } from './types';
 
@@ -57,9 +66,19 @@ export type JBAuthContextValue = {
   confirmPasswordReset: (payload: PasswordResetConfirmPayload) => Promise<Record<string, unknown>>;
   changePassword: (payload: PasswordChangePayload) => Promise<Record<string, unknown>>;
   getProfiles: () => Promise<ProfilesResponse>;
+  getProfileById: (profileId: number | string) => Promise<Record<string, unknown>>;
   createProfile: (payload: CreateProfilePayload) => Promise<Record<string, unknown>>;
+  updateProfile: (profileId: number | string, payload: UpdateProfilePayload) => Promise<Record<string, unknown>>;
+  deleteProfile: (profileId: number | string) => Promise<Record<string, unknown>>;
   updateProfilePicture: (payload: UpdateProfilePicturePayload) => Promise<Record<string, unknown>>;
   updateAccount: (payload: AccountUpdatePayload, method?: 'PATCH' | 'PUT') => Promise<Record<string, unknown>>;
+  checkEmailAvailability: (payload: EmailAvailabilityPayload) => Promise<AvailabilityResponse>;
+  checkPhoneAvailability: (payload: PhoneAvailabilityPayload) => Promise<AvailabilityResponse>;
+  checkUsernameAvailability: (payload: UsernameAvailabilityPayload) => Promise<AvailabilityResponse>;
+  requestContactVerification: (payload: ContactVerificationRequestPayload) => Promise<Record<string, unknown>>;
+  verifyContactVerification: (payload: ContactVerificationVerifyPayload) => Promise<Record<string, unknown>>;
+  getAccountSocialAccounts: () => Promise<AccountSocialAccountsResponse>;
+  deleteAccount: (payload: DeleteAccountPayload) => Promise<unknown>;
   getMe: () => Promise<unknown>;
   switchProfile: (payload: SwitchProfilePayload) => Promise<unknown>;
   signOut: () => Promise<void>;
@@ -284,13 +303,53 @@ export function JBAuthProvider(props: JBAuthProviderProps) {
   );
 
   const getProfiles = useCallback(() => authClient.getProfiles(), [authClient]);
+  const getProfileById = useCallback(
+    (profileId: number | string) => authClient.getProfileById(profileId),
+    [authClient]
+  );
   const createProfile = useCallback((payload: CreateProfilePayload) => authClient.createProfile(payload), [authClient]);
+  const updateProfile = useCallback(
+    (profileId: number | string, payload: UpdateProfilePayload) => authClient.updateProfile(profileId, payload),
+    [authClient]
+  );
+  const deleteProfile = useCallback(
+    (profileId: number | string) => authClient.deleteProfile(profileId),
+    [authClient]
+  );
   const updateProfilePicture = useCallback(
     (payload: UpdateProfilePicturePayload) => authClient.updateProfilePicture(payload),
     [authClient]
   );
   const updateAccount = useCallback(
     (payload: AccountUpdatePayload, method?: 'PATCH' | 'PUT') => authClient.updateAccount(payload, method),
+    [authClient]
+  );
+  const checkEmailAvailability = useCallback(
+    (payload: EmailAvailabilityPayload) => authClient.checkEmailAvailability(payload),
+    [authClient]
+  );
+  const checkPhoneAvailability = useCallback(
+    (payload: PhoneAvailabilityPayload) => authClient.checkPhoneAvailability(payload),
+    [authClient]
+  );
+  const checkUsernameAvailability = useCallback(
+    (payload: UsernameAvailabilityPayload) => authClient.checkUsernameAvailability(payload),
+    [authClient]
+  );
+  const requestContactVerification = useCallback(
+    (payload: ContactVerificationRequestPayload) => authClient.requestContactVerification(payload),
+    [authClient]
+  );
+  const verifyContactVerification = useCallback(
+    (payload: ContactVerificationVerifyPayload) => authClient.verifyContactVerification(payload),
+    [authClient]
+  );
+  const getAccountSocialAccounts = useCallback(
+    () => authClient.getAccountSocialAccounts(),
+    [authClient]
+  );
+  const deleteAccount = useCallback(
+    (payload: DeleteAccountPayload) => authClient.deleteAccount(payload),
     [authClient]
   );
   const getMe = useCallback(async () => {
@@ -366,9 +425,19 @@ export function JBAuthProvider(props: JBAuthProviderProps) {
       confirmPasswordReset,
       changePassword,
       getProfiles,
+      getProfileById,
       createProfile,
+      updateProfile,
+      deleteProfile,
       updateProfilePicture,
       updateAccount,
+      checkEmailAvailability,
+      checkPhoneAvailability,
+      checkUsernameAvailability,
+      requestContactVerification,
+      verifyContactVerification,
+      getAccountSocialAccounts,
+      deleteAccount,
       getMe,
       switchProfile,
       signOut,
@@ -391,9 +460,19 @@ export function JBAuthProvider(props: JBAuthProviderProps) {
       confirmPasswordReset,
       changePassword,
       getProfiles,
+      getProfileById,
       createProfile,
+      updateProfile,
+      deleteProfile,
       updateProfilePicture,
       updateAccount,
+      checkEmailAvailability,
+      checkPhoneAvailability,
+      checkUsernameAvailability,
+      requestContactVerification,
+      verifyContactVerification,
+      getAccountSocialAccounts,
+      deleteAccount,
       getMe,
       switchProfile,
       signOut,

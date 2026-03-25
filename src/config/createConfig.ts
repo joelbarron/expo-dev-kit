@@ -1,6 +1,9 @@
 import { defaultJBExpoConfig } from './defaults';
 import { deepMerge } from './merge';
 import {
+  JBAuthAccountConfig,
+  JBAuthRequiredProfileFields,
+  JBAuthUserDebugConfig,
   JBApiHostConfig,
   JBAppConfig,
   JBAppConfigOverrides,
@@ -124,4 +127,52 @@ export const getApiUrl = (config: JBAppConfig): string => {
 
 export const getAuthBasePath = (config: JBAppConfig): string => {
   return config.auth?.apiBasePath || '/authentication';
+};
+
+export const getAuthRequiredProfileFields = (
+  accountConfig?: Partial<JBAuthAccountConfig>
+): JBAuthRequiredProfileFields => {
+  const defaultRequiredProfileFields = defaultJBExpoConfig.auth.account.requiredProfileFields;
+  const customRequiredProfileFields = (accountConfig?.requiredProfileFields ??
+    {}) as Partial<JBAuthRequiredProfileFields>;
+
+  return {
+    ...defaultRequiredProfileFields,
+    ...customRequiredProfileFields
+  };
+};
+
+export const getAuthAccountConfig = (config: JBAppConfig): JBAuthAccountConfig => {
+  const accountConfig = config.auth?.account ?? defaultJBExpoConfig.auth.account;
+  const requiredProfileFields = getAuthRequiredProfileFields(accountConfig);
+
+  return {
+    ...defaultJBExpoConfig.auth.account,
+    ...accountConfig,
+    requiredProfileFields,
+    menu: {
+      ...defaultJBExpoConfig.auth.account.menu,
+      ...(accountConfig.menu ?? {}),
+      overrides: {
+        ...(defaultJBExpoConfig.auth.account.menu.overrides ?? {}),
+        ...(accountConfig.menu?.overrides ?? {})
+      },
+      confirmations: {
+        ...(defaultJBExpoConfig.auth.account.menu.confirmations ?? {}),
+        ...(accountConfig.menu?.confirmations ?? {})
+      }
+    }
+  };
+};
+
+export const getAuthUserDebugConfig = (config: JBAppConfig): JBAuthUserDebugConfig => {
+  const userDebug = config.auth?.userDebug ?? defaultJBExpoConfig.auth.userDebug;
+  return {
+    ...defaultJBExpoConfig.auth.userDebug,
+    ...(userDebug ?? {}),
+    signUp: {
+      ...(defaultJBExpoConfig.auth.userDebug.signUp ?? {}),
+      ...(userDebug?.signUp ?? {})
+    }
+  };
 };

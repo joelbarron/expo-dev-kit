@@ -13,11 +13,11 @@ type JBUserAccountActionsProps = {
 
 const ActionRow = ({ title, subtitle, href }: { title: string; subtitle: string; href: string }) => (
   <Link href={href as any} asChild>
-    <TouchableOpacity>
-      <Box className="rounded-2xl border border-outline-200 bg-background-100 px-4 py-4">
+    <TouchableOpacity activeOpacity={0.9}>
+      <Box className="rounded-2xl bg-background-150 px-4 py-4 dark:bg-background-200">
         <VStack space="xs">
-          <Text bold size="md" className="text-white">{title}</Text>
-          <Text size="sm" className="text-typography-300">{subtitle}</Text>
+          <Text bold size="md" className="text-typography-900 dark:text-typography-50">{title}</Text>
+          <Text size="sm" className="text-typography-500 dark:text-typography-300">{subtitle}</Text>
         </VStack>
       </Box>
     </TouchableOpacity>
@@ -38,7 +38,7 @@ export const JBUserAccountActions = ({
   return (
     <VStack space="md" className={className}>
       <HStack className="items-center justify-between">
-        <Text bold size="lg" className="text-white">{title}</Text>
+        <Text bold size="lg" className="text-typography-900 dark:text-typography-50">{title}</Text>
       </HStack>
 
       {capabilities.canSeeProfiles ? (

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
-import { getLastCreatedJBExpoConfig } from '../../../config';
-import { JBAuthProfileRoleOption, JBAuthUserSettingsConfig } from '../../../config/types';
+import { getAuthAccountConfig, getLastCreatedJBExpoConfig } from '../../../config';
+import { JBAuthAccountConfig, JBAuthProfileRoleOption, JBAuthUserSettingsConfig } from '../../../config/types';
 import { useAppConfigStore, useAuthStore } from '../../../runtime';
 
 const pickBoolean = (value: unknown, fallback: boolean) =>
@@ -50,6 +50,7 @@ const mergeUserSettings = (
 
 export type JBUserAccountCapabilities = {
   config: JBAuthUserSettingsConfig;
+  accountConfig: JBAuthAccountConfig;
   roleOptions: JBAuthProfileRoleOption[];
   showAccountSection: boolean;
   canSeeProfiles: boolean;
@@ -58,6 +59,8 @@ export type JBUserAccountCapabilities = {
   canChangePassword: boolean;
   canChangePhoto: boolean;
   canEditPersonalData: boolean;
+  canDeleteAccount: boolean;
+  canEditDefaultProfile: boolean;
   profilesCount: number;
 };
 
@@ -69,10 +72,19 @@ export const useJBUserAccountCapabilities = (): JBUserAccountCapabilities => {
   const nonDefaultProfiles = useAuthStore((state: any) => state?.profiles);
 
   return useMemo(() => {
+    const mergedConfig = {
+      ...baseConfig,
+      auth: {
+        ...baseConfig.auth,
+        ...(appConfig?.auth ?? {}),
+      },
+    } as any;
+
     const mergedUserSettings = mergeUserSettings(
       baseConfig.auth.userSettings,
       appConfig?.auth?.userSettings
     );
+    const accountConfig = getAuthAccountConfig(mergedConfig);
 
     const roleOptions = (appConfig?.auth?.profileRoles ?? baseConfig.auth.profileRoles ?? []) as JBAuthProfileRoleOption[];
     const profilesList = [defaultProfile, activeProfile, ...(Array.isArray(nonDefaultProfiles) ? nonDefaultProfiles : [])]
@@ -90,7 +102,10 @@ export const useJBUserAccountCapabilities = (): JBUserAccountCapabilities => {
       }, []);
 
     const profilesCount = profilesList.length;
-    const canSeeProfiles = mergedUserSettings.enabled && mergedUserSettings.screens.profiles.enabled;
+    const canSeeProfiles =
+      mergedUserSettings.enabled &&
+      mergedUserSettings.screens.profiles.enabled &&
+      accountConfig.allowProfileManagement;
     const canCreateProfile = canSeeProfiles && mergedUserSettings.screens.profiles.allowCreate;
     const canSwitchProfiles =
       canSeeProfiles &&
@@ -98,20 +113,31 @@ export const useJBUserAccountCapabilities = (): JBUserAccountCapabilities => {
       profilesCount > 1;
 
     const canChangePassword = mergedUserSettings.enabled && mergedUserSettings.screens.changePassword.enabled;
-    const canChangePhoto = mergedUserSettings.enabled && mergedUserSettings.screens.photo.enabled;
-    const canEditPersonalData = mergedUserSettings.enabled && mergedUserSettings.screens.personalData.enabled;
+    const canChangePhoto =
+      mergedUserSettings.enabled &&
+      mergedUserSettings.screens.photo.enabled &&
+      accountConfig.allowProfilePictureChange;
+    const canEditPersonalData =
+      mergedUserSettings.enabled &&
+      mergedUserSettings.screens.personalData.enabled &&
+      accountConfig.allowAccountEdit;
+    const canDeleteAccount = accountConfig.allowDeleteAccount;
+    const canEditDefaultProfile = accountConfig.allowDefaultProfileEdit;
 
     return {
       config: mergedUserSettings,
+      accountConfig,
       roleOptions,
       showAccountSection:
-        canSeeProfiles || canChangePassword || canChangePhoto || canEditPersonalData,
+        canSeeProfiles || canChangePassword || canChangePhoto || canEditPersonalData || canDeleteAccount,
       canSeeProfiles,
       canSwitchProfiles,
       canCreateProfile,
       canChangePassword,
       canChangePhoto,
       canEditPersonalData,
+      canDeleteAccount,
+      canEditDefaultProfile,
       profilesCount,
     };
   }, [activeProfile, appConfig, baseConfig, defaultProfile, nonDefaultProfiles]);

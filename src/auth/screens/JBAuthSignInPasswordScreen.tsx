@@ -19,8 +19,9 @@ export function JBAuthSignInPasswordScreen(props: JBAuthSignInPasswordScreenProp
   const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const baseConfig = getLastCreatedJBExpoConfig();
   const isConfigDebug = Boolean(appConfig?.debug ?? baseConfig.debug);
-  const debugLogin = appConfig?.userDebug?.login ?? baseConfig.userDebug?.login ?? "";
-  const debugPassword = appConfig?.userDebug?.password ?? baseConfig.userDebug?.password ?? "";
+  const debugLogin = appConfig?.auth?.userDebug?.login ?? baseConfig.auth.userDebug?.login ?? "";
+  const debugPassword =
+    appConfig?.auth?.userDebug?.password ?? baseConfig.auth.userDebug?.password ?? "";
   const signInDefaultValues =
     isConfigDebug && (debugLogin || debugPassword)
       ? { login: debugLogin, password: debugPassword }

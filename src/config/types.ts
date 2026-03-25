@@ -52,6 +52,16 @@ export type JBAuthProfileRoleOption = {
   allowSignup?: boolean;
 };
 
+export type JBAuthProfileFieldKey =
+  | 'firstName'
+  | 'lastName1'
+  | 'lastName2'
+  | 'birthday'
+  | 'gender'
+  | 'label';
+
+export type JBAuthRequiredProfileFields = Record<JBAuthProfileFieldKey, boolean>;
+
 export type JBLottieSource = Record<string, unknown> | string | { uri: string };
 
 export type JBAuthVerifyEmailVisualConfig = {
@@ -91,6 +101,84 @@ export type JBAuthUserSettingsConfig = {
     personalData: {
       enabled: boolean;
     };
+  };
+};
+
+export type JBAuthAccountMenuItemId =
+  | 'security'
+  | 'paymentMethods'
+  | 'settings'
+  | 'signOut'
+  | 'notifications';
+
+export type JBAuthDialogActionColor =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'positive'
+  | 'negative';
+
+export type JBAuthAccountMenuItemConfirmation = {
+  title?: string;
+  content?: string;
+  agreeText?: string;
+  agreeColor?: JBAuthDialogActionColor;
+  disagreeText?: string;
+  disagreeColor?: JBAuthDialogActionColor;
+};
+
+export type JBAuthAccountMenuItemOverride = {
+  title?: string;
+  subtitle?: string;
+  iconName?: string;
+  href?: string;
+  visible?: boolean;
+  confirmation?: JBAuthAccountMenuItemConfirmation;
+};
+
+export type JBAuthAccountMenuConfig = {
+  include?: JBAuthAccountMenuItemId[];
+  order?: JBAuthAccountMenuItemId[];
+  overrides?: Partial<Record<JBAuthAccountMenuItemId, JBAuthAccountMenuItemOverride>>;
+  confirmations?: Partial<Record<JBAuthAccountMenuItemId, JBAuthAccountMenuItemConfirmation>>;
+};
+
+export type JBAuthAccountProfileMirrorConfig = {
+  enabled: boolean;
+  rolePairs: Array<[string, string]>;
+  syncFields: string[];
+  autocureOnAuthEvents: boolean;
+};
+
+export type JBAuthAccountConfig = {
+  allowProfileManagement: boolean;
+  enableContactVerification: boolean;
+  allowDeleteAccount: boolean;
+  allowAccountEdit: boolean;
+  allowDefaultProfileEdit: boolean;
+  allowProfilePictureChange: boolean;
+  ensureProfileCompletion: boolean;
+  profileCompletionPath?: string;
+  requiredProfileFields: JBAuthRequiredProfileFields;
+  subscriptionUrl?: string;
+  menu: JBAuthAccountMenuConfig;
+  profileMirror: JBAuthAccountProfileMirrorConfig;
+};
+
+export type JBAuthUserDebugConfig = {
+  login: string;
+  password: string;
+  signUp?: {
+    firstName?: string;
+    lastName1?: string;
+    lastName2?: string;
+    email?: string;
+    birthday?: string;
+    gender?: string;
+    role?: string;
+    password?: string;
+    passwordConfirm?: string;
+    acceptTermsConditions?: boolean;
   };
 };
 
@@ -194,27 +282,13 @@ export type JBAppConfig = {
       verifyEmail: JBAuthVerifyEmailVisualConfig;
     };
     userSettings: JBAuthUserSettingsConfig;
+    account: JBAuthAccountConfig;
     profileRoles: JBAuthProfileRoleOption[];
     defaultProfileRole?: string;
+    userDebug: JBAuthUserDebugConfig;
     social: JBAuthSocialConfig;
   };
   ui: JBUIConfig;
-  userDebug: {
-    login: string;
-    password: string;
-    signUp?: {
-      firstName?: string;
-      lastName1?: string;
-      lastName2?: string;
-      email?: string;
-      birthday?: string;
-      gender?: string;
-      role?: string;
-      password?: string;
-      passwordConfirm?: string;
-      acceptTermsConditions?: boolean;
-    };
-  };
 };
 
 type JBDeepPartial<T> = T extends Array<infer U>

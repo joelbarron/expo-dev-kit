@@ -5,3 +5,6 @@ export * from './JBUserCreateProfileScreen';
 export * from './JBUserChangePasswordScreen';
 export * from './JBUserProfilePhotoScreen';
 export * from './JBUserPersonalDataScreen';
+export * from './JBUserAccountContactScreen';
+export * from './JBUserSocialAccountsScreen';
+export * from './JBUserDeleteAccountScreen';

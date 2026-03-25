@@ -76,8 +76,61 @@ export const defaultJBExpoConfig: JBAppConfig = {
         },
       },
     },
+    account: {
+      allowProfileManagement: false,
+      enableContactVerification: true,
+      allowDeleteAccount: false,
+      allowAccountEdit: true,
+      allowDefaultProfileEdit: true,
+      allowProfilePictureChange: true,
+      ensureProfileCompletion: false,
+      profileCompletionPath: "/account/complete-profile",
+      requiredProfileFields: {
+        firstName: true,
+        lastName1: true,
+        lastName2: false,
+        birthday: true,
+        gender: true,
+        label: false,
+      },
+      subscriptionUrl: undefined,
+      menu: {
+        include: ["security", "settings", "signOut"],
+        order: ["security", "settings", "signOut"],
+        overrides: {},
+        confirmations: {
+          signOut: {
+            title: "Cerrar sesion",
+            content: "Estas seguro de que deseas cerrar sesion?",
+            agreeText: "Si, cerrar sesion",
+            agreeColor: "primary",
+            disagreeText: "Cancelar",
+            disagreeColor: "negative",
+          },
+        },
+      },
+      profileMirror: {
+        enabled: false,
+        rolePairs: [["HOST", "GUEST"]],
+        syncFields: [
+          "first_name",
+          "last_name_1",
+          "last_name_2",
+          "birthday",
+          "gender",
+          "picture",
+          "label",
+        ],
+        autocureOnAuthEvents: true,
+      },
+    },
     profileRoles: [],
     defaultProfileRole: undefined,
+    userDebug: {
+      login: "",
+      password: "",
+      signUp: {},
+    },
     social: {
       strategy: {
         defaultMode: "expo",
@@ -182,10 +235,5 @@ export const defaultJBExpoConfig: JBAppConfig = {
         dark: "typography.50",
       },
     },
-  },
-  userDebug: {
-    login: "",
-    password: "",
-    signUp: {},
   },
 };

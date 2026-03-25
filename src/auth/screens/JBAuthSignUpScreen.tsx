@@ -52,7 +52,8 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
   const defaultSignUpRole =
     signUpRoleOptions.find((roleOption) => roleOption.value === authConfig?.defaultProfileRole)?.value ??
     signUpRoleOptions[0]?.value;
-  const debugSignUp = appConfig?.userDebug?.signUp ?? baseConfig?.userDebug?.signUp ?? {};
+  const debugSignUp =
+    appConfig?.auth?.userDebug?.signUp ?? baseConfig?.auth?.userDebug?.signUp ?? {};
   const socialConfig = authConfig?.social ?? {};
   const showDebugSocial = Boolean(authConfig?.showDebugSocial ?? false);
   const socialRoleOptions = useMemo<Array<JBSelectOption<string>>>(
