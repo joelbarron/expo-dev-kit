@@ -43,7 +43,7 @@ type CustomFormInputProps = {
   autoCorrect?: boolean;
   forceLowercase?: boolean;
   capitalizeFirstLetter?: boolean;
-  returnKeyType?: "done" | "next" | "go" | "search" | "send";
+  returnKeyType?: "default" | "none" | "done" | "next" | "go" | "search" | "send";
   inputRef?: React.RefObject<TextInput>;
   nextRef?: React.RefObject<TextInput>;
   onSubmitEditing?: () => void;

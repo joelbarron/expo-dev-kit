@@ -2,6 +2,7 @@ import { defaultJBExpoConfig } from './defaults';
 import { deepMerge } from './merge';
 import {
   JBAuthAccountConfig,
+  JBAuthAccountScreensConfig,
   JBAuthRequiredProfileFields,
   JBAuthUserDebugConfig,
   JBApiHostConfig,
@@ -43,6 +44,8 @@ const resolveApiHostByStage = (hostConfig: JBApiHostConfig, stage: JBAppStage): 
 };
 
 const trimTrailingSlashes = (value: string): string => value.replace(/\/+$/, '');
+const pickBoolean = (value: unknown, fallback: boolean) =>
+  typeof value === 'boolean' ? value : fallback;
 const hasAnyGoogleClientId = (providerConfig: {
   clientId?: string;
   iosClientId?: string;
@@ -162,6 +165,68 @@ export const getAuthAccountConfig = (config: JBAppConfig): JBAuthAccountConfig =
         ...(accountConfig.menu?.confirmations ?? {})
       }
     }
+  };
+};
+
+export const getAuthAccountScreensConfig = (
+  config: JBAppConfig
+): JBAuthAccountScreensConfig => {
+  const base = defaultJBExpoConfig.auth.accountScreens;
+  const override = config.auth?.accountScreens;
+
+  return {
+    enabled: pickBoolean(override?.enabled, base.enabled),
+    routing: {
+      homePathAfterProfileSwitch:
+        override?.routing?.homePathAfterProfileSwitch ??
+        base.routing.homePathAfterProfileSwitch,
+    },
+    screens: {
+      profiles: {
+        enabled: pickBoolean(
+          override?.screens?.profiles?.enabled,
+          base.screens.profiles.enabled
+        ),
+        allowSwitch: pickBoolean(
+          override?.screens?.profiles?.allowSwitch,
+          base.screens.profiles.allowSwitch
+        ),
+        allowCreate: pickBoolean(
+          override?.screens?.profiles?.allowCreate,
+          base.screens.profiles.allowCreate
+        ),
+      },
+      changePassword: {
+        enabled: pickBoolean(
+          override?.screens?.changePassword?.enabled,
+          base.screens.changePassword.enabled
+        ),
+      },
+      photo: {
+        enabled: pickBoolean(
+          override?.screens?.photo?.enabled,
+          base.screens.photo.enabled
+        ),
+        crop: {
+          enabled: pickBoolean(
+            override?.screens?.photo?.crop?.enabled,
+            base.screens.photo.crop.enabled
+          ),
+          allowsEditing: pickBoolean(
+            override?.screens?.photo?.crop?.allowsEditing,
+            base.screens.photo.crop.allowsEditing
+          ),
+          aspect:
+            override?.screens?.photo?.crop?.aspect ?? base.screens.photo.crop.aspect,
+        },
+      },
+      personalData: {
+        enabled: pickBoolean(
+          override?.screens?.personalData?.enabled,
+          base.screens.personalData.enabled
+        ),
+      },
+    },
   };
 };
 

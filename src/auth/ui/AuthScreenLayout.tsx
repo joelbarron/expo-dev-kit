@@ -31,6 +31,7 @@ export const AuthScreenLayout = ({
 }: AuthScreenLayoutProps) => {
   const scheme = useColorScheme();
   const background = getColor('background') ?? {};
+  const typography = getColor('typography') ?? {};
   const isDark = scheme === 'dark';
   const baseConfig = getLastCreatedJBExpoConfig();
   const uiConfig = baseConfig?.ui;
@@ -41,6 +42,12 @@ export const AuthScreenLayout = ({
   );
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
+  const titleColor = isDark
+    ? typography.white ?? typography[50] ?? '#f8fafc'
+    : typography.black ?? typography[900] ?? '#0f172a';
+  const subtitleColor = isDark
+    ? typography[300] ?? '#cbd5e1'
+    : typography[500] ?? '#64748b';
 
   const content = (
     <View
@@ -51,8 +58,8 @@ export const AuthScreenLayout = ({
     >
       {title || subtitle ? (
         <View style={styles.header}>
-          {title ? <Text style={[styles.title, { color: isDark ? '#ffffff' : '#27272a' }]}>{title}</Text> : null}
-          {subtitle ? <Text style={[styles.subtitle, { color: '#9ca3af' }]}>{subtitle}</Text> : null}
+          {title ? <Text style={[styles.title, { color: titleColor }]}>{title}</Text> : null}
+          {subtitle ? <Text style={[styles.subtitle, { color: subtitleColor }]}>{subtitle}</Text> : null}
         </View>
       ) : null}
 

@@ -1,4 +1,3 @@
-import React from 'react';
 
 import { Box } from '../../../ui';
 import { AuthScreenLayout } from '../../ui';
@@ -12,9 +11,15 @@ export function JBUserAccountSecurityScreen(props: JBUserAccountSecurityScreenPr
   const { basePath = '/user' } = props;
 
   return (
-    <AuthScreenLayout>
+    <AuthScreenLayout
+      title=""
+      subtitle="Desde aquí puedes administrar tu información personal y los accesos de tu cuenta."
+    >
       <Box className="w-full">
-        <JBUserAccountActions basePath={basePath} />
+        <JBUserAccountActions
+          basePath={basePath}
+          title="Accesos rápidos"
+        />
       </Box>
     </AuthScreenLayout>
   );

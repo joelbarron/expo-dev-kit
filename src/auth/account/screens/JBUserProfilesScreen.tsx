@@ -1,15 +1,18 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'expo-router';
+import { RefreshControl } from 'react-native';
 import Toast from 'react-native-toast-message';
 
+import { JBMainLayout } from '../../../core';
 import { JBFormButton } from '../../../forms';
 import { Box, Text, VStack } from '../../../ui';
 import { parseAuthError } from '../../forms/errorParser';
 import { useJBUserAccountCapabilities, useJBProfiles } from '../hooks';
 import { JBUserProfileList } from '../components';
-import { AuthScreenLayout } from '../../ui';
 
 const getProfileId = (profile: Record<string, any>) => profile?.id ?? profile?.pk;
+const isDefaultProfile = (profile: Record<string, any>) =>
+  Boolean(profile?.default ?? profile?.is_default ?? profile?.isDefault);
 
 export function JBUserProfilesScreen() {
   const router = useRouter();
@@ -17,6 +20,7 @@ export function JBUserProfilesScreen() {
   const {
     profiles,
     activeProfile,
+    defaultProfile,
     isLoadingProfiles,
     isSwitchingProfileId,
     refreshProfiles,
@@ -33,6 +37,22 @@ export function JBUserProfilesScreen() {
       });
     });
   }, [refreshProfiles]);
+
+  const defaultProfileId = useMemo(
+    () => (defaultProfile ? String(getProfileId(defaultProfile as any)) : null),
+    [defaultProfile]
+  );
+  const additionalProfiles = useMemo(
+    () =>
+      profiles.filter((profile) => {
+        const profileId = String(getProfileId(profile) ?? '');
+        if (defaultProfileId && profileId && profileId === defaultProfileId) {
+          return false;
+        }
+        return !isDefaultProfile(profile);
+      }),
+    [defaultProfileId, profiles]
+  );
 
   const handleSwitchProfile = useCallback(
     async (profile: Record<string, any>) => {
@@ -62,77 +82,62 @@ export function JBUserProfilesScreen() {
     [activeProfile, capabilities.config.routing.homePathAfterProfileSwitch, router, switchProfile]
   );
 
+  const handleRefresh = useCallback(() => {
+    void refreshProfiles().catch((error) => {
+      const parsed = parseAuthError(error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error al cargar perfiles',
+        text2: parsed.rootMessage || 'No se pudieron cargar los perfiles.',
+      });
+    });
+  }, [refreshProfiles]);
+  const isRefreshing = isLoadingProfiles && additionalProfiles.length > 0;
+
   return (
-    <AuthScreenLayout
-      footerAdjustableHeight
+    <JBMainLayout
+      scrollable
+      className="flex-1 bg-background-100 dark:bg-background-0"
+      classNameScrollView="flex-1"
+      contentContainerStyle={{ paddingBottom: 120 }}
+      refreshControl={
+        <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+      }
       footerClassName="pt-4 pb-6"
       footer={
         capabilities.canCreateProfile ? (
-          <VStack space="sm" className="pt-4">
+          <VStack space="sm">
             <JBFormButton
-              buttonType="add"
-              text="Crear perfil"
-              onPress={() => router.push('/user/profiles/create' as any)}
-            />
-            <JBFormButton
-              variant="link"
+              variant="solid"
               action="primary"
-              text="Refrescar lista"
-              className="self-center px-0"
-              textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
-              onPress={() => {
-                void refreshProfiles().catch((error) => {
-                  const parsed = parseAuthError(error);
-                  Toast.show({
-                    type: 'error',
-                    text1: 'Error al cargar perfiles',
-                    text2: parsed.rootMessage || 'No se pudieron cargar los perfiles.',
-                  });
-                });
-              }}
+              iconName="account-plus-outline"
+              iconPosition="start"
+              text="Agregar nuevo perfil"
+              onPress={() => router.push('/user/profiles/create' as any)}
             />
           </VStack>
         ) : undefined
       }
     >
-      <Box className="w-full">
+      <Box className="w-full px-6 pt-6">
         <VStack space="md">
-          <Text size="sm" className="text-typography-300">
-            Cambia el perfil activo para actualizar el contexto de la sesión.
+          <Text size="sm" className="text-typography-500 dark:text-typography-300">
+            Gestiona perfiles adicionales de la cuenta y cambia el perfil activo cuando lo necesites.
           </Text>
 
-          {isLoadingProfiles && profiles.length === 0 ? (
+          {isLoadingProfiles && additionalProfiles.length === 0 ? (
             <Text size="md" className="text-typography-200">Cargando perfiles...</Text>
           ) : (
             <JBUserProfileList
-              profiles={profiles as Array<Record<string, any>>}
+              profiles={additionalProfiles as Array<Record<string, any>>}
               activeProfile={activeProfile as any}
               canSwitch={capabilities.canSwitchProfiles}
               switchingProfileId={isSwitchingProfileId}
               onSwitchProfile={handleSwitchProfile}
             />
           )}
-
-          {!capabilities.canCreateProfile ? (
-            <JBFormButton
-              variant="link"
-              action="primary"
-              text="Refrescar lista"
-              className="self-start px-0"
-              onPress={() => {
-                void refreshProfiles().catch((error) => {
-                  const parsed = parseAuthError(error);
-                  Toast.show({
-                    type: 'error',
-                    text1: 'Error al cargar perfiles',
-                    text2: parsed.rootMessage || 'No se pudieron cargar los perfiles.',
-                  });
-                });
-              }}
-            />
-          ) : null}
         </VStack>
       </Box>
-    </AuthScreenLayout>
+    </JBMainLayout>
   );
 }

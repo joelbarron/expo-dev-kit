@@ -76,7 +76,7 @@ export type JBAuthVerifyEmailVisualConfig = {
   animationSize?: number;
 };
 
-export type JBAuthUserSettingsConfig = {
+export type JBAuthAccountScreensConfig = {
   enabled: boolean;
   routing: {
     homePathAfterProfileSwitch: string;
@@ -151,12 +151,8 @@ export type JBAuthAccountProfileMirrorConfig = {
 };
 
 export type JBAuthAccountConfig = {
-  allowProfileManagement: boolean;
-  enableContactVerification: boolean;
-  allowDeleteAccount: boolean;
-  allowAccountEdit: boolean;
   allowDefaultProfileEdit: boolean;
-  allowProfilePictureChange: boolean;
+  enableContactVerification: boolean;
   ensureProfileCompletion: boolean;
   profileCompletionPath?: string;
   requiredProfileFields: JBAuthRequiredProfileFields;
@@ -281,7 +277,7 @@ export type JBAppConfig = {
     visuals: {
       verifyEmail: JBAuthVerifyEmailVisualConfig;
     };
-    userSettings: JBAuthUserSettingsConfig;
+    accountScreens: JBAuthAccountScreensConfig;
     account: JBAuthAccountConfig;
     profileRoles: JBAuthProfileRoleOption[];
     defaultProfileRole?: string;

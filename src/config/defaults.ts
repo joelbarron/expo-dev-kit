@@ -49,7 +49,7 @@ export const defaultJBExpoConfig: JBAppConfig = {
         animationSize: 180,
       },
     },
-    userSettings: {
+    accountScreens: {
       enabled: true,
       routing: {
         homePathAfterProfileSwitch: "/",
@@ -77,12 +77,8 @@ export const defaultJBExpoConfig: JBAppConfig = {
       },
     },
     account: {
-      allowProfileManagement: false,
-      enableContactVerification: true,
-      allowDeleteAccount: false,
-      allowAccountEdit: true,
       allowDefaultProfileEdit: true,
-      allowProfilePictureChange: true,
+      enableContactVerification: true,
       ensureProfileCompletion: false,
       profileCompletionPath: "/account/complete-profile",
       requiredProfileFields: {
