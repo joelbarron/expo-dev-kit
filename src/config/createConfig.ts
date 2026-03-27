@@ -148,10 +148,15 @@ export const getAuthRequiredProfileFields = (
 export const getAuthAccountConfig = (config: JBAppConfig): JBAuthAccountConfig => {
   const accountConfig = config.auth?.account ?? defaultJBExpoConfig.auth.account;
   const requiredProfileFields = getAuthRequiredProfileFields(accountConfig);
+  const profileCompletionMode =
+    accountConfig.profileCompletionMode === "suggested"
+      ? "suggested"
+      : "enforced";
 
   return {
     ...defaultJBExpoConfig.auth.account,
     ...accountConfig,
+    profileCompletionMode,
     requiredProfileFields,
     menu: {
       ...defaultJBExpoConfig.auth.account.menu,

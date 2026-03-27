@@ -80,6 +80,7 @@ export const defaultJBExpoConfig: JBAppConfig = {
       allowDefaultProfileEdit: true,
       enableContactVerification: true,
       ensureProfileCompletion: false,
+      profileCompletionMode: "enforced",
       profileCompletionPath: "/account/complete-profile",
       requiredProfileFields: {
         firstName: true,

@@ -89,21 +89,12 @@ export const JBUserAccountActions = ({
         />
       ) : null}
 
-      {capabilities.canEditDefaultProfile ? (
+      {capabilities.canEditDefaultProfile || capabilities.canEditPersonalData ? (
         <ActionRow
-          title="Editar información del perfil"
-          subtitle="Actualiza nombre, apellidos y datos de perfil"
-          href={`${basePath}/profile`}
+          title="Editar datos de cuenta"
+          subtitle="Actualiza perfil, correo, teléfono y usuario"
+          href={`${basePath}/account-data`}
           iconName="card-account-details-outline"
-        />
-      ) : null}
-
-      {capabilities.canEditPersonalData ? (
-        <ActionRow
-          title="Editar datos de acceso"
-          subtitle="Modifica correo, teléfono y usuario"
-          href={`${basePath}/personal-data`}
-          iconName="account-cog-outline"
         />
       ) : null}
 

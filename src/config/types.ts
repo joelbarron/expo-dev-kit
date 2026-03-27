@@ -150,10 +150,13 @@ export type JBAuthAccountProfileMirrorConfig = {
   autocureOnAuthEvents: boolean;
 };
 
+export type JBAuthProfileCompletionMode = 'enforced' | 'suggested';
+
 export type JBAuthAccountConfig = {
   allowDefaultProfileEdit: boolean;
   enableContactVerification: boolean;
   ensureProfileCompletion: boolean;
+  profileCompletionMode: JBAuthProfileCompletionMode;
   profileCompletionPath?: string;
   requiredProfileFields: JBAuthRequiredProfileFields;
   subscriptionUrl?: string;

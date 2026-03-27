@@ -10,6 +10,7 @@ export type AuthScreenLayoutProps = {
   title?: string;
   subtitle?: string;
   children: ReactNode;
+  header?: ReactNode;
   footer?: ReactNode;
   footerClassName?: string;
   footerStyle?: StyleProp<ViewStyle>;
@@ -22,6 +23,7 @@ export const AuthScreenLayout = ({
   title,
   subtitle,
   children,
+  header,
   footer,
   footerClassName,
   footerStyle,
@@ -84,6 +86,7 @@ export const AuthScreenLayout = ({
       >
         <JBMainLayout
           className="flex-1"
+          header={header}
           footer={footer}
           footerClassName={footerClassName}
           footerStyle={footerStyle}

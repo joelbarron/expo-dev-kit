@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
@@ -157,7 +157,20 @@ const DefaultProfileSkeleton = () => (
   </VStack>
 );
 
-export function JBUserDefaultProfileScreen() {
+export type JBUserDefaultProfileScreenProps = {
+  showPersonalDataCta?: boolean;
+  personalDataHref?: string;
+  topContent?: ReactNode;
+};
+
+export function JBUserDefaultProfileScreen(
+  props: JBUserDefaultProfileScreenProps = {}
+) {
+  const {
+    showPersonalDataCta = true,
+    personalDataHref = '/user/account-data?tab=access',
+    topContent,
+  } = props;
   const router = useRouter();
   const auth = useJBAuth();
   const defaultProfile = useAuthStore((state: any) => state?.defaultProfile) as ProfileDetail | null;
@@ -310,7 +323,9 @@ export function JBUserDefaultProfileScreen() {
           <DefaultProfileSkeleton />
         ) : (
           <VStack space="lg">
-            {capabilities.canEditPersonalData ? (
+            {topContent ? topContent : null}
+
+            {showPersonalDataCta && capabilities.canEditPersonalData ? (
               <Box className="rounded-2xl bg-background-150 px-4 py-4 dark:bg-background-200">
                 <VStack space="sm">
                   <Text size="sm" className="text-typography-600 dark:text-typography-300">
@@ -321,7 +336,7 @@ export function JBUserDefaultProfileScreen() {
                     action="primary"
                     text="Ir a editar datos de acceso"
                     className="self-start px-0"
-                    onPress={() => router.push('/user/personal-data' as any)}
+                    onPress={() => router.push(personalDataHref as any)}
                   />
                 </VStack>
               </Box>

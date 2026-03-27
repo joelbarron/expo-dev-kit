@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { TouchableOpacity } from 'react-native';
 import Toast from 'react-native-toast-message';
@@ -64,6 +64,16 @@ const idleAvailabilityState: AvailabilityState = {
 };
 
 const pickString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+const isPlaceholderOtpEmail = (value: string): boolean => {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return false;
+  return normalized.endsWith('@otp.local') || normalized.endsWith('@phone.local');
+};
+const sanitizeVisibleEmail = (value: unknown): string => {
+  const normalized = pickString(value);
+  if (!normalized) return '';
+  return isPlaceholderOtpEmail(normalized) ? '' : normalized;
+};
 
 const normalizeDigits = (value: string): string => value.replace(/\D+/g, '');
 
@@ -118,7 +128,20 @@ const mapAvailabilityError = (error: unknown, fallback: string): string => {
 type PersonalDataSection = 'email' | 'phone' | 'username';
 const OTP_RESEND_COOLDOWN_SECONDS = 30;
 
-export function JBUserPersonalDataScreen() {
+export type JBUserPersonalDataScreenProps = {
+  showProfileCta?: boolean;
+  profileHref?: string;
+  topContent?: ReactNode;
+};
+
+export function JBUserPersonalDataScreen(
+  props: JBUserPersonalDataScreenProps = {}
+) {
+  const {
+    showProfileCta = true,
+    profileHref = '/user/account-data?tab=profile',
+    topContent,
+  } = props;
   const router = useRouter();
   const navigation = useNavigation();
   const auth = useJBAuth();
@@ -153,7 +176,7 @@ export function JBUserPersonalDataScreen() {
   const user = (auth.user ?? {}) as Record<string, unknown>;
 
   const initialState = useMemo(() => {
-    const email = pickString(user.email);
+    const email = sanitizeVisibleEmail(user.email);
     const username = pickString(user.username);
 
     const explicitPhoneCountryCode =
@@ -952,13 +975,15 @@ export function JBUserPersonalDataScreen() {
       >
         <Box className="w-full">
           <VStack space="lg">
+            {topContent ? topContent : null}
+
             {!canEdit ? (
               <Text size="sm" className="text-typography-400">
                 La edición de cuenta está deshabilitada para esta implementación.
               </Text>
             ) : null}
 
-            {capabilities.canEditDefaultProfile ? (
+            {showProfileCta && capabilities.canEditDefaultProfile ? (
               <Box className="rounded-2xl bg-background-150 px-4 py-4 dark:bg-background-200">
                 <VStack space="sm">
                   <Text size="sm" className="text-typography-600 dark:text-typography-300">
@@ -969,7 +994,7 @@ export function JBUserPersonalDataScreen() {
                     action="primary"
                     text="Ir a editar información del perfil"
                     className="self-start px-0"
-                    onPress={() => router.push('/user/profile' as any)}
+                    onPress={() => router.push(profileHref as any)}
                   />
                 </VStack>
               </Box>

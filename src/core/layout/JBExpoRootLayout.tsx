@@ -1,15 +1,23 @@
 import { DarkTheme, DefaultTheme, Theme } from "@react-navigation/native";
 import * as SplashScreen from "expo-splash-screen";
-import { Stack } from "expo-router";
+import { Stack, usePathname, useRouter } from "expo-router";
 import { StatusBar, StatusBarStyle } from "expo-status-bar";
 import moment from "moment";
 import "moment/locale/es";
 import "moment/locale/es-mx";
 import React, { useCallback, useEffect, useMemo } from "react";
+import { useRef } from "react";
 import { Platform } from "react-native";
 
-import { JBAuthProvider, JBAuthStatus } from "../../auth";
 import {
+  JBAuthProvider,
+  JBAuthStatus,
+  useJBAuth,
+  useJBProfileCompletion,
+} from "../../auth";
+import {
+  getAuthAccountConfig,
+  getAuthAccountScreensConfig,
   getLastCreatedJBExpoConfig,
   JBAppConfig,
   JBAppStage,
@@ -184,6 +192,137 @@ const resolveNavigationTheme = (
   };
 };
 
+const normalizePathname = (path?: string | null): string => {
+  if (!path) return "/";
+  const withoutQuery = path.split("?")[0] ?? "/";
+  const normalized = withoutQuery.trim();
+  if (!normalized) return "/";
+  return normalized.replace(/\/+$/, "") || "/";
+};
+
+const isSameOrDescendantPath = (
+  currentPath: string,
+  basePath: string,
+): boolean => {
+  const current = normalizePathname(currentPath);
+  const base = normalizePathname(basePath);
+  if (base === "/") return current === "/";
+  return current === base || current.startsWith(`${base}/`);
+};
+
+function JBProfileCompletionNavigationGuard() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { authStatus, isAuthenticated } = useJBAuth();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
+  const profileCompletion = useJBProfileCompletion();
+
+  const mergedConfig = useMemo(
+    () =>
+      ({
+        ...baseConfig,
+        auth: {
+          ...baseConfig.auth,
+          ...(appConfig?.auth ?? {}),
+        },
+      }) as JBAppConfig,
+    [appConfig, baseConfig],
+  );
+
+  const accountConfig = useMemo(
+    () => getAuthAccountConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const accountScreensConfig = useMemo(
+    () => getAuthAccountScreensConfig(mergedConfig),
+    [mergedConfig],
+  );
+
+  const completionPath = useMemo(
+    () =>
+      profileCompletion.profileCompletionPath ||
+      accountConfig.profileCompletionPath ||
+      "/account/complete-profile",
+    [accountConfig.profileCompletionPath, profileCompletion.profileCompletionPath],
+  );
+  const completionBasePath = useMemo(
+    () => normalizePathname(completionPath),
+    [completionPath],
+  );
+  const completionFallbackPath = useMemo(
+    () =>
+      accountScreensConfig?.routing?.homePathAfterProfileSwitch?.trim() || "/",
+    [accountScreensConfig?.routing?.homePathAfterProfileSwitch],
+  );
+  const attemptedPathRef = useRef<string | null>(null);
+  const forcedCompletionActiveRef = useRef(false);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated" || !isAuthenticated) {
+      forcedCompletionActiveRef.current = false;
+      attemptedPathRef.current = null;
+      return;
+    }
+    if (!profileCompletion.enabled) {
+      forcedCompletionActiveRef.current = false;
+      return;
+    }
+    if (accountConfig.profileCompletionMode !== "enforced") {
+      forcedCompletionActiveRef.current = false;
+      return;
+    }
+    const isOnCompletionPath = isSameOrDescendantPath(
+      pathname,
+      completionBasePath,
+    );
+
+    if (!profileCompletion.isComplete) {
+      forcedCompletionActiveRef.current = true;
+      if (!isOnCompletionPath) {
+        attemptedPathRef.current = pathname;
+        router.replace(completionPath as any);
+      }
+      return;
+    }
+
+    if (forcedCompletionActiveRef.current && isOnCompletionPath) {
+      const attemptedPath = normalizePathname(attemptedPathRef.current);
+      const targetPath =
+        attemptedPath && attemptedPath !== completionBasePath
+          ? attemptedPath
+          : normalizePathname(completionFallbackPath);
+
+      forcedCompletionActiveRef.current = false;
+      attemptedPathRef.current = null;
+
+      if (
+        targetPath &&
+        !isSameOrDescendantPath(pathname, targetPath)
+      ) {
+        router.replace(targetPath as any);
+      }
+      return;
+    }
+
+    forcedCompletionActiveRef.current = false;
+    attemptedPathRef.current = null;
+  }, [
+    accountConfig.profileCompletionMode,
+    completionFallbackPath,
+    authStatus,
+    completionBasePath,
+    completionPath,
+    isAuthenticated,
+    pathname,
+    profileCompletion.enabled,
+    profileCompletion.isComplete,
+    router,
+  ]);
+
+  return null;
+}
+
 export function JBExpoRootLayout({
   authClient,
   appMeta,
@@ -311,6 +450,7 @@ export function JBExpoRootLayout({
       authClient={authClient}
       onAuthStateChanged={handleAuthStateChanged}
     >
+      <JBProfileCompletionNavigationGuard />
       {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}
 
       <Stack
