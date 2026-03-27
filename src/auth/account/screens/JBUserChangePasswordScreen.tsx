@@ -95,6 +95,7 @@ export function JBUserChangePasswordScreen() {
       footer={
         <JBFormButton
           buttonType="save"
+          showIcon={false}
           text="Guardar cambios"
           loading={isLoading}
           isDisabled={!formState.isValid}

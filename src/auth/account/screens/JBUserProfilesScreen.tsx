@@ -11,6 +11,12 @@ import { useJBUserAccountCapabilities, useJBProfiles } from '../hooks';
 import { JBUserProfileList } from '../components';
 
 const getProfileId = (profile: Record<string, any>) => profile?.id ?? profile?.pk;
+const normalizeRoutePath = (value: unknown, fallback = '/') => {
+  const raw = String(value ?? '').trim();
+  if (!raw) return fallback;
+  if (raw.startsWith('/')) return raw;
+  return `/${raw.replace(/^\/+/, '')}`;
+};
 const isDefaultProfile = (profile: Record<string, any>) =>
   Boolean(profile?.default ?? profile?.is_default ?? profile?.isDefault);
 const normalizeRole = (value: unknown) => String(value ?? '').trim().toUpperCase();
@@ -204,7 +210,9 @@ export function JBUserProfilesScreen() {
           text1: 'Perfil cambiado',
           text2: 'Se actualizó el perfil activo correctamente.',
         });
-        router.replace(capabilities.config.routing.homePathAfterProfileSwitch as any);
+        router.replace(
+          normalizeRoutePath(capabilities.config.routing.homePathAfterProfileSwitch) as any
+        );
       } catch (error) {
         const parsed = parseAuthError(error);
         Toast.show({

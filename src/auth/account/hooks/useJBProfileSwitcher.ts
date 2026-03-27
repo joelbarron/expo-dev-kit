@@ -34,6 +34,13 @@ const normalizeMirrorPairs = (
 const getProfileId = (profile: Record<string, any>): string =>
   String(profile?.id ?? profile?.pk ?? "");
 
+const normalizeRoutePath = (value: unknown, fallback = "/"): string => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return fallback;
+  if (raw.startsWith("/")) return raw;
+  return `/${raw.replace(/^\/+/, "")}`;
+};
+
 type ProfileSwitcherProfile = Record<string, any> & {
   __profile_id?: string;
   __picture_uri?: string;
@@ -116,8 +123,10 @@ export const useJBProfileSwitcher = () => {
 
   // Allow opening the sheet when switch is enabled even before profiles are refreshed.
   const isEnabled = hasSwitchCapability || canCreateProfile;
-  const homePathAfterProfileSwitch =
-    capabilities.config.routing.homePathAfterProfileSwitch || "/";
+  const homePathAfterProfileSwitch = normalizeRoutePath(
+    capabilities.config.routing.homePathAfterProfileSwitch,
+    "/",
+  );
 
   const switchToProfile = useCallback(
     async (profileId: string | number) => {
