@@ -1,12 +1,17 @@
 import { DarkTheme, DefaultTheme, Theme } from "@react-navigation/native";
-import * as SplashScreen from "expo-splash-screen";
 import { Stack, usePathname, useRouter } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar, StatusBarStyle } from "expo-status-bar";
 import moment from "moment";
 import "moment/locale/es";
 import "moment/locale/es-mx";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useRef } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Platform } from "react-native";
 
 import {
@@ -28,8 +33,8 @@ import {
   resolveJBUIColor,
 } from "../../config";
 import { useColorScheme } from "../../hooks";
-import { ConfirmationDialog } from "../../shared";
 import { useAppConfigStore, useAuthStore } from "../../runtime";
+import { ConfirmationDialog } from "../../shared";
 import { getColor } from "../../utils";
 import { JBUnderMaintenanceScreen } from "../app-status";
 import {
@@ -129,7 +134,8 @@ const resolveStripeRuntimeConfig = (
 const getOptionalStripeProvider = (): StripeProviderComponentType | null => {
   try {
     const stripeModule = require("@stripe/stripe-react-native");
-    return (stripeModule?.StripeProvider ?? null) as StripeProviderComponentType | null;
+    return (stripeModule?.StripeProvider ??
+      null) as StripeProviderComponentType | null;
   } catch {
     return null;
   }
@@ -146,12 +152,12 @@ const resolveNavigationTheme = (
   const redColor = getColor("red");
   const defaultBackgroundColor =
     mode === "dark"
-      ? (backgroundColor[0] ?? "#070b10")
-      : (backgroundColor.light ?? "#f8f9fa");
+      ? backgroundColor[0] ?? "#070b10"
+      : backgroundColor.light ?? "#f8f9fa";
   const defaultCardColor =
     mode === "dark"
-      ? (backgroundColor[200] ?? "#121b26")
-      : (backgroundColor[50] ?? "#ffffff");
+      ? backgroundColor[200] ?? "#121b26"
+      : backgroundColor[50] ?? "#ffffff";
 
   const resolvedBackgroundColor = resolveJBUIColor(
     uiConfig?.main?.backgroundColor,
@@ -218,7 +224,8 @@ function JBProfileCompletionNavigationGuard() {
   const baseConfig = getLastCreatedJBExpoConfig();
   const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const activeProfileId = useAuthStore(
-    (state: any) => state?.activeProfile?.id ?? state?.defaultProfile?.id ?? null,
+    (state: any) =>
+      state?.activeProfile?.id ?? state?.defaultProfile?.id ?? null,
   );
   const profileCompletion = useJBProfileCompletion();
   const [showSuggestedDialog, setShowSuggestedDialog] = useState(false);
@@ -231,7 +238,7 @@ function JBProfileCompletionNavigationGuard() {
           ...baseConfig.auth,
           ...(appConfig?.auth ?? {}),
         },
-      }) as JBAppConfig,
+      } as JBAppConfig),
     [appConfig, baseConfig],
   );
 
@@ -249,7 +256,10 @@ function JBProfileCompletionNavigationGuard() {
       profileCompletion.profileCompletionPath ||
       accountConfig.profileCompletionPath ||
       "/account/complete-profile",
-    [accountConfig.profileCompletionPath, profileCompletion.profileCompletionPath],
+    [
+      accountConfig.profileCompletionPath,
+      profileCompletion.profileCompletionPath,
+    ],
   );
   const completionBasePath = useMemo(
     () => normalizePathname(completionPath),
@@ -291,7 +301,9 @@ function JBProfileCompletionNavigationGuard() {
           pathname,
           completionBasePath,
         );
-        const promptKey = `${String(activeProfileId ?? "none")}::${profileCompletion.missingFields.join(",")}`;
+        const promptKey = `${String(
+          activeProfileId ?? "none",
+        )}::${profileCompletion.missingFields.join(",")}`;
         const shouldShowPrompt =
           !isOnCompletionPath && suggestedPromptKeyRef.current !== promptKey;
 
@@ -329,10 +341,7 @@ function JBProfileCompletionNavigationGuard() {
       forcedCompletionActiveRef.current = false;
       attemptedPathRef.current = null;
 
-      if (
-        targetPath &&
-        !isSameOrDescendantPath(pathname, targetPath)
-      ) {
+      if (targetPath && !isSameOrDescendantPath(pathname, targetPath)) {
         router.replace(targetPath as any);
       }
       return;
@@ -363,8 +372,8 @@ function JBProfileCompletionNavigationGuard() {
       title="Completa tu perfil"
       content="Te recomendamos completar tu perfil para mejorar la experiencia de reserva y seguridad en tu cuenta."
       agreeText="Ir a completar perfil"
-      agreeColor="secondary"
-      agreeVariant="solid"
+      agreeColor="primary"
+      agreeVariant="outline"
       disagreeText="Tal vez en otro momento"
       disagreeColor="primary"
       disagreeVariant="link"
@@ -409,8 +418,8 @@ export function JBExpoRootLayout({
     effectiveMode === "dark"
       ? "dark"
       : effectiveMode === "light"
-        ? "light"
-        : (scheme ?? "dark");
+      ? "light"
+      : scheme ?? "dark";
   const resolvedUIConfig = uiConfig ?? baseConfig?.ui;
   const navigationTheme = resolveNavigationTheme(
     resolvedMode,
@@ -459,7 +468,11 @@ export function JBExpoRootLayout({
   }, [isConfigLoaded, manageNativeSplash]);
 
   useEffect(() => {
-    const locale = (appConfig?.momentLocale ?? baseConfig?.momentLocale ?? "es-mx").toLowerCase();
+    const locale = (
+      appConfig?.momentLocale ??
+      baseConfig?.momentLocale ??
+      "es-mx"
+    ).toLowerCase();
     moment.locale(locale);
   }, [appConfig?.momentLocale, baseConfig?.momentLocale]);
 

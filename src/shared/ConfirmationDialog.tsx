@@ -61,7 +61,7 @@ const resolveDialogActionTextClass = (
   extraClassName = ""
 ) => {
   if (variant === "solid") {
-    return `text-sm font-semibold text-white ${extraClassName}`.trim();
+    return `text-sm font-semibold ${extraClassName}`.trim();
   }
 
   const colorClassMap: Record<DialogActionColor, string> = {
