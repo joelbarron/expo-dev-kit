@@ -72,7 +72,7 @@ const DEFAULT_FEATURES: Record<JBAppFeature, JBFeatureConfig> = {
   },
   account: {
     route: "/account",
-    paths: ["/account", "/user/*", "/settings", "/notifications"],
+    paths: ["/account", "/user/*", "/settings", "/settings/permissions", "/notifications"],
   },
 };
 

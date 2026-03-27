@@ -22,6 +22,9 @@ const initialState: AppStatusState = {
   updateInfo: null,
   error: null,
   shouldBlock: false,
+  updateAvailable: false,
+  updateUrl: '',
+  detailMessage: '',
   blockingReason: null
 };
 
@@ -53,6 +56,9 @@ export function JBAppStatusProvider(props: JBAppStatusProviderProps) {
         updateInfo,
         error: null,
         shouldBlock: next.shouldBlock,
+        updateAvailable: next.updateAvailable,
+        updateUrl: next.updateUrl,
+        detailMessage: next.detailMessage,
         blockingReason: next.blockingReason
       });
 

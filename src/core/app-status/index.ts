@@ -4,3 +4,4 @@ export * from './resolver';
 export * from './provider';
 export * from './components';
 export * from './JBUnderMaintenanceScreen';
+export * from './JBRequireUpdateScreen';

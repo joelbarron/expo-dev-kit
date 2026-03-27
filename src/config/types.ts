@@ -272,6 +272,93 @@ export type JBUIConfig = {
   chip?: JBUIChipConfig;
 };
 
+export type JBPermissionKey =
+  | 'location'
+  | 'notifications'
+  | 'camera'
+  | 'media_library';
+
+export type JBPermissionsGuardConfig = {
+  enabled?: boolean;
+  setupPath?: string;
+  authenticatedOnly?: boolean;
+  mode?: 'strict' | 'remindable';
+  remindAfterHours?: number;
+};
+
+export type JBPermissionsConfig = {
+  required?: JBPermissionKey[];
+  optional?: JBPermissionKey[];
+  guard?: JBPermissionsGuardConfig;
+};
+
+export type JBSettingsVersionConfig = {
+  iosStoreUrl?: string;
+  androidStoreUrl?: string;
+};
+
+export type JBSettingsSecurityConfig = {
+  biometricsEnabled?: boolean;
+  biometricsPath?: string;
+};
+
+export type JBSettingsConfig = {
+  version?: {
+    enabled?: boolean;
+    title?: string;
+    subtitle?: string;
+  } & JBSettingsVersionConfig;
+  notifications?: {
+    enabled?: boolean;
+    path?: string;
+  };
+  permissions?: {
+    enabled?: boolean;
+    path?: string;
+  };
+  appearance?: {
+    enabled?: boolean;
+  };
+  security?: JBSettingsSecurityConfig;
+};
+
+export type JBOfflineMode =
+  | 'blocking_with_offline'
+  | 'strict_blocking'
+  | 'banner_only';
+
+export type JBOfflineConfig = {
+  mode?: JBOfflineMode;
+};
+
+export type JBAppStatusStrategy = 'hybrid' | 'store' | 'remote';
+
+export type JBAppStatusConfig = {
+  strategy?: JBAppStatusStrategy;
+  enforceUpdateInProductionOnly?: boolean;
+  blockOnStoreMandatoryUpdate?: boolean;
+  blockOnRemoteOutdated?: boolean;
+  updateUrl?: string;
+} & JBSettingsVersionConfig;
+
+export type JBLoadingFallbackConfig = {
+  logoSource?: number | { uri: string };
+  logoWidth?: number;
+  logoHeight?: number;
+  title?: string;
+  subtitle?: string;
+  showIndicator?: boolean;
+  backgroundColor?: JBUIColorConfig;
+  textColor?: JBUIColorConfig;
+  indicatorColor?: JBUIColorConfig;
+};
+
+export type JBRuntimeConfig = {
+  offline?: JBOfflineConfig;
+  appStatus?: JBAppStatusConfig;
+  loading?: JBLoadingFallbackConfig;
+};
+
 export type JBAppConfig = {
   debug: boolean;
   forceHideStage: boolean;
@@ -288,6 +375,10 @@ export type JBAppConfig = {
     host: JBApiHostConfig;
   };
   stripe?: JBStripeConfig;
+  settings?: JBSettingsConfig;
+  permissions?: JBPermissionsConfig;
+  runtime?: JBRuntimeConfig;
+  navigation?: Record<string, unknown>;
   auth: {
     apiBasePath: string;
     showDebugSocial: boolean;

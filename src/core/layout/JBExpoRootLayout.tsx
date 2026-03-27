@@ -1,10 +1,12 @@
 import { DarkTheme, DefaultTheme, Theme } from "@react-navigation/native";
 import { Stack, usePathname, useRouter } from "expo-router";
+import * as Application from "expo-application";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar, StatusBarStyle } from "expo-status-bar";
 import moment from "moment";
 import "moment/locale/es";
 import "moment/locale/es-mx";
+import NetInfo from "@react-native-community/netinfo";
 import React, {
   useCallback,
   useEffect,
@@ -12,7 +14,14 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Platform } from "react-native";
+import {
+  ActivityIndicator,
+  AppState,
+  Image,
+  Platform,
+  Text as RNText,
+  View,
+} from "react-native";
 
 import {
   JBAuthProvider,
@@ -27,16 +36,32 @@ import {
   JBAppConfig,
   JBAppStage,
   JBAppStageLowercase,
+  getPermissionsConfig,
+  getRuntimeAppStatusConfig,
+  getRuntimeLoadingConfig,
+  getRuntimeOfflineConfig,
+  getSettingsConfig,
   JBStripeConfig,
   JBStripePublishableKeyConfig,
   JBUIConfig,
   resolveJBUIColor,
 } from "../../config";
 import { useColorScheme } from "../../hooks";
-import { useAppConfigStore, useAuthStore } from "../../runtime";
+import { useAppConfigStore, useAuthStore, useOfflineStore } from "../../runtime";
+import {
+  buildPermissionsGuardReminderKey,
+  clearPermissionsGuardNextPromptAt,
+  getJBPermissionStatus,
+  getPermissionsGuardNextPromptAt,
+} from "../../settings";
 import { ConfirmationDialog } from "../../shared";
 import { getColor } from "../../utils";
-import { JBUnderMaintenanceScreen } from "../app-status";
+import {
+  JBRequireUpdateScreen,
+  JBUnderMaintenanceScreen,
+  resolveAppStatus,
+} from "../app-status";
+import { JBOfflineGateScreen } from "../offline";
 import {
   JBExpoAppProviders,
   JBExpoAppProvidersProps,
@@ -68,6 +93,7 @@ type JBExpoRootLayoutProps = {
     user: unknown | null;
   }) => void;
   underMaintenanceFallback?: React.ReactNode;
+  loadingFallback?: React.ReactNode;
 } & Omit<
   JBExpoAppProvidersProps,
   "children" | "colorMode" | "appMeta" | "navigationTheme"
@@ -216,6 +242,48 @@ const isSameOrDescendantPath = (
   const base = normalizePathname(basePath);
   if (base === "/") return current === "/";
   return current === base || current.startsWith(`${base}/`);
+};
+
+const isLikelyAuthPath = (path?: string | null) => {
+  const normalized = normalizePathname(path);
+  const authPrefixes = [
+    "/welcome",
+    "/auth-entry",
+    "/sign-in",
+    "/sign-in-password",
+    "/sign-in-otp",
+    "/sign-up-form",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
+    "/sign-out",
+  ];
+
+  return authPrefixes.some((prefix) => isSameOrDescendantPath(normalized, prefix));
+};
+
+const defaultLoadingFallbackStyle = {
+  container: {
+    flex: 1,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+  },
+  logo: {
+    width: 180,
+    height: 180,
+  },
+  title: {
+    marginTop: 14,
+    color: "#ffffff",
+    fontSize: 18,
+    fontWeight: "600" as const,
+  },
+  subtitle: {
+    marginTop: 8,
+    color: "#ffffff",
+    fontSize: 13,
+    opacity: 0.9,
+  },
 };
 
 function JBProfileCompletionNavigationGuard() {
@@ -393,6 +461,182 @@ function JBProfileCompletionNavigationGuard() {
   );
 }
 
+function JBPermissionsNavigationGuard() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const { authStatus, isAuthenticated } = useJBAuth();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
+  const activeProfileId = useAuthStore(
+    (state: any) => state?.activeProfile?.id ?? state?.defaultProfile?.id ?? null,
+  );
+  const authUserId = useAuthStore(
+    (state: any) => state?.user?.id ?? state?.user?.pk ?? null,
+  );
+  const [missingPermissions, setMissingPermissions] = useState<string[]>([]);
+  const attemptedPathRef = useRef<string | null>(null);
+  const isNavigatingRef = useRef(false);
+  const [appActiveTick, setAppActiveTick] = useState(0);
+
+  const mergedConfig = useMemo(
+    () =>
+      ({
+        ...baseConfig,
+        permissions: {
+          ...(baseConfig.permissions ?? {}),
+          ...(appConfig?.permissions ?? {}),
+        },
+      } as JBAppConfig),
+    [appConfig?.permissions, baseConfig],
+  );
+  const permissionsConfig = useMemo(
+    () => getPermissionsConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const requiredPermissions = useMemo(
+    () =>
+      Array.isArray(permissionsConfig.required)
+        ? permissionsConfig.required
+        : [],
+    [permissionsConfig.required],
+  );
+  const guardPath = useMemo(
+    () => permissionsConfig.guard?.setupPath?.trim() || "/settings/permissions",
+    [permissionsConfig.guard?.setupPath],
+  );
+  const guardBasePath = useMemo(() => normalizePathname(guardPath), [guardPath]);
+  const guardEnabled = Boolean(permissionsConfig.guard?.enabled);
+  const authenticatedOnly = Boolean(permissionsConfig.guard?.authenticatedOnly);
+  const guardMode =
+    permissionsConfig.guard?.mode === "strict" ? "strict" : "remindable";
+  const reminderKey = useMemo(
+    () =>
+      buildPermissionsGuardReminderKey({
+        isAuthenticated,
+        userId: authUserId,
+        profileId: activeProfileId,
+      }),
+    [activeProfileId, authUserId, isAuthenticated],
+  );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        setAppActiveTick((prev) => prev + 1);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!guardEnabled || requiredPermissions.length === 0) {
+      setMissingPermissions([]);
+      attemptedPathRef.current = null;
+      return;
+    }
+    if (authStatus === "configuring") return;
+    if (authenticatedOnly && !isAuthenticated) {
+      setMissingPermissions([]);
+      attemptedPathRef.current = null;
+      return;
+    }
+
+    let cancelled = false;
+    const now = Date.now();
+
+    const runCheck = async () => {
+      const statuses = await Promise.all(
+        requiredPermissions.map(async (permission) => {
+          const status = await getJBPermissionStatus(permission as any);
+          return { permission, status };
+        }),
+      );
+      if (cancelled) return;
+
+      const nextMissing = statuses
+        .filter((item) => item.status !== "granted")
+        .map((item) => String(item.permission));
+
+      setMissingPermissions(nextMissing);
+
+      const onGuardPath = isSameOrDescendantPath(pathname, guardBasePath);
+      const onAuthPath = isLikelyAuthPath(pathname);
+
+      if (nextMissing.length === 0) {
+        await clearPermissionsGuardNextPromptAt(reminderKey);
+        if (cancelled) return;
+
+        if (guardMode === "strict" && onGuardPath) {
+          const targetPath = normalizePathname(attemptedPathRef.current);
+          attemptedPathRef.current = null;
+          const fallbackTarget = targetPath || "/";
+          if (
+            fallbackTarget &&
+            !isSameOrDescendantPath(pathname, fallbackTarget)
+          ) {
+            router.replace(fallbackTarget as any);
+          }
+        }
+        return;
+      }
+
+      if (onGuardPath || isNavigatingRef.current) {
+        return;
+      }
+
+      if (guardMode === "strict") {
+        attemptedPathRef.current = pathname;
+        isNavigatingRef.current = true;
+        router.replace(guardPath as any);
+        setTimeout(() => {
+          isNavigatingRef.current = false;
+        }, 450);
+        return;
+      }
+
+      if (!onAuthPath) {
+        const nextPromptAt = await getPermissionsGuardNextPromptAt(reminderKey);
+        if (cancelled) return;
+        if (nextPromptAt && now < nextPromptAt) {
+          return;
+        }
+      }
+
+      attemptedPathRef.current = pathname;
+      isNavigatingRef.current = true;
+      router.push(guardPath as any);
+      setTimeout(() => {
+        isNavigatingRef.current = false;
+      }, 450);
+    };
+
+    void runCheck();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeProfileId,
+    appActiveTick,
+    authStatus,
+    authUserId,
+    authenticatedOnly,
+    guardBasePath,
+    guardEnabled,
+    guardMode,
+    guardPath,
+    isAuthenticated,
+    pathname,
+    reminderKey,
+    requiredPermissions,
+    requiredPermissions.length,
+    router,
+  ]);
+
+  return null;
+}
+
 export function JBExpoRootLayout({
   authClient,
   appMeta,
@@ -405,6 +649,7 @@ export function JBExpoRootLayout({
   manageNativeSplash = true,
   onAuthStateChanged,
   underMaintenanceFallback,
+  loadingFallback,
   queryClientOptions,
   ...providersProps
 }: JBExpoRootLayoutProps) {
@@ -445,11 +690,111 @@ export function JBExpoRootLayout({
         : "dark"
       : statusBarStyle;
 
-  const { isConfigLoaded, fetchAppConfig, appConfig } = useAppConfigStore();
+  const { isConfigLoaded, fetchAppConfig, appConfig, updateInfo } = useAppConfigStore();
   const setSessionFromJBAuth = useAuthStore(
     (state: any) => state.setSessionFromJBAuth,
   );
   const signout = useAuthStore((state: any) => state.signout);
+  const setOfflineMode = useOfflineStore((state: any) => state.setMode);
+  const setConnectivity = useOfflineStore((state: any) => state.setConnectivity);
+  const continueOfflineReadOnly = useOfflineStore(
+    (state: any) => state.continueOfflineReadOnly,
+  );
+  const clearOfflineReadOnly = useOfflineStore(
+    (state: any) => state.clearOfflineReadOnly,
+  );
+  const isOffline = useOfflineStore((state: any) => Boolean(state.isOffline));
+  const continueOffline = useOfflineStore((state: any) =>
+    Boolean(state.continueOffline),
+  );
+
+  const mergedConfig = useMemo(
+    () =>
+      ({
+        ...baseConfig,
+        settings: {
+          ...(baseConfig.settings ?? {}),
+          ...(appConfig?.settings ?? {}),
+        },
+        permissions: {
+          ...(baseConfig.permissions ?? {}),
+          ...(appConfig?.permissions ?? {}),
+        },
+        runtime: {
+          ...(baseConfig.runtime ?? {}),
+          ...(appConfig?.runtime ?? {}),
+        },
+      } as JBAppConfig),
+    [appConfig?.permissions, appConfig?.runtime, appConfig?.settings, baseConfig],
+  );
+
+  const runtimeOfflineConfig = useMemo(
+    () => getRuntimeOfflineConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const runtimeAppStatusConfig = useMemo(
+    () => getRuntimeAppStatusConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const runtimeLoadingConfig = useMemo(
+    () => getRuntimeLoadingConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const settingsConfig = useMemo(
+    () => getSettingsConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const permissionsConfig = useMemo(
+    () => getPermissionsConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const currentAppVersion = useMemo(
+    () =>
+      Application.nativeApplicationVersion?.trim() ||
+      Application.nativeBuildVersion?.trim() ||
+      "",
+    [],
+  );
+
+  const appStatus = useMemo(
+    () =>
+      resolveAppStatus({
+        statusData: appConfig ?? null,
+        updateInfo: updateInfo ?? null,
+        strategy: runtimeAppStatusConfig.strategy,
+        enforceUpdateInProductionOnly:
+          runtimeAppStatusConfig.enforceUpdateInProductionOnly,
+        blockOnStoreMandatoryUpdate:
+          runtimeAppStatusConfig.blockOnStoreMandatoryUpdate,
+        blockOnRemoteOutdated: runtimeAppStatusConfig.blockOnRemoteOutdated,
+        currentVersion: currentAppVersion,
+        fallbackUpdateUrl: runtimeAppStatusConfig.updateUrl,
+        iosStoreUrl:
+          runtimeAppStatusConfig.iosStoreUrl || settingsConfig.version?.iosStoreUrl,
+        androidStoreUrl:
+          runtimeAppStatusConfig.androidStoreUrl ||
+          settingsConfig.version?.androidStoreUrl,
+        stage: mergedConfig.stage,
+        platform: Platform.OS as "ios" | "android" | "web",
+      }),
+    [
+      appConfig,
+      currentAppVersion,
+      mergedConfig.stage,
+      runtimeAppStatusConfig.androidStoreUrl,
+      runtimeAppStatusConfig.blockOnRemoteOutdated,
+      runtimeAppStatusConfig.blockOnStoreMandatoryUpdate,
+      runtimeAppStatusConfig.enforceUpdateInProductionOnly,
+      runtimeAppStatusConfig.iosStoreUrl,
+      runtimeAppStatusConfig.strategy,
+      runtimeAppStatusConfig.updateUrl,
+      settingsConfig.version?.androidStoreUrl,
+      settingsConfig.version?.iosStoreUrl,
+      updateInfo,
+    ],
+  );
+  const [isBootstrapReady, setIsBootstrapReady] = useState(false);
+  const bootCompletedRef = useRef(false);
 
   useEffect(() => {
     if (!manageNativeSplash || Platform.OS === "web") {
@@ -463,11 +808,88 @@ export function JBExpoRootLayout({
   }, [fetchAppConfig]);
 
   useEffect(() => {
-    if (!manageNativeSplash || Platform.OS === "web" || !isConfigLoaded) {
+    if (!isConfigLoaded) {
+      setIsBootstrapReady(false);
+      bootCompletedRef.current = false;
+      return;
+    }
+    if (bootCompletedRef.current) {
+      setIsBootstrapReady(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    const runBootstrap = async () => {
+      const guardEnabled = Boolean(permissionsConfig.guard?.enabled);
+      const requiredPermissions = Array.isArray(permissionsConfig.required)
+        ? permissionsConfig.required
+        : [];
+
+      if (guardEnabled && requiredPermissions.length > 0) {
+        await Promise.all(
+          requiredPermissions.map(async (permission) => {
+            try {
+              await getJBPermissionStatus(permission as any);
+            } catch {
+              // Ignore bootstrap errors and continue.
+            }
+          }),
+        );
+      }
+
+      if (cancelled) return;
+      bootCompletedRef.current = true;
+      setIsBootstrapReady(true);
+    };
+
+    void runBootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isConfigLoaded, permissionsConfig.guard?.enabled, permissionsConfig.required]);
+
+  useEffect(() => {
+    const mode = runtimeOfflineConfig.mode ?? "blocking_with_offline";
+    setOfflineMode(mode);
+  }, [runtimeOfflineConfig.mode, setOfflineMode]);
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const isConnected = Boolean(
+        state.isConnected && state.isInternetReachable !== false,
+      );
+      setConnectivity(isConnected);
+    });
+
+    void NetInfo.fetch().then((state) => {
+      const isConnected = Boolean(
+        state.isConnected && state.isInternetReachable !== false,
+      );
+      setConnectivity(isConnected);
+    });
+
+    return () => unsubscribe();
+  }, [setConnectivity]);
+
+  useEffect(() => {
+    if (!isOffline) {
+      clearOfflineReadOnly();
+    }
+  }, [clearOfflineReadOnly, isOffline]);
+
+  useEffect(() => {
+    if (
+      !manageNativeSplash ||
+      Platform.OS === "web" ||
+      !isConfigLoaded ||
+      !isBootstrapReady
+    ) {
       return;
     }
     SplashScreen.hideAsync().catch(() => {});
-  }, [isConfigLoaded, manageNativeSplash]);
+  }, [isBootstrapReady, isConfigLoaded, manageNativeSplash]);
 
   useEffect(() => {
     const locale = (
@@ -514,41 +936,163 @@ export function JBExpoRootLayout({
     [authClient, onAuthStateChanged, setSessionFromJBAuth, signout],
   );
 
-  if (!isConfigLoaded) {
-    return null;
-  }
+  if (!isConfigLoaded || !isBootstrapReady) {
+    const resolvedLoadingBackgroundColor = resolveJBUIColor(
+      runtimeLoadingConfig?.backgroundColor,
+      resolvedMode,
+      resolvedHeaderBackgroundColor ?? primaryColor[500],
+    );
+    const resolvedLoadingTextColor = resolveJBUIColor(
+      runtimeLoadingConfig?.textColor,
+      resolvedMode,
+      "#ffffff",
+    );
+    const resolvedLoadingIndicatorColor = resolveJBUIColor(
+      runtimeLoadingConfig?.indicatorColor,
+      resolvedMode,
+      "#ffffff",
+    );
+    const logoWidth =
+      runtimeLoadingConfig?.logoWidth ?? defaultLoadingFallbackStyle.logo.width;
+    const logoHeight =
+      runtimeLoadingConfig?.logoHeight ?? defaultLoadingFallbackStyle.logo.height;
+    const showIndicator = runtimeLoadingConfig?.showIndicator !== false;
+    const fallbackTitle =
+      runtimeLoadingConfig?.title?.trim() || appMeta?.name || "Cargando...";
+    const fallbackSubtitle = runtimeLoadingConfig?.subtitle?.trim();
 
-  const rootContent = appConfig?.underMaintenance ? (
-    underMaintenanceFallback ?? <JBUnderMaintenanceScreen />
-  ) : (
-    <JBAuthProvider
-      authClient={authClient}
-      onAuthStateChanged={handleAuthStateChanged}
-    >
-      <JBProfileCompletionNavigationGuard />
-      {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}
+    const fallback =
+      loadingFallback ?? (
+        <View
+          style={[
+            defaultLoadingFallbackStyle.container,
+            {
+              backgroundColor:
+                resolvedLoadingBackgroundColor ??
+                resolvedHeaderBackgroundColor ??
+                primaryColor[500],
+            },
+          ]}
+        >
+          {runtimeLoadingConfig?.logoSource ? (
+            <Image
+              source={runtimeLoadingConfig.logoSource as any}
+              resizeMode="contain"
+              style={[
+                defaultLoadingFallbackStyle.logo,
+                { width: logoWidth, height: logoHeight },
+              ]}
+            />
+          ) : null}
+          {showIndicator ? (
+            <ActivityIndicator
+              color={resolvedLoadingIndicatorColor ?? "#ffffff"}
+              size="large"
+              style={{ marginTop: runtimeLoadingConfig?.logoSource ? 18 : 0 }}
+            />
+          ) : null}
+          <RNText
+            style={[
+              defaultLoadingFallbackStyle.title,
+              { color: resolvedLoadingTextColor ?? "#ffffff" },
+            ]}
+          >
+            {fallbackTitle}
+          </RNText>
+          {fallbackSubtitle ? (
+            <RNText
+              style={[
+                defaultLoadingFallbackStyle.subtitle,
+                { color: resolvedLoadingTextColor ?? "#ffffff" },
+              ]}
+            >
+              {fallbackSubtitle}
+            </RNText>
+          ) : null}
+        </View>
+      );
 
-      <Stack
-        initialRouteName={unauthenticatedInitialRouteGroup}
-        screenOptions={{
-          headerTintColor: resolvedHeaderTintColor ?? "white",
-          headerBackTitle: "Volver",
-          headerStyle: {
-            backgroundColor: resolvedHeaderBackgroundColor ?? primaryColor[500],
+    return (
+      <JBExpoAppProviders
+        {...providersProps}
+        appMeta={appMeta}
+        colorMode={effectiveMode}
+        navigationTheme={navigationTheme}
+        queryClientOptions={{
+          onUnauthorized: () => {
+            useAuthStore.getState().signout();
           },
+          ...queryClientOptions,
         }}
       >
-        <Stack.Screen
-          name="(app)"
-          options={{ headerShown: false, animation: "none" }}
+        {fallback}
+      </JBExpoAppProviders>
+    );
+  }
+
+  const offlineMode = runtimeOfflineConfig.mode ?? "blocking_with_offline";
+  const shouldShowOfflineGate =
+    isOffline &&
+    (offlineMode === "strict_blocking" ||
+      (offlineMode === "blocking_with_offline" && !continueOffline));
+
+  const rootContent =
+    appStatus.blockingReason === "maintenance" ? (
+      underMaintenanceFallback ?? (
+        <JBUnderMaintenanceScreen
+          line1={appStatus.detailMessage || undefined}
+          line2={undefined}
         />
-        <Stack.Screen
-          name="(auth)"
-          options={{ headerShown: false, animation: "none" }}
-        />
-      </Stack>
-    </JBAuthProvider>
-  );
+      )
+    ) : appStatus.blockingReason === "update" ? (
+      <JBRequireUpdateScreen
+        line1={appStatus.detailMessage || undefined}
+        updateUrl={appStatus.updateUrl}
+      />
+    ) : shouldShowOfflineGate ? (
+      <JBOfflineGateScreen
+        mode={offlineMode}
+        onRetry={() => {
+          void NetInfo.fetch().then((state) => {
+            const isConnected = Boolean(
+              state.isConnected && state.isInternetReachable !== false,
+            );
+            setConnectivity(isConnected);
+          });
+        }}
+        onContinueOffline={() => continueOfflineReadOnly()}
+      />
+    ) : (
+      <JBAuthProvider
+        authClient={authClient}
+        onAuthStateChanged={handleAuthStateChanged}
+      >
+        <JBProfileCompletionNavigationGuard />
+        <JBPermissionsNavigationGuard />
+        {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}
+
+        <Stack
+          initialRouteName={unauthenticatedInitialRouteGroup}
+          screenOptions={{
+            headerTintColor: resolvedHeaderTintColor ?? "white",
+            headerBackTitle: "Volver",
+            headerStyle: {
+              backgroundColor:
+                resolvedHeaderBackgroundColor ?? primaryColor[500],
+            },
+          }}
+        >
+          <Stack.Screen
+            name="(app)"
+            options={{ headerShown: false, animation: "none" }}
+          />
+          <Stack.Screen
+            name="(auth)"
+            options={{ headerShown: false, animation: "none" }}
+          />
+        </Stack>
+      </JBAuthProvider>
+    );
 
   const contentWithOptionalStripe =
     resolvedStripeConfig.enabled &&

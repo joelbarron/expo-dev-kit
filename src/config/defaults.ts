@@ -33,6 +33,73 @@ export const defaultJBExpoConfig: JBAppConfig = {
     urlScheme: "",
     setReturnUrlSchemeOnAndroid: false,
   },
+  settings: {
+    version: {
+      enabled: true,
+      title: "Version de la app",
+      subtitle: "Consulta el estado de actualizacion de la aplicacion.",
+      iosStoreUrl: "",
+      androidStoreUrl: "",
+    },
+    notifications: {
+      enabled: true,
+      path: "/notifications",
+    },
+    permissions: {
+      enabled: true,
+      path: "/settings/permissions",
+    },
+    appearance: {
+      enabled: true,
+    },
+    security: {
+      biometricsEnabled: false,
+      biometricsPath: "",
+    },
+  },
+  permissions: {
+    required: [],
+    optional: [],
+    guard: {
+      enabled: false,
+      setupPath: "/settings/permissions",
+      authenticatedOnly: false,
+      mode: "remindable",
+      remindAfterHours: 24,
+    },
+  },
+  runtime: {
+    offline: {
+      mode: "blocking_with_offline",
+    },
+    appStatus: {
+      strategy: "hybrid",
+      enforceUpdateInProductionOnly: true,
+      blockOnStoreMandatoryUpdate: true,
+      blockOnRemoteOutdated: true,
+      updateUrl: "",
+      iosStoreUrl: "",
+      androidStoreUrl: "",
+    },
+    loading: {
+      logoWidth: 180,
+      logoHeight: 180,
+      showIndicator: true,
+      backgroundColor: {
+        light: "#FBFBFB",
+        dark: "#121B26",
+      },
+      textColor: {
+        light: "#163047",
+        dark: "#E5F4FF",
+      },
+      indicatorColor: {
+        light: "#1396CB",
+        dark: "#E5F4FF",
+      },
+    },
+  },
+  navigation: {},
   auth: {
     apiBasePath: "/authentication",
     showDebugSocial: false,

@@ -11,6 +11,11 @@ import {
   JBAppConfigOverrides,
   JBAppStage,
   JBAppStageLowercase,
+  JBAppStatusConfig,
+  JBLoadingFallbackConfig,
+  JBPermissionsConfig,
+  JBRuntimeConfig,
+  JBSettingsConfig,
   JBSocialProviderName
 } from './types';
 
@@ -262,3 +267,86 @@ export const getAuthWelcomeConfig = (config: JBAppConfig): JBAuthWelcomeConfig =
       base.guestExploreLabel,
   };
 };
+
+export const getSettingsConfig = (config: JBAppConfig): JBSettingsConfig => {
+  const base = defaultJBExpoConfig.settings ?? {};
+  const override = config.settings ?? {};
+
+  return {
+    ...base,
+    ...override,
+    version: {
+      ...(base.version ?? {}),
+      ...(override.version ?? {}),
+    },
+    notifications: {
+      ...(base.notifications ?? {}),
+      ...(override.notifications ?? {}),
+    },
+    permissions: {
+      ...(base.permissions ?? {}),
+      ...(override.permissions ?? {}),
+    },
+    appearance: {
+      ...(base.appearance ?? {}),
+      ...(override.appearance ?? {}),
+    },
+    security: {
+      ...(base.security ?? {}),
+      ...(override.security ?? {}),
+    },
+  };
+};
+
+export const getPermissionsConfig = (config: JBAppConfig): JBPermissionsConfig => {
+  const base = defaultJBExpoConfig.permissions ?? {};
+  const override = config.permissions ?? {};
+
+  return {
+    ...base,
+    ...override,
+    required: Array.isArray(override.required)
+      ? override.required
+      : (base.required ?? []),
+    optional: Array.isArray(override.optional)
+      ? override.optional
+      : (base.optional ?? []),
+    guard: {
+      ...(base.guard ?? {}),
+      ...(override.guard ?? {}),
+    },
+  };
+};
+
+export const getRuntimeConfig = (config: JBAppConfig): JBRuntimeConfig => {
+  const base = defaultJBExpoConfig.runtime ?? {};
+  const override = config.runtime ?? {};
+
+  return {
+    ...base,
+    ...override,
+    offline: {
+      ...(base.offline ?? {}),
+      ...(override.offline ?? {}),
+    },
+    appStatus: {
+      ...(base.appStatus ?? {}),
+      ...(override.appStatus ?? {}),
+    },
+    loading: {
+      ...(base.loading ?? {}),
+      ...(override.loading ?? {}),
+    },
+  };
+};
+
+export const getRuntimeOfflineConfig = (config: JBAppConfig) =>
+  getRuntimeConfig(config).offline ?? {};
+
+export const getRuntimeAppStatusConfig = (
+  config: JBAppConfig
+): JBAppStatusConfig => getRuntimeConfig(config).appStatus ?? {};
+
+export const getRuntimeLoadingConfig = (
+  config: JBAppConfig
+): JBLoadingFallbackConfig => getRuntimeConfig(config).loading ?? {};
