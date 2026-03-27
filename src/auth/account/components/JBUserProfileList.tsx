@@ -15,16 +15,20 @@ export type JBUserProfileListProps = {
   profiles: Array<Record<string, any>>;
   activeProfile?: Record<string, any> | null;
   canSwitch?: boolean;
+  canEditProfile?: boolean;
   switchingProfileId?: string | null;
   onSwitchProfile?: (profile: Record<string, any>) => void;
+  onEditProfile?: (profile: Record<string, any>) => void;
 };
 
 export const JBUserProfileList = ({
   profiles,
   activeProfile,
   canSwitch = false,
+  canEditProfile = false,
   switchingProfileId = null,
   onSwitchProfile,
+  onEditProfile,
 }: JBUserProfileListProps) => {
   if (!profiles.length) {
     return (
@@ -44,8 +48,10 @@ export const JBUserProfileList = ({
             profile={profile}
             isActive={isSameProfile(profile, activeProfile)}
             canSwitch={canSwitch}
+            canEdit={canEditProfile}
             switching={switchingProfileId === String(profileId)}
             onSwitch={onSwitchProfile}
+            onEdit={onEditProfile}
           />
         );
       })}

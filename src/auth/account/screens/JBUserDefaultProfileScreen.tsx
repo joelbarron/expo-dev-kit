@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
@@ -6,7 +7,7 @@ import { z } from 'zod';
 
 import { JBFormButton, JBFormDateTimePicker, JBFormInput, JBFormPicker } from '../../../forms';
 import { useAuthStore } from '../../../runtime';
-import { Box, Text, VStack } from '../../../ui';
+import { Box, HStack, Text, VStack } from '../../../ui';
 import { getFormattedDate } from '../../../utils/data-format';
 import { GENDERS, GENDER_SELECT_OPTIONS } from '../../constants';
 import { parseAuthError } from '../../forms/errorParser';
@@ -20,7 +21,6 @@ type FormValues = {
   lastName2?: string;
   birthday?: Date;
   gender?: any;
-  label?: string;
 };
 
 type ProfileDetail = Record<string, any>;
@@ -71,7 +71,6 @@ const toFormValues = (profile: ProfileDetail): FormValues => {
     lastName2: toStringValue(profile.last_name_2 ?? profile.lastName2),
     birthday: toDateValue(profile.birthday),
     gender: selectedGenderOption ?? (genderValue ? { label: genderValue, value: genderValue } : undefined),
-    label: toStringValue(profile.label),
   };
 };
 
@@ -83,7 +82,6 @@ const createSchema = (requiredFields: Record<string, boolean>) =>
       lastName2: z.string().optional(),
       birthday: z.date().optional(),
       gender: z.any().optional(),
-      label: z.string().optional(),
     })
     .superRefine((data, ctx) => {
       if (requiredFields.firstName && !data.firstName.trim()) {
@@ -134,16 +132,33 @@ const createSchema = (requiredFields: Record<string, boolean>) =>
         });
       }
 
-      if (requiredFields.label && !String(data.label ?? '').trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Debes ingresar la etiqueta del perfil.',
-          path: ['label'],
-        });
-      }
     });
 
+const DefaultProfileSkeleton = () => (
+  <VStack space="lg">
+    <Box className="rounded-3xl bg-background-150 dark:bg-background-200 p-5">
+      <HStack className="items-center" space="md">
+        <Box className="h-16 w-16 rounded-full bg-background-300 dark:bg-background-400" />
+        <VStack className="flex-1" space="sm">
+          <Box className="h-5 w-2/3 rounded-full bg-background-300 dark:bg-background-400" />
+          <Box className="h-4 w-1/2 rounded-full bg-background-300 dark:bg-background-400" />
+        </VStack>
+      </HStack>
+    </Box>
+
+    <VStack space="md">
+      {[0, 1, 2, 3, 4].map((index) => (
+        <Box
+          key={`default-profile-skeleton-field-${index}`}
+          className="h-14 rounded-2xl bg-background-200 dark:bg-background-300"
+        />
+      ))}
+    </VStack>
+  </VStack>
+);
+
 export function JBUserDefaultProfileScreen() {
+  const router = useRouter();
   const auth = useJBAuth();
   const defaultProfile = useAuthStore((state: any) => state?.defaultProfile) as ProfileDetail | null;
   const activeProfile = useAuthStore((state: any) => state?.activeProfile) as ProfileDetail | null;
@@ -162,7 +177,6 @@ export function JBUserDefaultProfileScreen() {
       lastName2: '',
       birthday: undefined,
       gender: undefined,
-      label: '',
     },
     resolver: zodResolver(schema),
   });
@@ -246,7 +260,6 @@ export function JBUserDefaultProfileScreen() {
         last_name_2: String(values.lastName2 ?? '').trim() || '',
         birthday: values.birthday ? getFormattedDate(values.birthday) : null,
         gender: genderValue ? String(genderValue).toUpperCase() : null,
-        label: String(values.label ?? '').trim() || '',
       };
 
       try {
@@ -294,11 +307,26 @@ export function JBUserDefaultProfileScreen() {
     >
       <Box className="w-full">
         {isLoadingProfile ? (
-          <Text size="sm" className="text-typography-400">
-            Cargando perfil principal...
-          </Text>
+          <DefaultProfileSkeleton />
         ) : (
           <VStack space="lg">
+            {capabilities.canEditPersonalData ? (
+              <Box className="rounded-2xl bg-background-150 px-4 py-4 dark:bg-background-200">
+                <VStack space="sm">
+                  <Text size="sm" className="text-typography-600 dark:text-typography-300">
+                    Si deseas modificar correo, teléfono o nombre de usuario, haz clic aquí.
+                  </Text>
+                  <JBFormButton
+                    variant="link"
+                    action="primary"
+                    text="Ir a editar datos de acceso"
+                    className="self-start px-0"
+                    onPress={() => router.push('/user/personal-data' as any)}
+                  />
+                </VStack>
+              </Box>
+            ) : null}
+
             {!capabilities.canEditDefaultProfile ? (
               <Text size="sm" className="text-typography-400">
                 La edición del perfil principal está deshabilitada para esta aplicación.
@@ -335,13 +363,6 @@ export function JBUserDefaultProfileScreen() {
               fieldName="gender"
               label="Género"
               items={GENDER_SELECT_OPTIONS}
-              isDisabled={!capabilities.canEditDefaultProfile || isSubmitting}
-            />
-            <JBFormInput
-              control={control}
-              fieldName="label"
-              label="Etiqueta del perfil"
-              placeholder="Ejemplo: Personal"
               isDisabled={!capabilities.canEditDefaultProfile || isSubmitting}
             />
           </VStack>

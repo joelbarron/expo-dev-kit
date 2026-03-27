@@ -50,7 +50,9 @@ type FormValues = {
 export function JBUserCreateProfileScreen() {
   const router = useRouter();
   const auth = useJBAuth();
-  const { roleOptions } = useJBUserAccountCapabilities();
+  const capabilities = useJBUserAccountCapabilities();
+  const { roleOptions } = capabilities;
+  const isProfileMirrorEnabled = Boolean(capabilities.accountConfig.profileMirror?.enabled);
 
   const pickerRoleOptions = useMemo(
     () =>
@@ -88,6 +90,14 @@ export function JBUserCreateProfileScreen() {
   }, [watch, clearErrors]);
 
   const submitForm = useCallback(async (values: FormValues) => {
+    if (isProfileMirrorEnabled) {
+      Toast.show({
+        type: 'info',
+        text1: 'No disponible',
+        text2: 'La creación manual de perfiles está deshabilitada por sincronización de perfiles.',
+      });
+      return;
+    }
     const roleValue = typeof values.role === 'string' ? values.role : values.role?.value;
     const genderValue = typeof values.gender === 'string' ? values.gender : values.gender?.value;
     try {
@@ -117,9 +127,29 @@ export function JBUserCreateProfileScreen() {
         text2: parsed.rootMessage || 'No se pudo crear el perfil.',
       });
     }
-  }, [auth, router, setError]);
+  }, [auth, isProfileMirrorEnabled, router, setError]);
 
   const isLoading = formState.isSubmitting;
+
+  if (isProfileMirrorEnabled) {
+    return (
+      <AuthScreenLayout
+        subtitle="La sincronización de perfiles está activa y la creación manual de perfiles adicionales no está disponible."
+      >
+        <Box className="w-full">
+          <VStack space="lg">
+            <JBFormButton
+              variant="solid"
+              action="primary"
+              text="Volver"
+              showIcon={false}
+              onPress={() => router.replace('/user/profiles' as any)}
+            />
+          </VStack>
+        </Box>
+      </AuthScreenLayout>
+    );
+  }
 
   return (
     <AuthScreenLayout

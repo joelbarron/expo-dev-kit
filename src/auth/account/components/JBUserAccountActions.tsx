@@ -100,7 +100,7 @@ export const JBUserAccountActions = ({
 
       {capabilities.canEditPersonalData ? (
         <ActionRow
-          title="Editar datos de cuenta"
+          title="Editar datos de acceso"
           subtitle="Modifica correo, teléfono y usuario"
           href={`${basePath}/personal-data`}
           iconName="account-cog-outline"

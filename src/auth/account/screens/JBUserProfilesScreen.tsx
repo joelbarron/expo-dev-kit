@@ -5,7 +5,7 @@ import Toast from 'react-native-toast-message';
 
 import { JBMainLayout } from '../../../core';
 import { JBFormButton } from '../../../forms';
-import { Box, Text, VStack } from '../../../ui';
+import { Box, HStack, Text, VStack } from '../../../ui';
 import { parseAuthError } from '../../forms/errorParser';
 import { useJBUserAccountCapabilities, useJBProfiles } from '../hooks';
 import { JBUserProfileList } from '../components';
@@ -13,6 +13,69 @@ import { JBUserProfileList } from '../components';
 const getProfileId = (profile: Record<string, any>) => profile?.id ?? profile?.pk;
 const isDefaultProfile = (profile: Record<string, any>) =>
   Boolean(profile?.default ?? profile?.is_default ?? profile?.isDefault);
+const normalizeRole = (value: unknown) => String(value ?? '').trim().toUpperCase();
+
+const profileFieldAliases: Record<string, string[]> = {
+  first_name: ['first_name', 'firstName'],
+  last_name_1: ['last_name_1', 'lastName1'],
+  last_name_2: ['last_name_2', 'lastName2'],
+  birthday: ['birthday'],
+  gender: ['gender'],
+  label: ['label'],
+};
+
+const getFieldValue = (profile: Record<string, any>, fieldName: string) => {
+  const aliases = profileFieldAliases[fieldName] ?? [fieldName];
+  for (const alias of aliases) {
+    if (Object.prototype.hasOwnProperty.call(profile, alias)) {
+      return profile[alias];
+    }
+  }
+  return undefined;
+};
+
+const normalizeComparableValue = (fieldName: string, value: unknown) => {
+  if (value == null) return '';
+  if (fieldName === 'birthday') {
+    const raw = String(value).trim();
+    return raw.slice(0, 10);
+  }
+  return String(value).trim().toLowerCase();
+};
+
+const resolveCounterpartRole = (roleValue: string, rolePairs: Array<[string, string]>) => {
+  for (const [left, right] of rolePairs) {
+    if (left === roleValue) return right;
+    if (right === roleValue) return left;
+  }
+  return null;
+};
+
+const ProfilesListSkeleton = () => (
+  <VStack space="md">
+    {[0, 1, 2].map((index) => (
+      <Box
+        key={`profiles-skeleton-${index}`}
+        className="rounded-2xl bg-background-150 dark:bg-background-200 px-4 py-4"
+      >
+        <HStack className="items-center justify-between" space="md">
+          <HStack className="items-center flex-1" space="md">
+            <Box className="h-14 w-14 rounded-full bg-background-300 dark:bg-background-400" />
+            <VStack className="flex-1" space="xs">
+              <Box className="h-4 w-40 rounded-full bg-background-300 dark:bg-background-400" />
+              <Box className="h-3 w-28 rounded-full bg-background-300 dark:bg-background-400" />
+              <Box className="h-3 w-24 rounded-full bg-background-300 dark:bg-background-400" />
+            </VStack>
+          </HStack>
+          <VStack space="xs">
+            <Box className="h-8 w-20 rounded-full bg-background-300 dark:bg-background-400" />
+            <Box className="h-8 w-20 rounded-full bg-background-300 dark:bg-background-400" />
+          </VStack>
+        </HStack>
+      </Box>
+    ))}
+  </VStack>
+);
 
 export function JBUserProfilesScreen() {
   const router = useRouter();
@@ -26,8 +89,12 @@ export function JBUserProfilesScreen() {
     refreshProfiles,
     switchProfile,
   } = useJBProfiles();
+  const isProfileMirrorEnabled = Boolean(capabilities.accountConfig.profileMirror?.enabled);
 
   useEffect(() => {
+    if (isProfileMirrorEnabled) {
+      return;
+    }
     void refreshProfiles().catch((error) => {
       const parsed = parseAuthError(error);
       Toast.show({
@@ -36,12 +103,35 @@ export function JBUserProfilesScreen() {
         text2: parsed.rootMessage || 'No se pudieron cargar los perfiles.',
       });
     });
-  }, [refreshProfiles]);
+  }, [isProfileMirrorEnabled, refreshProfiles]);
 
   const defaultProfileId = useMemo(
     () => (defaultProfile ? String(getProfileId(defaultProfile as any)) : null),
     [defaultProfile]
   );
+  const mirrorPairs = useMemo(() => {
+    const configuredPairs = capabilities.accountConfig.profileMirror?.rolePairs ?? [];
+    const normalizedPairs = configuredPairs
+      .map((pair) => [normalizeRole(pair?.[0]), normalizeRole(pair?.[1])] as [string, string])
+      .filter(([left, right]) => Boolean(left && right));
+    if (normalizedPairs.length > 0) {
+      return normalizedPairs;
+    }
+    return [['HOST', 'GUEST']] as Array<[string, string]>;
+  }, [capabilities.accountConfig.profileMirror?.rolePairs]);
+  const mirrorSyncFields = useMemo(() => {
+    const configuredFields = capabilities.accountConfig.profileMirror?.syncFields ?? [];
+    const normalizedFields = configuredFields
+      .map((field) => String(field ?? '').trim())
+      .filter(Boolean)
+      .filter((field) => field !== 'picture');
+    if (normalizedFields.length > 0) {
+      return normalizedFields;
+    }
+    return ['first_name', 'last_name_1', 'last_name_2', 'birthday', 'gender', 'label'];
+  }, [capabilities.accountConfig.profileMirror?.syncFields]);
+
+  const inferredDefaultProfile = (defaultProfile ?? null) as Record<string, any> | null;
   const additionalProfiles = useMemo(
     () =>
       profiles.filter((profile) => {
@@ -49,9 +139,54 @@ export function JBUserProfilesScreen() {
         if (defaultProfileId && profileId && profileId === defaultProfileId) {
           return false;
         }
-        return !isDefaultProfile(profile);
+        if (isDefaultProfile(profile)) {
+          return false;
+        }
+
+        if (!isProfileMirrorEnabled || !inferredDefaultProfile) {
+          return true;
+        }
+
+        const defaultRole = normalizeRole(
+          inferredDefaultProfile?.role ?? inferredDefaultProfile?.role_value
+        );
+        const profileRole = normalizeRole(profile?.role ?? profile?.role_value);
+        if (!defaultRole || !profileRole) {
+          return true;
+        }
+
+        const counterpartRole = resolveCounterpartRole(defaultRole, mirrorPairs);
+        if (!counterpartRole || counterpartRole !== profileRole) {
+          return true;
+        }
+
+        const comparableFields = mirrorSyncFields.filter((fieldName) => fieldName !== 'picture');
+        if (comparableFields.length === 0) {
+          return true;
+        }
+
+        const isLikelyMirrored = comparableFields.every((fieldName) => {
+          const defaultValue = normalizeComparableValue(
+            fieldName,
+            getFieldValue(inferredDefaultProfile, fieldName)
+          );
+          const profileValue = normalizeComparableValue(
+            fieldName,
+            getFieldValue(profile, fieldName)
+          );
+          return defaultValue === profileValue;
+        });
+
+        return !isLikelyMirrored;
       }),
-    [defaultProfileId, profiles]
+    [
+      defaultProfileId,
+      inferredDefaultProfile,
+      isProfileMirrorEnabled,
+      mirrorPairs,
+      mirrorSyncFields,
+      profiles,
+    ]
   );
 
   const handleSwitchProfile = useCallback(
@@ -83,6 +218,9 @@ export function JBUserProfilesScreen() {
   );
 
   const handleRefresh = useCallback(() => {
+    if (isProfileMirrorEnabled) {
+      return;
+    }
     void refreshProfiles().catch((error) => {
       const parsed = parseAuthError(error);
       Toast.show({
@@ -91,8 +229,19 @@ export function JBUserProfilesScreen() {
         text2: parsed.rootMessage || 'No se pudieron cargar los perfiles.',
       });
     });
-  }, [refreshProfiles]);
-  const isRefreshing = isLoadingProfiles && additionalProfiles.length > 0;
+  }, [isProfileMirrorEnabled, refreshProfiles]);
+  const handleEditProfile = useCallback(
+    (profile: Record<string, any>) => {
+      const profileId = getProfileId(profile);
+      if (profileId == null) {
+        return;
+      }
+      router.push(`/user/profiles/edit/${profileId}` as any);
+    },
+    [router]
+  );
+  const isRefreshing =
+    !isProfileMirrorEnabled && isLoadingProfiles && additionalProfiles.length > 0;
 
   return (
     <JBMainLayout
@@ -110,8 +259,6 @@ export function JBUserProfilesScreen() {
             <JBFormButton
               variant="solid"
               action="primary"
-              iconName="account-plus-outline"
-              iconPosition="start"
               text="Agregar nuevo perfil"
               onPress={() => router.push('/user/profiles/create' as any)}
             />
@@ -125,17 +272,28 @@ export function JBUserProfilesScreen() {
             Gestiona perfiles adicionales de la cuenta y cambia el perfil activo cuando lo necesites.
           </Text>
 
-          {isLoadingProfiles && additionalProfiles.length === 0 ? (
-            <Text size="md" className="text-typography-200">Cargando perfiles...</Text>
-          ) : (
+          {isProfileMirrorEnabled ? (
+            <Box className="rounded-2xl bg-background-150 px-4 py-4 dark:bg-background-200">
+              <Text size="sm" className="text-typography-600 dark:text-typography-300">
+                La gestión de perfiles adicionales no está disponible porque la sincronización de
+                perfiles está habilitada.
+              </Text>
+            </Box>
+          ) : null}
+
+          {!isProfileMirrorEnabled && isLoadingProfiles && additionalProfiles.length === 0 ? (
+            <ProfilesListSkeleton />
+          ) : !isProfileMirrorEnabled ? (
             <JBUserProfileList
               profiles={additionalProfiles as Array<Record<string, any>>}
               activeProfile={activeProfile as any}
               canSwitch={capabilities.canSwitchProfiles}
+              canEditProfile
               switchingProfileId={isSwitchingProfileId}
               onSwitchProfile={handleSwitchProfile}
+              onEditProfile={handleEditProfile}
             />
-          )}
+          ) : null}
         </VStack>
       </Box>
     </JBMainLayout>

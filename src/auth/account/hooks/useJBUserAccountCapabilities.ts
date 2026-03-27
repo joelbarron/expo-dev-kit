@@ -45,6 +45,7 @@ export const useJBUserAccountCapabilities = (): JBUserAccountCapabilities => {
 
     const accountScreensConfig = getAuthAccountScreensConfig(mergedConfig);
     const accountConfig = getAuthAccountConfig(mergedConfig);
+    const isProfileMirrorEnabled = Boolean(accountConfig.profileMirror?.enabled);
 
     const roleOptions = (appConfig?.auth?.profileRoles ?? baseConfig.auth.profileRoles ?? []) as JBAuthProfileRoleOption[];
     const profilesList = [defaultProfile, activeProfile, ...(Array.isArray(nonDefaultProfiles) ? nonDefaultProfiles : [])]
@@ -64,7 +65,8 @@ export const useJBUserAccountCapabilities = (): JBUserAccountCapabilities => {
     const profilesCount = profilesList.length;
     const canSeeProfiles =
       accountScreensConfig.enabled &&
-      accountScreensConfig.screens.profiles.enabled;
+      accountScreensConfig.screens.profiles.enabled &&
+      !isProfileMirrorEnabled;
     const canCreateProfile = canSeeProfiles && accountScreensConfig.screens.profiles.allowCreate;
     const canSwitchProfiles =
       canSeeProfiles &&

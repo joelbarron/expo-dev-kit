@@ -626,16 +626,15 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
   };
 
   const changePassword = async (payload: PasswordChangePayload): Promise<Record<string, unknown>> => {
-    const normalizedPayload: Record<string, unknown> = {
-      ...payload
-    };
-
-    if (payload.newPassword && !payload.password) {
-      normalizedPayload.password = payload.newPassword;
+    const normalizedPayload: Record<string, unknown> = {};
+    if (payload.oldPassword) {
+      normalizedPayload.oldPassword = payload.oldPassword;
+    }
+    if (payload.newPassword) {
+      normalizedPayload.newPassword = payload.newPassword;
     }
     if (payload.newPasswordConfirm) {
       normalizedPayload.newPasswordConfirm = payload.newPasswordConfirm;
-      normalizedPayload.passwordConfirm = payload.newPasswordConfirm;
     }
 
     const response = await createAuthenticatedAxiosWithRefresh().post<Record<string, unknown>>(

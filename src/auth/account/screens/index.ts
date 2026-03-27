@@ -2,6 +2,7 @@ export * from './JBUserProfilesScreen';
 export * from './JBUserAccountSecurityScreen';
 export * from './JBUserHomeScreen';
 export * from './JBUserDefaultProfileScreen';
+export * from './JBUserEditProfileScreen';
 export * from './JBUserCreateProfileScreen';
 export * from './JBUserChangePasswordScreen';
 export * from './JBUserProfilePhotoScreen';

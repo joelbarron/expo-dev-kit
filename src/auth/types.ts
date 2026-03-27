@@ -176,7 +176,6 @@ export type PasswordResetConfirmPayload = {
 
 export type PasswordChangePayload = {
   oldPassword?: string;
-  password?: string;
   newPassword?: string;
   newPasswordConfirm?: string;
 };

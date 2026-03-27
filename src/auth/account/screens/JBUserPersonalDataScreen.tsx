@@ -958,6 +958,23 @@ export function JBUserPersonalDataScreen() {
               </Text>
             ) : null}
 
+            {capabilities.canEditDefaultProfile ? (
+              <Box className="rounded-2xl bg-background-150 px-4 py-4 dark:bg-background-200">
+                <VStack space="sm">
+                  <Text size="sm" className="text-typography-600 dark:text-typography-300">
+                    Si deseas editar tu información personal como nombre y apellidos, hazlo desde tu perfil.
+                  </Text>
+                  <JBFormButton
+                    variant="link"
+                    action="primary"
+                    text="Ir a editar información del perfil"
+                    className="self-start px-0"
+                    onPress={() => router.push('/user/profile' as any)}
+                  />
+                </VStack>
+              </Box>
+            ) : null}
+
             <Box className="rounded-2xl bg-background-150 px-4 py-4 dark:bg-background-200">
               <TouchableOpacity activeOpacity={0.85} onPress={() => handleOpenSection('email')}>
                 <VStack space="xs" className="w-full">
