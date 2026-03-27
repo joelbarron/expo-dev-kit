@@ -6,6 +6,7 @@ import {
   View,
 } from "react-native";
 
+import { getAuthWelcomeConfig, getLastCreatedJBExpoConfig } from "../../config";
 import { JBFormButton } from "../../forms";
 import { AuthScreenLayout } from "../ui";
 import { JBAuthNavigator } from "./types";
@@ -15,6 +16,8 @@ export type JBAuthWelcomeScreenProps = {
   appName?: string;
   subtitle?: string;
   backgroundImageSource?: ImageSourcePropType;
+  allowGuestExplore?: boolean;
+  guestExploreLabel?: string;
 };
 
 export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
@@ -23,7 +26,29 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
     appName,
     subtitle = "",
     backgroundImageSource,
+    allowGuestExplore,
+    guestExploreLabel,
   } = props;
+  const appConfig = getLastCreatedJBExpoConfig();
+  const welcomeConfig = getAuthWelcomeConfig(appConfig);
+  const shouldShowGuestExplore =
+    typeof allowGuestExplore === "boolean"
+      ? allowGuestExplore
+      : welcomeConfig.allowGuestExplore;
+  const resolvedGuestExploreLabel =
+    (guestExploreLabel ?? welcomeConfig.guestExploreLabel).trim() ||
+    welcomeConfig.guestExploreLabel;
+  const handleGuestExplore = () => {
+    if (navigator.goToGuestExplore) {
+      navigator.goToGuestExplore();
+      return;
+    }
+    if (navigator.onSignedIn) {
+      navigator.onSignedIn();
+      return;
+    }
+    navigator.goToSignIn();
+  };
 
   if (backgroundImageSource) {
     return (
@@ -51,6 +76,15 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
                 text="Comenzar"
                 onPress={() => navigator.goToSignIn()}
               />
+              {shouldShowGuestExplore ? (
+                <JBFormButton
+                  variant="link"
+                  className="mt-1"
+                  textClassName="font-semibold !text-white"
+                  text={resolvedGuestExploreLabel}
+                  onPress={handleGuestExplore}
+                />
+              ) : null}
             </View>
           </View>
         </View>
@@ -67,6 +101,15 @@ export function JBAuthWelcomeScreen(props: JBAuthWelcomeScreenProps) {
         text="Comenzar"
         onPress={() => navigator.goToSignIn()}
       />
+      {shouldShowGuestExplore ? (
+        <JBFormButton
+          variant="link"
+          className="mt-1"
+          textClassName="font-semibold"
+          text={resolvedGuestExploreLabel}
+          onPress={handleGuestExplore}
+        />
+      ) : null}
     </AuthScreenLayout>
   );
 }

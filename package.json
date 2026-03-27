@@ -98,6 +98,12 @@
       "import": "./dist/payments/index.js",
       "default": "./dist/payments/index.js"
     },
+    "./navigation": {
+      "types": "./dist/navigation/index.d.ts",
+      "react-native": "./src/navigation/index.ts",
+      "import": "./dist/navigation/index.js",
+      "default": "./dist/navigation/index.js"
+    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "react-native": "./src/ui/index.ts",

@@ -13,6 +13,7 @@ export type JBExpoAuthNavigatorPaths = {
   resetPassword?: string;
   verifyEmail?: string;
   welcome?: string;
+  guestExplore?: string;
   signedIn?: string;
 };
 
@@ -26,6 +27,7 @@ const defaultPaths: Required<JBExpoAuthNavigatorPaths> = {
   resetPassword: '/reset-password',
   verifyEmail: '/verify-email',
   welcome: '/welcome',
+  guestExplore: '/',
   signedIn: '/'
 };
 
@@ -81,6 +83,10 @@ export const useJBExpoAuthNavigator = (paths?: JBExpoAuthNavigatorPaths): JBAuth
     [nav, resolved.verifyEmail],
   );
   const goToWelcome = useCallback(() => nav.replace(resolved.welcome), [nav, resolved.welcome]);
+  const goToGuestExplore = useCallback(
+    () => nav.replace(resolved.guestExplore),
+    [nav, resolved.guestExplore]
+  );
   const onSignedIn = useCallback(() => nav.replace(resolved.signedIn), [nav, resolved.signedIn]);
   const onSignedOut = useCallback(() => nav.replace(resolved.signIn), [nav, resolved.signIn]);
 
@@ -100,6 +106,7 @@ export const useJBExpoAuthNavigator = (paths?: JBExpoAuthNavigatorPaths): JBAuth
       goToVerifyEmail,
       goToVerifyEmailReplace,
       goToWelcome,
+      goToGuestExplore,
       onSignedIn,
       onSignedOut,
     }),
@@ -118,6 +125,7 @@ export const useJBExpoAuthNavigator = (paths?: JBExpoAuthNavigatorPaths): JBAuth
       goToVerifyEmail,
       goToVerifyEmailReplace,
       goToWelcome,
+      goToGuestExplore,
       onSignedIn,
       onSignedOut,
     ],

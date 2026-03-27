@@ -60,6 +60,7 @@ type JBExpoRootLayoutProps = {
   withStatusBar?: boolean;
   statusBarStyle?: StatusBarStyle;
   stripeConfig?: JBStripeConfig;
+  unauthenticatedInitialRouteGroup?: "(app)" | "(auth)";
   manageNativeSplash?: boolean;
   onAuthStateChanged?: (state: {
     authStatus: JBAuthStatus;
@@ -400,6 +401,7 @@ export function JBExpoRootLayout({
   withStatusBar = true,
   statusBarStyle = "light",
   stripeConfig,
+  unauthenticatedInitialRouteGroup = "(app)",
   manageNativeSplash = true,
   onAuthStateChanged,
   underMaintenanceFallback,
@@ -527,6 +529,7 @@ export function JBExpoRootLayout({
       {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}
 
       <Stack
+        initialRouteName={unauthenticatedInitialRouteGroup}
         screenOptions={{
           headerTintColor: resolvedHeaderTintColor ?? "white",
           headerBackTitle: "Volver",

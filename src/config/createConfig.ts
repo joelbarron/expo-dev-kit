@@ -5,6 +5,7 @@ import {
   JBAuthAccountScreensConfig,
   JBAuthRequiredProfileFields,
   JBAuthUserDebugConfig,
+  JBAuthWelcomeConfig,
   JBApiHostConfig,
   JBAppConfig,
   JBAppConfigOverrides,
@@ -244,5 +245,20 @@ export const getAuthUserDebugConfig = (config: JBAppConfig): JBAuthUserDebugConf
       ...(defaultJBExpoConfig.auth.userDebug.signUp ?? {}),
       ...(userDebug?.signUp ?? {})
     }
+  };
+};
+
+export const getAuthWelcomeConfig = (config: JBAppConfig): JBAuthWelcomeConfig => {
+  const base = defaultJBExpoConfig.auth.welcome;
+  const override = config.auth?.welcome;
+
+  return {
+    allowGuestExplore: pickBoolean(
+      override?.allowGuestExplore,
+      base.allowGuestExplore
+    ),
+    guestExploreLabel:
+      (override?.guestExploreLabel ?? base.guestExploreLabel).trim() ||
+      base.guestExploreLabel,
   };
 };

@@ -76,6 +76,11 @@ export type JBAuthVerifyEmailVisualConfig = {
   animationSize?: number;
 };
 
+export type JBAuthWelcomeConfig = {
+  allowGuestExplore: boolean;
+  guestExploreLabel: string;
+};
+
 export type JBAuthAccountScreensConfig = {
   enabled: boolean;
   routing: {
@@ -292,6 +297,7 @@ export type JBAppConfig = {
     visuals: {
       verifyEmail: JBAuthVerifyEmailVisualConfig;
     };
+    welcome: JBAuthWelcomeConfig;
     accountScreens: JBAuthAccountScreensConfig;
     account: JBAuthAccountConfig;
     profileRoles: JBAuthProfileRoleOption[];

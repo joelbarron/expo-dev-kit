@@ -12,3 +12,4 @@ export * from './shared';
 export * from './http';
 export * from './services';
 export * from './payments';
+export * from './navigation';

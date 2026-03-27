@@ -49,6 +49,10 @@ export const defaultJBExpoConfig: JBAppConfig = {
         animationSize: 180,
       },
     },
+    welcome: {
+      allowGuestExplore: false,
+      guestExploreLabel: "Explorar como invitado",
+    },
     accountScreens: {
       enabled: true,
       routing: {
