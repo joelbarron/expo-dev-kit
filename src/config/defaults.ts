@@ -43,7 +43,7 @@ export const defaultJBExpoConfig: JBAppConfig = {
     },
     notifications: {
       enabled: true,
-      path: "/notifications",
+      path: "/settings/notifications",
     },
     permissions: {
       enabled: true,

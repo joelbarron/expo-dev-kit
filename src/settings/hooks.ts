@@ -155,19 +155,22 @@ export const useJBSettingsSections = (
           {
             id: 'theme-system',
             title: 'Tema del sistema',
-            subtitle: themeMode === 'system' ? 'Activo' : undefined,
+            type: 'theme' as const,
+            isActive: themeMode === 'system',
             onPress: () => setThemeMode?.('system'),
           },
           {
             id: 'theme-light',
             title: 'Tema claro',
-            subtitle: themeMode === 'light' ? 'Activo' : undefined,
+            type: 'theme' as const,
+            isActive: themeMode === 'light',
             onPress: () => setThemeMode?.('light'),
           },
           {
             id: 'theme-dark',
             title: 'Tema oscuro',
-            subtitle: themeMode === 'dark' ? 'Activo' : undefined,
+            type: 'theme' as const,
+            isActive: themeMode === 'dark',
             onPress: () => setThemeMode?.('dark'),
           },
         ];

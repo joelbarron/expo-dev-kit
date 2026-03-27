@@ -69,11 +69,13 @@ const permissionIconMap: Record<JBPermissionKey, keyof typeof MaterialIcons.glyp
 export type JBPermissionsSetupScreenProps = {
   title?: string;
   continuePath?: string;
+  showContinueButton?: boolean;
 };
 
 export const JBPermissionsSetupScreen = ({
   title = 'Permisos',
   continuePath,
+  showContinueButton = true,
 }: JBPermissionsSetupScreenProps) => {
   const router = useRouter();
   const baseConfig = getLastCreatedJBExpoConfig();
@@ -187,28 +189,30 @@ export const JBPermissionsSetupScreen = ({
       <JBMainLayout
         scrollable
         footer={
-          <VStack className="w-full" space="sm">
-            <JBFormButton
-              text="Continuar"
-              action="primary"
-              variant="solid"
-              onPress={() => {
-                if (!canContinue) {
-                  Toast.show({
-                    type: 'error',
-                    text1: 'Faltan permisos requeridos',
-                    text2: 'Concede los permisos obligatorios para continuar.',
-                  });
-                  return;
-                }
-                void clearPermissionsGuardNextPromptAt(reminderKey);
-                router.back();
-                if (continuePath) {
-                  router.replace(continuePath as any);
-                }
-              }}
-            />
-          </VStack>
+          showContinueButton ? (
+            <VStack className="w-full" space="sm">
+              <JBFormButton
+                text="Continuar"
+                action="primary"
+                variant="solid"
+                onPress={() => {
+                  if (!canContinue) {
+                    Toast.show({
+                      type: 'error',
+                      text1: 'Faltan permisos requeridos',
+                      text2: 'Concede los permisos obligatorios para continuar.',
+                    });
+                    return;
+                  }
+                  void clearPermissionsGuardNextPromptAt(reminderKey);
+                  router.back();
+                  if (continuePath) {
+                    router.replace(continuePath as any);
+                  }
+                }}
+              />
+            </VStack>
+          ) : undefined
         }
         footerClassName="px-5 py-4"
       >

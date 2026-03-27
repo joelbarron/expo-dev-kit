@@ -17,6 +17,7 @@ export type JBSettingsItem = {
   title: string;
   subtitle?: string;
   type?: JBSettingsItemType;
+  isActive?: boolean;
   disabled?: boolean;
   badge?: string;
   rightLabel?: string;
