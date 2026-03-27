@@ -132,6 +132,7 @@ export type JBUserPersonalDataScreenProps = {
   showProfileCta?: boolean;
   profileHref?: string;
   topContent?: ReactNode;
+  layoutHeader?: ReactNode;
 };
 
 export function JBUserPersonalDataScreen(
@@ -141,6 +142,7 @@ export function JBUserPersonalDataScreen(
     showProfileCta = true,
     profileHref = '/user/account-data?tab=profile',
     topContent,
+    layoutHeader,
   } = props;
   const router = useRouter();
   const navigation = useNavigation();
@@ -958,6 +960,7 @@ export function JBUserPersonalDataScreen(
   return (
     <>
       <AuthScreenLayout
+        header={layoutHeader}
         subtitle="Actualiza tu correo, teléfono y usuario. Los cambios de contacto requieren verificación."
         footerClassName={showFooterActions ? "pt-4 pb-6" : undefined}
         footer={showFooterActions

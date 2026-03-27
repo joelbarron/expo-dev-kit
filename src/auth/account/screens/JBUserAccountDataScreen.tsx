@@ -61,19 +61,11 @@ export function JBUserAccountDataScreen() {
   const headerChips = useMemo(
     () => (
       <HStack
-        space="sm"
-        className="items-center justify-center pr-1"
+        space="md"
+        className="justify-center pb-3 px-5"
       >
         <Chip
           title="Perfil"
-          className="min-w-[74px]"
-          titleClassName={
-            activeTab === 'profile'
-              ? 'text-primary-700 font-semibold text-[10px]'
-              : 'text-white font-semibold text-[10px]'
-          }
-          activeBgClassName="bg-white"
-          inactiveBgClassName="bg-white/20"
           isActive={activeTab === 'profile'}
           onPress={() => {
             if (activeTab === 'profile') return;
@@ -82,14 +74,6 @@ export function JBUserAccountDataScreen() {
         />
         <Chip
           title="Acceso"
-          className="min-w-[74px]"
-          titleClassName={
-            activeTab === 'access'
-              ? 'text-primary-700 font-semibold text-[10px]'
-              : 'text-white font-semibold text-[10px]'
-          }
-          activeBgClassName="bg-white"
-          inactiveBgClassName="bg-white/20"
           isActive={activeTab === 'access'}
           onPress={() => {
             if (activeTab === 'access') return;
@@ -103,17 +87,26 @@ export function JBUserAccountDataScreen() {
 
   useEffect(() => {
     (navigation as any).setOptions?.({
+      headerShown: true,
       gestureEnabled: !shouldLockBack,
       headerLeft: shouldLockBack ? () => null : undefined,
-      headerTitleAlign: 'center',
       title: shouldLockBack ? 'Completar perfil' : 'Editar datos de cuenta',
-      headerRight: shouldLockBack ? undefined : () => headerChips,
     });
-  }, [headerChips, navigation, shouldLockBack]);
+  }, [navigation, shouldLockBack]);
 
   if (activeTab === 'access') {
-    return <JBUserPersonalDataScreen showProfileCta={false} />;
+    return (
+      <JBUserPersonalDataScreen
+        showProfileCta={false}
+        layoutHeader={shouldLockBack ? undefined : headerChips}
+      />
+    );
   }
 
-  return <JBUserDefaultProfileScreen showPersonalDataCta={false} />;
+  return (
+    <JBUserDefaultProfileScreen
+      showPersonalDataCta={false}
+      layoutHeader={shouldLockBack ? undefined : headerChips}
+    />
+  );
 }

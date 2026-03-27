@@ -232,5 +232,32 @@ export const defaultJBExpoConfig: JBAppConfig = {
         dark: "typography.50",
       },
     },
+    chip: {
+      active: {
+        backgroundColor: {
+          light: "primary.500",
+          dark: "primary.500",
+        },
+        borderColor: "transparent",
+        textColor: {
+          light: "typography.white",
+          dark: "typography.white",
+        },
+      },
+      inactive: {
+        backgroundColor: {
+          light: "background.150",
+          dark: "background.200",
+        },
+        borderColor: {
+          light: "outline.200",
+          dark: "outline.700",
+        },
+        textColor: {
+          light: "typography.black",
+          dark: "typography.50",
+        },
+      },
+    },
   },
 };

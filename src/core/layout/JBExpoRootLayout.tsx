@@ -5,7 +5,7 @@ import { StatusBar, StatusBarStyle } from "expo-status-bar";
 import moment from "moment";
 import "moment/locale/es";
 import "moment/locale/es-mx";
-import React, { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRef } from "react";
 import { Platform } from "react-native";
 
@@ -28,6 +28,7 @@ import {
   resolveJBUIColor,
 } from "../../config";
 import { useColorScheme } from "../../hooks";
+import { ConfirmationDialog } from "../../shared";
 import { useAppConfigStore, useAuthStore } from "../../runtime";
 import { getColor } from "../../utils";
 import { JBUnderMaintenanceScreen } from "../app-status";
@@ -216,7 +217,11 @@ function JBProfileCompletionNavigationGuard() {
   const { authStatus, isAuthenticated } = useJBAuth();
   const baseConfig = getLastCreatedJBExpoConfig();
   const appConfig = useAppConfigStore((state: any) => state?.appConfig);
+  const activeProfileId = useAuthStore(
+    (state: any) => state?.activeProfile?.id ?? state?.defaultProfile?.id ?? null,
+  );
   const profileCompletion = useJBProfileCompletion();
+  const [showSuggestedDialog, setShowSuggestedDialog] = useState(false);
 
   const mergedConfig = useMemo(
     () =>
@@ -257,19 +262,47 @@ function JBProfileCompletionNavigationGuard() {
   );
   const attemptedPathRef = useRef<string | null>(null);
   const forcedCompletionActiveRef = useRef(false);
+  const suggestedPromptKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (authStatus !== "authenticated" || !isAuthenticated) {
       forcedCompletionActiveRef.current = false;
       attemptedPathRef.current = null;
+      suggestedPromptKeyRef.current = null;
+      setShowSuggestedDialog(false);
       return;
     }
     if (!profileCompletion.enabled) {
       forcedCompletionActiveRef.current = false;
+      suggestedPromptKeyRef.current = null;
+      setShowSuggestedDialog(false);
       return;
     }
     if (accountConfig.profileCompletionMode !== "enforced") {
       forcedCompletionActiveRef.current = false;
+      if (accountConfig.profileCompletionMode === "suggested") {
+        if (profileCompletion.isComplete) {
+          suggestedPromptKeyRef.current = null;
+          setShowSuggestedDialog(false);
+          return;
+        }
+
+        const isOnCompletionPath = isSameOrDescendantPath(
+          pathname,
+          completionBasePath,
+        );
+        const promptKey = `${String(activeProfileId ?? "none")}::${profileCompletion.missingFields.join(",")}`;
+        const shouldShowPrompt =
+          !isOnCompletionPath && suggestedPromptKeyRef.current !== promptKey;
+
+        if (shouldShowPrompt) {
+          suggestedPromptKeyRef.current = promptKey;
+          setShowSuggestedDialog(true);
+        }
+
+        return;
+      }
+
       return;
     }
     const isOnCompletionPath = isSameOrDescendantPath(
@@ -309,6 +342,7 @@ function JBProfileCompletionNavigationGuard() {
     attemptedPathRef.current = null;
   }, [
     accountConfig.profileCompletionMode,
+    activeProfileId,
     completionFallbackPath,
     authStatus,
     completionBasePath,
@@ -317,10 +351,36 @@ function JBProfileCompletionNavigationGuard() {
     pathname,
     profileCompletion.enabled,
     profileCompletion.isComplete,
+    profileCompletion.missingFields,
     router,
   ]);
 
-  return null;
+  return (
+    <ConfirmationDialog
+      open={showSuggestedDialog}
+      setOpen={setShowSuggestedDialog}
+      showIcon={false}
+      title="Completa tu perfil"
+      content="Te recomendamos completar tu perfil para mejorar la experiencia de reserva y seguridad en tu cuenta."
+      agreeText="Ir a completar perfil"
+      agreeColor="secondary"
+      agreeVariant="solid"
+      disagreeText="Tal vez en otro momento"
+      disagreeColor="primary"
+      disagreeVariant="link"
+      footerLayout="column"
+      closeOnAgree={false}
+      contentClassName="w-full max-w-[415px] items-center gap-4 rounded-3xl border border-outline-200 bg-background-light px-5 py-7 dark:border-outline-700 dark:bg-background-0"
+      footerClassName="pt-1"
+      onAgree={() => {
+        setShowSuggestedDialog(false);
+        router.push(completionPath as any);
+      }}
+      onDisAgree={() => {
+        setShowSuggestedDialog(false);
+      }}
+    />
+  );
 }
 
 export function JBExpoRootLayout({

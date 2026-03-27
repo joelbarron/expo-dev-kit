@@ -244,6 +244,17 @@ export type JBUIButtonConfig = JBUIButtonActionConfig & {
   default?: JBUIButtonActionConfig;
 };
 
+export type JBUIChipStateConfig = {
+  backgroundColor?: JBUIColorConfig;
+  borderColor?: JBUIColorConfig;
+  textColor?: JBUIColorConfig;
+};
+
+export type JBUIChipConfig = {
+  active?: JBUIChipStateConfig;
+  inactive?: JBUIChipStateConfig;
+};
+
 export type JBUIConfig = {
   header?: JBUIHeaderConfig;
   tabs?: JBUITabsConfig;
@@ -253,6 +264,7 @@ export type JBUIConfig = {
   forms?: JBUIFormsConfig;
   socialButtons?: JBUISocialButtonsConfig;
   button?: JBUIButtonConfig;
+  chip?: JBUIChipConfig;
 };
 
 export type JBAppConfig = {

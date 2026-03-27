@@ -161,6 +161,7 @@ export type JBUserDefaultProfileScreenProps = {
   showPersonalDataCta?: boolean;
   personalDataHref?: string;
   topContent?: ReactNode;
+  layoutHeader?: ReactNode;
 };
 
 export function JBUserDefaultProfileScreen(
@@ -170,6 +171,7 @@ export function JBUserDefaultProfileScreen(
     showPersonalDataCta = true,
     personalDataHref = '/user/account-data?tab=access',
     topContent,
+    layoutHeader,
   } = props;
   const router = useRouter();
   const auth = useJBAuth();
@@ -305,6 +307,7 @@ export function JBUserDefaultProfileScreen(
 
   return (
     <AuthScreenLayout
+      header={layoutHeader}
       subtitle="Actualiza la información del perfil principal de tu cuenta."
       footerClassName="pt-4 pb-6"
       footer={
