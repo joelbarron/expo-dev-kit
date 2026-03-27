@@ -69,9 +69,10 @@ export const useJBUserAccountCapabilities = (): JBUserAccountCapabilities => {
       !isProfileMirrorEnabled;
     const canCreateProfile = canSeeProfiles && accountScreensConfig.screens.profiles.allowCreate;
     const canSwitchProfiles =
-      canSeeProfiles &&
+      accountScreensConfig.enabled &&
       accountScreensConfig.screens.profiles.allowSwitch &&
-      profilesCount > 1;
+      profilesCount > 1 &&
+      (canSeeProfiles || isProfileMirrorEnabled);
     const canEditDefaultProfile =
       accountScreensConfig.enabled && Boolean(accountConfig.allowDefaultProfileEdit);
 
