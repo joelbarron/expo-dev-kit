@@ -6,7 +6,9 @@ import { useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
+import { getLastCreatedJBExpoConfig, getSettingsConfig } from '../../../config';
 import { JBFormButton, JBFormDateTimePicker, JBFormInput, JBFormPicker } from '../../../forms';
+import { useAppConfigStore } from '../../../runtime';
 import { Box, HStack, Text, VStack } from '../../../ui';
 import { getFormattedDate } from '../../../utils/data-format';
 import { GENDERS, GENDER_SELECT_OPTIONS } from '../../constants';
@@ -149,10 +151,32 @@ export function JBUserEditProfileScreen({ profileId }: JBUserEditProfileScreenPr
   const router = useRouter();
   const auth = useJBAuth();
   const capabilities = useJBUserAccountCapabilities();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
+  const baseConfig = getLastCreatedJBExpoConfig();
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [loadedProfile, setLoadedProfile] = useState<ProfileRecord | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<SelectedPhoto | null>(null);
   const [photoCacheKey] = useState<number | null>(null);
+
+  const mergedConfig = useMemo(
+    () => ({
+      ...baseConfig,
+      settings: {
+        ...(baseConfig.settings ?? {}),
+        ...(appConfig?.settings ?? {}),
+      },
+    }),
+    [appConfig?.settings, baseConfig]
+  );
+  const settingsConfig = useMemo(
+    () => getSettingsConfig(mergedConfig as any),
+    [mergedConfig]
+  );
+  const permissionsSettingsPath = useMemo(() => {
+    const configuredPath = settingsConfig.permissions?.path?.trim();
+    if (!configuredPath) return '/settings/permissions';
+    return configuredPath.startsWith('/') ? configuredPath : `/${configuredPath}`;
+  }, [settingsConfig.permissions?.path]);
 
   const requiredFields = capabilities.accountConfig.requiredProfileFields as Record<string, boolean>;
   const schema = useMemo(() => createSchema(requiredFields), [requiredFields]);
@@ -246,14 +270,34 @@ export function JBUserEditProfileScreen({ profileId }: JBUserEditProfileScreenPr
     });
   }, []);
 
-  const pickFromLibrary = useCallback(async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
+  const openPermissionsSetup = useCallback(() => {
+    router.push(permissionsSettingsPath as any);
+  }, [permissionsSettingsPath, router]);
+
+  const handlePermissionDenied = useCallback(
+    (resource: string, canAskAgain?: boolean | null) => {
+      if (canAskAgain === false) {
+        Toast.show({
+          type: 'error',
+          text1: 'Permiso bloqueado',
+          text2: `Activa ${resource} en permisos para continuar.`,
+        });
+        openPermissionsSetup();
+        return;
+      }
       Toast.show({
         type: 'error',
         text1: 'Permiso requerido',
-        text2: 'Autoriza acceso a tus fotos para continuar.',
+        text2: `Autoriza ${resource} para continuar.`,
       });
+    },
+    [openPermissionsSetup]
+  );
+
+  const pickFromLibrary = useCallback(async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      handlePermissionDenied('el acceso a tus fotos', permission.canAskAgain);
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -266,16 +310,12 @@ export function JBUserEditProfileScreen({ profileId }: JBUserEditProfileScreenPr
     });
     if (result.canceled) return;
     applySelectedAsset(result.assets?.[0]);
-  }, [applySelectedAsset]);
+  }, [applySelectedAsset, handlePermissionDenied]);
 
   const takePhoto = useCallback(async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Toast.show({
-        type: 'error',
-        text1: 'Permiso requerido',
-        text2: 'Autoriza acceso a la cámara para continuar.',
-      });
+      handlePermissionDenied('el acceso a la camara', permission.canAskAgain);
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
@@ -286,7 +326,7 @@ export function JBUserEditProfileScreen({ profileId }: JBUserEditProfileScreenPr
     });
     if (result.canceled) return;
     applySelectedAsset(result.assets?.[0]);
-  }, [applySelectedAsset]);
+  }, [applySelectedAsset, handlePermissionDenied]);
 
   const submitForm = useCallback(
     async (values: FormValues) => {

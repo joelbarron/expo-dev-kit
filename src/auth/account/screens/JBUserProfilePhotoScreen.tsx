@@ -6,7 +6,11 @@ import { useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
-import { getAuthAccountScreensConfig, getLastCreatedJBExpoConfig } from '../../../config';
+import {
+  getAuthAccountScreensConfig,
+  getLastCreatedJBExpoConfig,
+  getSettingsConfig,
+} from '../../../config';
 import { JBFormButton } from '../../../forms';
 import { useAppConfigStore, useAuthStore } from '../../../runtime';
 import { Box, VStack } from '../../../ui';
@@ -56,9 +60,22 @@ export function JBUserProfilePhotoScreen() {
         ...baseConfig.auth,
         ...(appConfig?.auth ?? {}),
       },
+      settings: {
+        ...(baseConfig.settings ?? {}),
+        ...(appConfig?.settings ?? {}),
+      },
     }),
-    [appConfig?.auth, baseConfig]
+    [appConfig?.auth, appConfig?.settings, baseConfig]
   );
+  const settingsConfig = useMemo(
+    () => getSettingsConfig(mergedConfig as any),
+    [mergedConfig]
+  );
+  const permissionsSettingsPath = useMemo(() => {
+    const configuredPath = settingsConfig.permissions?.path?.trim();
+    if (!configuredPath) return '/settings/permissions';
+    return configuredPath.startsWith('/') ? configuredPath : `/${configuredPath}`;
+  }, [settingsConfig.permissions?.path]);
   const accountScreensConfig = useMemo(
     () => getAuthAccountScreensConfig(mergedConfig as any),
     [mergedConfig]
@@ -115,10 +132,34 @@ export function JBUserProfilePhotoScreen() {
     [clearErrors, setValue]
   );
 
+  const openPermissionsSetup = useCallback(() => {
+    router.push(permissionsSettingsPath as any);
+  }, [permissionsSettingsPath, router]);
+
+  const handlePermissionDenied = useCallback(
+    (resource: string, canAskAgain?: boolean | null) => {
+      if (canAskAgain === false) {
+        Toast.show({
+          type: 'error',
+          text1: 'Permiso bloqueado',
+          text2: `Activa ${resource} en permisos para continuar.`,
+        });
+        openPermissionsSetup();
+        return;
+      }
+      Toast.show({
+        type: 'error',
+        text1: 'Permiso requerido',
+        text2: `Autoriza ${resource} para continuar.`,
+      });
+    },
+    [openPermissionsSetup]
+  );
+
   const pickFromLibrary = useCallback(async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Toast.show({ type: 'error', text1: 'Permiso requerido', text2: 'Autoriza acceso a tus fotos para continuar.' });
+      handlePermissionDenied('el acceso a tus fotos', permission.canAskAgain);
       return;
     }
 
@@ -133,12 +174,12 @@ export function JBUserProfilePhotoScreen() {
 
     if (result.canceled) return;
     applySelectedAsset(result.assets?.[0]);
-  }, [applySelectedAsset, cropConfig]);
+  }, [applySelectedAsset, cropConfig, handlePermissionDenied]);
 
   const takePhoto = useCallback(async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Toast.show({ type: 'error', text1: 'Permiso requerido', text2: 'Autoriza acceso a la cámara para continuar.' });
+      handlePermissionDenied('el acceso a la camara', permission.canAskAgain);
       return;
     }
 
@@ -151,7 +192,7 @@ export function JBUserProfilePhotoScreen() {
 
     if (result.canceled) return;
     applySelectedAsset(result.assets?.[0]);
-  }, [applySelectedAsset, cropConfig]);
+  }, [applySelectedAsset, cropConfig, handlePermissionDenied]);
 
   const submitSave = useCallback(async () => {
     const pictureBase64 = selectedPhoto?.base64;
