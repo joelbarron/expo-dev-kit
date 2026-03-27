@@ -330,6 +330,13 @@ export type JBSettingsVersionConfig = {
 export type JBSettingsSecurityConfig = {
   biometricsEnabled?: boolean;
   biometricsPath?: string;
+  biometricsPromptOnLogin?: boolean;
+  biometricsLockMode?:
+    | 'on_app_open'
+    | 'every_foreground'
+    | 'foreground_timeout';
+  biometricsLockTimeoutSeconds?: number;
+  allowDeviceCredentialFallback?: boolean;
 };
 
 export type JBSettingsConfig = {

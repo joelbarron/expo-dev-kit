@@ -137,8 +137,11 @@ export const useJBSettingsSections = (
       settingsConfig.security?.biometricsEnabled
         ? {
             id: 'security',
-            title: 'Seguridad',
-            subtitle: 'Configura accesos seguros en la aplicación.',
+            title: 'Desbloqueo biométrico',
+            subtitle:
+              Platform.OS === 'ios'
+                ? 'Configura Face ID o Touch ID para proteger tu sesión.'
+                : 'Configura huella o biometría para proteger tu sesión.',
             onPress: args?.onOpenSecurity,
           }
         : null,

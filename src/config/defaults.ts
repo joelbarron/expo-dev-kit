@@ -55,6 +55,10 @@ export const defaultJBExpoConfig: JBAppConfig = {
     security: {
       biometricsEnabled: false,
       biometricsPath: "",
+      biometricsPromptOnLogin: true,
+      biometricsLockMode: "on_app_open",
+      biometricsLockTimeoutSeconds: 300,
+      allowDeviceCredentialFallback: true,
     },
   },
   permissions: {

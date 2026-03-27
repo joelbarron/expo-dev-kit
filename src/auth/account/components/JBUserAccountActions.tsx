@@ -3,7 +3,9 @@ import { Link } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { TouchableOpacity } from 'react-native';
 
+import { getLastCreatedJBExpoConfig, getSettingsConfig } from '../../../config';
 import { useColorScheme } from '../../../hooks';
+import { useAppConfigStore } from '../../../runtime';
 import { Box, HStack, Text, VStack } from '../../../ui';
 import { getColor } from '../../../utils';
 import { useJBUserAccountCapabilities } from '../hooks/useJBUserAccountCapabilities';
@@ -64,7 +66,22 @@ export const JBUserAccountActions = ({
   title,
   className = '',
 }: JBUserAccountActionsProps) => {
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const capabilities = useJBUserAccountCapabilities();
+  const settingsConfig = getSettingsConfig({
+    ...baseConfig,
+    settings: {
+      ...(baseConfig.settings ?? {}),
+      ...(appConfig?.settings ?? {}),
+    },
+  } as any);
+  const biometricsPath = String(
+    settingsConfig.security?.biometricsPath ?? ''
+  ).trim();
+  const canOpenBiometricsSettings = Boolean(
+    settingsConfig.security?.biometricsEnabled && biometricsPath
+  );
 
   if (!capabilities.showAccountSection) {
     return null;
@@ -104,6 +121,15 @@ export const JBUserAccountActions = ({
           subtitle="Actualiza tu contraseña de acceso"
           href={`${basePath}/change-password`}
           iconName="lock-outline"
+        />
+      ) : null}
+
+      {canOpenBiometricsSettings ? (
+        <ActionRow
+          title="Desbloqueo biométrico"
+          subtitle="Configura Face ID, Touch ID o huella de acceso"
+          href={biometricsPath}
+          iconName="fingerprint"
         />
       ) : null}
 

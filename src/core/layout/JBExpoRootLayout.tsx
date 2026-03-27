@@ -53,9 +53,12 @@ import {
   clearPermissionsGuardNextPromptAt,
   getJBPermissionStatus,
   getPermissionsGuardNextPromptAt,
+  isJBBiometricsAvailable,
+  useJBBiometricsState,
 } from "../../settings";
 import { ConfirmationDialog } from "../../shared";
 import { getColor } from "../../utils";
+import { JBFormButton } from "../../forms";
 import {
   JBRequireUpdateScreen,
   JBUnderMaintenanceScreen,
@@ -637,6 +640,374 @@ function JBPermissionsNavigationGuard() {
   return null;
 }
 
+function JBBiometricsActivationPromptGuard() {
+  const { authStatus, isAuthenticated } = useJBAuth();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const previousAuthStatusRef = useRef<JBAuthStatus>("configuring");
+  const shouldEvaluateRef = useRef(false);
+
+  const mergedConfig = useMemo(
+    () =>
+      ({
+        ...baseConfig,
+        settings: {
+          ...(baseConfig.settings ?? {}),
+          ...(appConfig?.settings ?? {}),
+        },
+      } as JBAppConfig),
+    [appConfig?.settings, baseConfig],
+  );
+
+  const settingsConfig = useMemo(
+    () => getSettingsConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const securityConfig = settingsConfig.security ?? {};
+  const biometricsFeatureEnabled = Boolean(securityConfig.biometricsEnabled);
+  const shouldPromptOnLogin = securityConfig.biometricsPromptOnLogin !== false;
+  const allowDeviceCredentialFallback =
+    securityConfig.allowDeviceCredentialFallback !== false;
+  const {
+    availability,
+    isAvailabilityLoaded,
+    isEnabled,
+    isPromptDismissed,
+    refreshAvailability,
+    setEnabled,
+    setPromptDismissed,
+    authenticate,
+  } = useJBBiometricsState();
+  const biometricLabel = availability?.label ?? "Biometría";
+
+  useEffect(() => {
+    const previousStatus = previousAuthStatusRef.current;
+    const transitionedToAuthenticated =
+      previousStatus === "unauthenticated" &&
+      authStatus === "authenticated" &&
+      isAuthenticated;
+
+    if (transitionedToAuthenticated) {
+      shouldEvaluateRef.current = true;
+      void refreshAvailability();
+    }
+
+    if (authStatus === "unauthenticated" || !isAuthenticated) {
+      shouldEvaluateRef.current = false;
+      setShowPrompt(false);
+    }
+
+    previousAuthStatusRef.current = authStatus;
+  }, [authStatus, isAuthenticated, refreshAvailability]);
+
+  useEffect(() => {
+    if (!shouldEvaluateRef.current) return;
+    if (!biometricsFeatureEnabled || !shouldPromptOnLogin) {
+      shouldEvaluateRef.current = false;
+      return;
+    }
+    if (isEnabled || isPromptDismissed) {
+      shouldEvaluateRef.current = false;
+      return;
+    }
+    if (!isAvailabilityLoaded) return;
+    if (!isJBBiometricsAvailable(availability)) {
+      shouldEvaluateRef.current = false;
+      return;
+    }
+
+    setShowPrompt(true);
+    shouldEvaluateRef.current = false;
+  }, [
+    availability,
+    biometricsFeatureEnabled,
+    isAvailabilityLoaded,
+    isEnabled,
+    isPromptDismissed,
+    shouldPromptOnLogin,
+  ]);
+
+  return (
+    <ConfirmationDialog
+      open={showPrompt}
+      setOpen={setShowPrompt}
+      showIcon={false}
+      title={`Activa ${biometricLabel}`}
+      content={`Usa ${biometricLabel} para desbloquear tu sesión de forma rápida y segura.`}
+      agreeText={`Activar ${biometricLabel}`}
+      agreeColor="primary"
+      agreeVariant="solid"
+      disagreeText="Ahora no"
+      disagreeColor="secondary"
+      disagreeVariant="link"
+      footerLayout="column"
+      closeOnAgree={false}
+      onAgree={async () => {
+        const result = await authenticate({
+          context: "enable",
+          label: biometricLabel,
+          allowDeviceCredentialFallback,
+        });
+        if (result.success) {
+          await setEnabled(true);
+          await setPromptDismissed(false);
+        }
+        setShowPrompt(false);
+      }}
+      onDisAgree={async () => {
+        await setPromptDismissed(true);
+        setShowPrompt(false);
+      }}
+    />
+  );
+}
+
+function JBBiometricsAppLockOverlay() {
+  const { authStatus, isAuthenticated, signOut } = useJBAuth();
+  const pathname = usePathname();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
+  const [isLocked, setIsLocked] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const appStateRef = useRef(AppState.currentState);
+  const lockTriggeredForSessionRef = useRef(false);
+  const skipNextOpenLockRef = useRef(false);
+  const previousAuthStatusRef = useRef<JBAuthStatus>("configuring");
+
+  const mergedConfig = useMemo(
+    () =>
+      ({
+        ...baseConfig,
+        settings: {
+          ...(baseConfig.settings ?? {}),
+          ...(appConfig?.settings ?? {}),
+        },
+      } as JBAppConfig),
+    [appConfig?.settings, baseConfig],
+  );
+  const settingsConfig = useMemo(
+    () => getSettingsConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const securityConfig = settingsConfig.security ?? {};
+  const lockMode = securityConfig.biometricsLockMode ?? "on_app_open";
+  const lockTimeoutSecondsRaw = Number(
+    securityConfig.biometricsLockTimeoutSeconds,
+  );
+  const lockTimeoutMs =
+    Number.isFinite(lockTimeoutSecondsRaw) && lockTimeoutSecondsRaw > 0
+      ? lockTimeoutSecondsRaw * 1000
+      : 300000;
+  const allowDeviceCredentialFallback =
+    securityConfig.allowDeviceCredentialFallback !== false;
+
+  const {
+    availability,
+    isAvailabilityLoaded,
+    isEnabled,
+    lastUnlockAt,
+    refreshAvailability,
+    markUnlockedNow,
+    authenticate,
+  } = useJBBiometricsState();
+  const biometricLabel = availability?.label ?? "Biometría";
+
+  const shouldProtect = useMemo(() => {
+    if (!Boolean(securityConfig.biometricsEnabled)) return false;
+    if (!isAuthenticated || authStatus !== "authenticated") return false;
+    if (isLikelyAuthPath(pathname)) return false;
+    if (!isEnabled) return false;
+    if (!isAvailabilityLoaded) return false;
+    return isJBBiometricsAvailable(availability);
+  }, [
+    authStatus,
+    availability,
+    isAuthenticated,
+    isAvailabilityLoaded,
+    isEnabled,
+    pathname,
+    securityConfig.biometricsEnabled,
+  ]);
+
+  useEffect(() => {
+    const previousStatus = previousAuthStatusRef.current;
+    if (
+      previousStatus === "unauthenticated" &&
+      authStatus === "authenticated" &&
+      isAuthenticated
+    ) {
+      skipNextOpenLockRef.current = true;
+      lockTriggeredForSessionRef.current = false;
+    }
+
+    if (authStatus === "unauthenticated" || !isAuthenticated) {
+      lockTriggeredForSessionRef.current = false;
+      skipNextOpenLockRef.current = false;
+      setIsLocked(false);
+    }
+
+    previousAuthStatusRef.current = authStatus;
+  }, [authStatus, isAuthenticated]);
+
+  useEffect(() => {
+    if (!shouldProtect) {
+      setIsLocked(false);
+      return;
+    }
+    void refreshAvailability();
+  }, [refreshAvailability, shouldProtect]);
+
+  useEffect(() => {
+    if (!shouldProtect) return;
+    if (lockMode === "on_app_open") {
+      if (!lockTriggeredForSessionRef.current) {
+        lockTriggeredForSessionRef.current = true;
+        if (!skipNextOpenLockRef.current) {
+          setIsLocked(true);
+        }
+        skipNextOpenLockRef.current = false;
+      }
+      return;
+    }
+
+    if (!lockTriggeredForSessionRef.current) {
+      lockTriggeredForSessionRef.current = true;
+      if (lockMode === "every_foreground") {
+        setIsLocked(true);
+        return;
+      }
+
+      if (!lastUnlockAt || Date.now() - lastUnlockAt >= lockTimeoutMs) {
+        setIsLocked(true);
+      }
+    }
+  }, [lastUnlockAt, lockMode, lockTimeoutMs, shouldProtect]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      const previousState = appStateRef.current;
+      appStateRef.current = nextState;
+
+      const becameActive =
+        nextState === "active" &&
+        (previousState === "inactive" || previousState === "background");
+
+      if (!becameActive || !shouldProtect) return;
+
+      if (lockMode === "every_foreground") {
+        setIsLocked(true);
+        return;
+      }
+
+      if (lockMode === "foreground_timeout") {
+        if (!lastUnlockAt || Date.now() - lastUnlockAt >= lockTimeoutMs) {
+          setIsLocked(true);
+        }
+      }
+    });
+
+    return () => subscription.remove();
+  }, [lastUnlockAt, lockMode, lockTimeoutMs, shouldProtect]);
+
+  const handleUnlock = useCallback(async () => {
+    if (isAuthenticating || !shouldProtect) return;
+
+    setIsAuthenticating(true);
+    try {
+      const result = await authenticate({
+        context: "unlock",
+        label: biometricLabel,
+        allowDeviceCredentialFallback,
+      });
+
+      if (result.success) {
+        await markUnlockedNow();
+        setIsLocked(false);
+      }
+    } finally {
+      setIsAuthenticating(false);
+    }
+  }, [
+    allowDeviceCredentialFallback,
+    authenticate,
+    biometricLabel,
+    isAuthenticating,
+    markUnlockedNow,
+    shouldProtect,
+  ]);
+
+  useEffect(() => {
+    if (!isLocked || !shouldProtect || isAuthenticating) return;
+    void handleUnlock();
+  }, [handleUnlock, isAuthenticating, isLocked, shouldProtect]);
+
+  if (!shouldProtect || !isLocked) {
+    return null;
+  }
+
+  return (
+    <View
+      style={{
+        position: "absolute",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        zIndex: 9999,
+        elevation: 80,
+      }}
+    >
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: getColor("primary")?.[500] ?? "#0ea5e9",
+          paddingHorizontal: 24,
+        }}
+      >
+        <RNText
+          style={{
+            color: "#ffffff",
+            fontSize: 30,
+            fontWeight: "700",
+            textAlign: "center",
+          }}
+        >
+          Desbloqueo de seguridad
+        </RNText>
+        <RNText
+          style={{
+            color: "rgba(255,255,255,0.95)",
+            fontSize: 16,
+            marginTop: 12,
+            textAlign: "center",
+          }}
+        >
+          Desbloquea la aplicación con {biometricLabel}.
+        </RNText>
+        <View style={{ width: "100%", maxWidth: 360, marginTop: 26 }}>
+          <JBFormButton
+            text={isAuthenticating ? "Validando..." : "Reintentar"}
+            action="primary"
+            variant="solid"
+            isDisabled={isAuthenticating}
+            onPress={() => void handleUnlock()}
+          />
+          <JBFormButton
+            text="Cerrar sesión"
+            action="negative"
+            variant="link"
+            className="mt-3"
+            onPress={() => void signOut()}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export function JBExpoRootLayout({
   authClient,
   appMeta,
@@ -1069,6 +1440,7 @@ export function JBExpoRootLayout({
       >
         <JBProfileCompletionNavigationGuard />
         <JBPermissionsNavigationGuard />
+        <JBBiometricsActivationPromptGuard />
         {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}
 
         <Stack
@@ -1091,6 +1463,7 @@ export function JBExpoRootLayout({
             options={{ headerShown: false, animation: "none" }}
           />
         </Stack>
+        <JBBiometricsAppLockOverlay />
       </JBAuthProvider>
     );
 
