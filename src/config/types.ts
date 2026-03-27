@@ -81,6 +81,29 @@ export type JBAuthWelcomeConfig = {
   guestExploreLabel: string;
 };
 
+export type JBButtonAction =
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'positive'
+  | 'negative';
+
+export type JBButtonVariant = 'solid' | 'outline' | 'link';
+export type JBButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
+export type JBAuthFooterButtonConfig = {
+  action?: JBButtonAction;
+  variant?: JBButtonVariant;
+  size?: JBButtonSize;
+  className?: string;
+  textClassName?: string;
+};
+
+export type JBAuthFooterButtonsConfig = {
+  primary?: JBAuthFooterButtonConfig;
+  secondary?: JBAuthFooterButtonConfig;
+};
+
 export type JBAuthAccountScreensConfig = {
   enabled: boolean;
   routing: {
@@ -225,6 +248,11 @@ export type JBUISocialButtonsConfig = {
   iconColor?: JBUIColorConfig;
 };
 
+export type JBUIAuthConfig = {
+  socialButtons?: JBUISocialButtonsConfig;
+  footerButtons?: JBAuthFooterButtonsConfig;
+};
+
 export type JBUIButtonStyleConfig = {
   backgroundColor?: JBUIColorConfig;
   borderColor?: JBUIColorConfig;
@@ -267,6 +295,8 @@ export type JBUIConfig = {
   card?: JBUISectionBackgroundConfig;
   footer?: JBUISectionBackgroundConfig;
   forms?: JBUIFormsConfig;
+  auth?: JBUIAuthConfig;
+  // Deprecated: use ui.auth.socialButtons
   socialButtons?: JBUISocialButtonsConfig;
   button?: JBUIButtonConfig;
   chip?: JBUIChipConfig;
@@ -389,6 +419,8 @@ export type JBAppConfig = {
       verifyEmail: JBAuthVerifyEmailVisualConfig;
     };
     welcome: JBAuthWelcomeConfig;
+    // Deprecated: use ui.auth.footerButtons
+    footerButtons?: JBAuthFooterButtonsConfig;
     accountScreens: JBAuthAccountScreensConfig;
     account: JBAuthAccountConfig;
     profileRoles: JBAuthProfileRoleOption[];

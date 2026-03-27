@@ -3,6 +3,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../../config";
 import { JBFormButton } from "../../forms";
 import { useColorScheme } from "../../hooks";
+import { useAppConfigStore } from "../../runtime";
 import { Box, ButtonText, Text, VStack } from "../../ui";
 import { getColor } from "../../utils";
 
@@ -42,7 +43,17 @@ export function JBAuthSocialActions({
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const baseConfig = getLastCreatedJBExpoConfig();
-  const socialButtonsConfig = baseConfig?.ui?.socialButtons;
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
+  const resolvedUiConfig = {
+    ...(baseConfig?.ui ?? {}),
+    ...(appConfig?.ui ?? {}),
+    auth: {
+      ...(baseConfig?.ui?.auth ?? {}),
+      ...(appConfig?.ui?.auth ?? {}),
+    },
+  };
+  const socialButtonsConfig =
+    resolvedUiConfig?.auth?.socialButtons ?? resolvedUiConfig?.socialButtons;
   const typography = getColor("typography") ?? {};
   const background = getColor("background") ?? {};
   const outline = getColor("outline") ?? {};

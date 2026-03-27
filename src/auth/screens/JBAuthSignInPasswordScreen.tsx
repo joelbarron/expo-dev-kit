@@ -1,12 +1,11 @@
 import { useCallback, useState } from "react";
 
 import { getLastCreatedJBExpoConfig } from "../../config";
-import { JBFormButton } from "../../forms";
 import { useAppConfigStore } from "../../runtime";
 import { Box, VStack } from "../../ui";
 import { JBAuthPasswordSignInForm } from "../forms";
 import { useJBAuth } from "../provider";
-import { AuthScreenLayout } from "../ui";
+import { AuthScreenLayout, JBAuthFooterButton } from "../ui";
 import { JBAuthNavigator } from "./types";
 
 export type JBAuthSignInPasswordScreenProps = {
@@ -58,10 +57,8 @@ export function JBAuthSignInPasswordScreen(props: JBAuthSignInPasswordScreenProp
       footerClassName="pt-4 pb-6"
       footer={
         <VStack space="md" className="pt-6">
-          <JBFormButton
-            variant="solid"
-            size="xl"
-            className="px-4"
+          <JBAuthFooterButton
+            slot="primary"
             buttonType="email"
             iconPosition="start"
             text="Iniciar sesión"
@@ -69,13 +66,9 @@ export function JBAuthSignInPasswordScreen(props: JBAuthSignInPasswordScreenProp
             isDisabled={!formState.canSubmit}
             onPress={formState.submit}
           />
-          <JBFormButton
-            variant="link"
-            action="primary"
-            size="sm"
-            className="self-center px-0"
+          <JBAuthFooterButton
+            slot="secondary"
             text="¿No tienes cuenta? Crear cuenta"
-            textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
             onPress={navigator.goToSignUpForm ?? navigator.goToSignUp}
           />
         </VStack>

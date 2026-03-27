@@ -11,7 +11,7 @@ import { Box, Text, VStack } from "../../ui";
 import { authenticateWithExpoSocialProvider, useJBSocialDebugLogs } from "../expo";
 import { useJBAuth } from "../provider";
 import { LoginSocialPayload } from "../types";
-import { AuthScreenLayout, JBAuthSocialActions } from "../ui";
+import { AuthScreenLayout, JBAuthFooterButton, JBAuthSocialActions } from "../ui";
 import { shouldSelectRoleForSocialLogin } from "../utils";
 import { JBAuthNavigator } from "./types";
 
@@ -163,10 +163,8 @@ export function JBAuthSignInEntryScreen(props: JBAuthSignInEntryScreenProps) {
       footerClassName="pt-4 pb-6"
       footer={
         <VStack space="md" className="pt-6">
-          <JBFormButton
-            variant="solid"
-            size="xl"
-            className="px-4"
+          <JBAuthFooterButton
+            slot="primary"
             buttonType="default"
             showIcon
             iconName="account-plus-outline"
@@ -174,13 +172,9 @@ export function JBAuthSignInEntryScreen(props: JBAuthSignInEntryScreenProps) {
             text="Crear cuenta con email"
             onPress={navigator.goToSignUpForm ?? navigator.goToSignUp}
           />
-          <JBFormButton
-            variant="link"
-            action="primary"
-            size="sm"
-            className="self-center px-0"
+          <JBAuthFooterButton
+            slot="secondary"
             text="¿Ya tienes una cuenta? Iniciar sesión"
-            textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
             onPress={navigator.goToSignInPassword ?? (() => navigator.goToSignIn({ initialMode: "password" }))}
           />
         </VStack>

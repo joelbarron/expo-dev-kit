@@ -2,6 +2,7 @@ import { defaultJBExpoConfig } from './defaults';
 import { deepMerge } from './merge';
 import {
   JBAuthAccountConfig,
+  JBAuthFooterButtonsConfig,
   JBAuthAccountScreensConfig,
   JBAuthRequiredProfileFields,
   JBAuthUserDebugConfig,
@@ -265,6 +266,30 @@ export const getAuthWelcomeConfig = (config: JBAppConfig): JBAuthWelcomeConfig =
     guestExploreLabel:
       (override?.guestExploreLabel ?? base.guestExploreLabel).trim() ||
       base.guestExploreLabel,
+  };
+};
+
+export const getAuthFooterButtonsConfig = (
+  config: JBAppConfig
+): JBAuthFooterButtonsConfig => {
+  const base =
+    defaultJBExpoConfig.ui?.auth?.footerButtons ??
+    defaultJBExpoConfig.auth.footerButtons ??
+    {};
+  const legacyOverride = config.auth?.footerButtons ?? {};
+  const override = config.ui?.auth?.footerButtons ?? {};
+
+  return {
+    primary: {
+      ...(base.primary ?? {}),
+      ...(legacyOverride.primary ?? {}),
+      ...(override.primary ?? {}),
+    },
+    secondary: {
+      ...(base.secondary ?? {}),
+      ...(legacyOverride.secondary ?? {}),
+      ...(override.secondary ?? {}),
+    },
   };
 };
 

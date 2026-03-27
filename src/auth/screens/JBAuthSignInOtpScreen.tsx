@@ -1,10 +1,9 @@
 import { useCallback, useState } from "react";
 
-import { JBFormButton } from "../../forms";
 import { VStack } from "../../ui";
 import { JBAuthOtpSignInForm } from "../forms";
 import { useJBAuth } from "../provider";
-import { AuthScreenLayout } from "../ui";
+import { AuthScreenLayout, JBAuthFooterButton } from "../ui";
 import { JBAuthNavigator } from "./types";
 
 export type JBAuthSignInOtpScreenProps = {
@@ -77,10 +76,8 @@ export function JBAuthSignInOtpScreen(props: JBAuthSignInOtpScreenProps) {
       footerClassName="pt-4 pb-6"
       footer={
         <VStack space="md" className="pt-6">
-          <JBFormButton
-            variant="solid"
-            size="xl"
-            className="px-4"
+          <JBAuthFooterButton
+            slot="primary"
             buttonType="default"
             showIcon
             iconName="message-processing-outline"
@@ -91,13 +88,9 @@ export function JBAuthSignInOtpScreen(props: JBAuthSignInOtpScreenProps) {
             onPress={formState.submit}
           />
           {formState.otpRequested ? (
-            <JBFormButton
-              variant="link"
-              action="primary"
-              size="sm"
-              className="self-center px-0"
+            <JBAuthFooterButton
+              slot="secondary"
               text="Cambiar número"
-              textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
               onPress={formState.resetPhoneStep}
             />
           ) : null}

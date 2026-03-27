@@ -285,22 +285,40 @@ export const defaultJBExpoConfig: JBAppConfig = {
         dark: "background.950",
       },
     },
-    socialButtons: {
-      backgroundColor: {
-        light: "background.150",
-        dark: "background.200",
+    auth: {
+      socialButtons: {
+        backgroundColor: {
+          light: "background.150",
+          dark: "background.200",
+        },
+        borderColor: {
+          light: "gray.200",
+          dark: "muted.700",
+        },
+        textColor: {
+          light: "typography.black",
+          dark: "typography.50",
+        },
+        iconColor: {
+          light: "typography.black",
+          dark: "typography.50",
+        },
       },
-      borderColor: {
-        light: "gray.200",
-        dark: "muted.700",
-      },
-      textColor: {
-        light: "typography.black",
-        dark: "typography.50",
-      },
-      iconColor: {
-        light: "typography.black",
-        dark: "typography.50",
+      footerButtons: {
+        primary: {
+          action: "primary",
+          variant: "solid",
+          size: "xl",
+          className: "px-4",
+        },
+        secondary: {
+          action: "primary",
+          variant: "link",
+          size: "sm",
+          className: "self-center px-0",
+          textClassName:
+            "text-sm font-medium text-primary-600 dark:text-primary-300",
+        },
       },
     },
     chip: {

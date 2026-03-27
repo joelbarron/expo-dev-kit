@@ -8,7 +8,6 @@ import {
   getLastCreatedJBExpoConfig,
   getPermissionsConfig,
   JBAppConfig,
-  JBPermissionsConfig,
   JBPermissionKey,
 } from '../config';
 import { JBMainLayout } from '../core';
@@ -24,7 +23,6 @@ import {
 import {
   buildPermissionsGuardReminderKey,
   clearPermissionsGuardNextPromptAt,
-  setPermissionsGuardNextPromptAt,
 } from './guardReminder';
 import { JBPermissionState } from './types';
 import { useAuthStore } from '../runtime';
@@ -41,11 +39,6 @@ const normalizePermissionList = (value: unknown): JBPermissionKey[] => {
     .map((item) => String(item ?? '').trim() as JBPermissionKey)
     .filter((item) => valid.has(item));
 };
-
-const normalizeGuardMode = (
-  guardConfig: JBPermissionsConfig['guard']
-): 'strict' | 'remindable' =>
-  guardConfig?.mode === 'strict' ? 'strict' : 'remindable';
 
 const statusMeta: Record<JBPermissionState, { label: string; colorClassName: string }> = {
   granted: {
@@ -153,12 +146,6 @@ export const JBPermissionsSetupScreen = ({
     [permissionState, requiredPermissions],
   );
   const canContinue = missingRequired.length === 0;
-  const guardMode = normalizeGuardMode(permissionsConfig.guard);
-  const remindAfterHoursRaw = Number(permissionsConfig.guard?.remindAfterHours);
-  const remindAfterHours =
-    Number.isFinite(remindAfterHoursRaw) && remindAfterHoursRaw > 0
-      ? remindAfterHoursRaw
-      : 24;
   const reminderKey = useMemo(
     () =>
       buildPermissionsGuardReminderKey({
@@ -168,7 +155,6 @@ export const JBPermissionsSetupScreen = ({
       }),
     [activeProfileId, authUserId, isAuthenticated],
   );
-  const canDismiss = guardMode === 'remindable';
 
   const requestPermission = useCallback(
     async (permission: JBPermissionKey) => {
@@ -185,23 +171,6 @@ export const JBPermissionsSetupScreen = ({
     },
     [],
   );
-
-  const handleDismiss = useCallback(async () => {
-    const nextPromptAt = Date.now() + remindAfterHours * 60 * 60 * 1000;
-    await setPermissionsGuardNextPromptAt(reminderKey, nextPromptAt);
-
-    const canGoBack =
-      typeof (router as any)?.canGoBack === 'function'
-        ? Boolean((router as any).canGoBack())
-        : false;
-
-    if (canGoBack) {
-      router.back();
-      return;
-    }
-
-    router.replace('/' as any);
-  }, [remindAfterHours, reminderKey, router]);
 
   useEffect(() => {
     if (!canContinue) return;
@@ -226,7 +195,7 @@ export const JBPermissionsSetupScreen = ({
               onPress={() => {
                 if (!canContinue) {
                   Toast.show({
-                    type: 'info',
+                    type: 'error',
                     text1: 'Faltan permisos requeridos',
                     text2: 'Concede los permisos obligatorios para continuar.',
                   });
@@ -239,14 +208,6 @@ export const JBPermissionsSetupScreen = ({
                 }
               }}
             />
-            {canDismiss && canContinue ? (
-              <JBFormButton
-                text="Ahora no"
-                action="secondary"
-                variant="link"
-                onPress={() => void handleDismiss()}
-              />
-            ) : null}
           </VStack>
         }
         footerClassName="px-5 py-4"

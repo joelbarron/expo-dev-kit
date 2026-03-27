@@ -14,7 +14,12 @@ import { JBAuthSignUpForm } from '../forms';
 import { useJBAuth } from '../provider';
 import { LoginSocialPayload, RegisterPayload } from '../types';
 import { shouldSelectRoleForSocialLogin } from '../utils';
-import { AuthScreenLayout, JBAuthAlert, JBAuthSocialActions } from '../ui';
+import {
+  AuthScreenLayout,
+  JBAuthAlert,
+  JBAuthFooterButton,
+  JBAuthSocialActions,
+} from '../ui';
 import { JBAuthNavigator } from './types';
 
 export type JBAuthSignUpScreenProps = {
@@ -224,11 +229,8 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
   const showDivider = isCombinedVariant;
   const hubFooter = (
     <VStack space="md" className="pt-2">
-      <JBFormButton
-        variant="solid"
-        action="primary"
-        size="xl"
-        className="px-4"
+      <JBAuthFooterButton
+        slot="primary"
         buttonType="default"
         showIcon
         iconName="account-plus-outline"
@@ -237,24 +239,17 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
         onPress={navigator.goToSignUpForm ?? navigator.goToSignUp}
       />
 
-      <JBFormButton
-        variant="link"
-        action="primary"
-        size="sm"
-        className="self-center px-0"
+      <JBAuthFooterButton
+        slot="secondary"
         text="¿Ya tienes cuenta? Iniciar sesión"
-        textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
         onPress={navigator.goToSignInPassword ?? (() => navigator.goToSignIn({ initialMode: 'password' }))}
       />
     </VStack>
   );
   const formFooter = (
     <VStack space="md" className="pt-2">
-      <JBFormButton
-        variant="solid"
-        action="primary"
-        size="xl"
-        className="px-4"
+      <JBAuthFooterButton
+        slot="primary"
         buttonType="default"
         showIcon
         iconName="account-plus-outline"
@@ -265,13 +260,9 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
         onPress={formState.submit}
       />
 
-      <JBFormButton
-        variant="link"
-        action="primary"
-        size="sm"
-        className="self-center px-0"
+      <JBAuthFooterButton
+        slot="secondary"
         text="¿Ya tienes cuenta? Iniciar sesión"
-        textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
         onPress={navigator.goToSignInPassword ?? (() => navigator.goToSignIn({ initialMode: 'password' }))}
       />
     </VStack>
