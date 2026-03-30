@@ -4,6 +4,7 @@ export * from './guardReminder';
 export * from './biometricsStorage';
 export * from './biometrics';
 export * from './hooks';
+export * from './localReminders';
 export * from './JBSettingsScreen';
 export * from './JBPermissionsSetupScreen';
 export * from './JBSettingsSecurityScreen';

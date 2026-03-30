@@ -56,8 +56,10 @@ import {
   isJBBiometricsAvailable,
   useJBBiometricsState,
 } from "../../settings";
+import { customAxiosAuthenticated } from "../../http";
 import { ConfirmationDialog } from "../../shared";
 import { getColor } from "../../utils";
+import { loginDeviceInfo } from "../../utils/device-info";
 import { JBFormButton } from "../../forms";
 import {
   JBRequireUpdateScreen,
@@ -763,6 +765,146 @@ function JBBiometricsActivationPromptGuard() {
   );
 }
 
+function JBPushNotificationsBridge() {
+  const { authStatus, isAuthenticated } = useJBAuth();
+  const router = useRouter();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
+  const syncSignatureRef = useRef<string>("");
+  const syncInProgressRef = useRef(false);
+
+  const mergedConfig = useMemo(
+    () =>
+      ({
+        ...baseConfig,
+        settings: {
+          ...(baseConfig.settings ?? {}),
+          ...(appConfig?.settings ?? {}),
+        },
+      } as JBAppConfig),
+    [appConfig?.settings, baseConfig],
+  );
+  const settingsConfig = useMemo(
+    () => getSettingsConfig(mergedConfig),
+    [mergedConfig],
+  );
+
+  const notificationsConfig = settingsConfig.notifications ?? {};
+  const enablePushListeners = notificationsConfig.enablePushListeners !== false;
+  const autoSyncPushToken = notificationsConfig.autoSyncPushToken !== false;
+  const pushTokenSyncPath = String(
+    notificationsConfig.pushTokenSyncPath ?? "",
+  ).trim();
+
+  useEffect(() => {
+    if (Platform.OS === "web" || !enablePushListeners) {
+      return;
+    }
+
+    let responseSubscription: { remove: () => void } | null = null;
+    let receivedSubscription: { remove: () => void } | null = null;
+
+    void (async () => {
+      try {
+        const Notifications = await import("expo-notifications");
+        Notifications.setNotificationHandler({
+          handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: false,
+            shouldShowBanner: true,
+            shouldShowList: true,
+          }),
+        });
+
+        responseSubscription =
+          Notifications.addNotificationResponseReceivedListener(
+            (response) => {
+              const payload = response?.notification?.request?.content?.data;
+              const actionPath = String(
+                (payload as any)?.actionPath ?? (payload as any)?.action_path ?? "",
+              ).trim();
+
+              if (!actionPath || !actionPath.startsWith("/")) return;
+              router.push(actionPath as any);
+            },
+          );
+
+        receivedSubscription =
+          Notifications.addNotificationReceivedListener(() => {
+            // no-op: foreground handling is delegated to query invalidations in the app layer.
+          });
+      } catch {
+        // Ignore optional notification listener bootstrap failures.
+      }
+    })();
+
+    return () => {
+      responseSubscription?.remove();
+      receivedSubscription?.remove();
+    };
+  }, [enablePushListeners, router]);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    if (!autoSyncPushToken) return;
+    if (!pushTokenSyncPath || !pushTokenSyncPath.startsWith("/")) return;
+    if (!isAuthenticated || authStatus !== "authenticated") {
+      syncSignatureRef.current = "";
+      return;
+    }
+
+    let isCancelled = false;
+
+    const syncPushToken = async () => {
+      if (syncInProgressRef.current) return;
+      syncInProgressRef.current = true;
+
+      try {
+        const device = await loginDeviceInfo({
+          requestNotificationPermission: false,
+        });
+
+        const deviceToken = String(device?.token ?? "").trim();
+        if (!deviceToken) return;
+
+        const notificationToken = String(device?.notificationToken ?? "").trim();
+        const syncSignature = `${deviceToken}:${notificationToken || "<none>"}`;
+        if (syncSignatureRef.current === syncSignature) return;
+
+        await customAxiosAuthenticated.post(pushTokenSyncPath, {
+          deviceToken,
+          notificationToken: notificationToken || null,
+          platform: device?.platform,
+          name: device?.name,
+        });
+
+        if (!isCancelled) {
+          syncSignatureRef.current = syncSignature;
+        }
+      } catch {
+        // Ignore sync failures; retry on next foreground/auth cycle.
+      } finally {
+        syncInProgressRef.current = false;
+      }
+    };
+
+    void syncPushToken();
+    const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        void syncPushToken();
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+      appStateSubscription.remove();
+    };
+  }, [authStatus, autoSyncPushToken, isAuthenticated, pushTokenSyncPath]);
+
+  return null;
+}
+
 function JBBiometricsAppLockOverlay() {
   const { authStatus, isAuthenticated, signOut } = useJBAuth();
   const pathname = usePathname();
@@ -1441,6 +1583,7 @@ export function JBExpoRootLayout({
         <JBProfileCompletionNavigationGuard />
         <JBPermissionsNavigationGuard />
         <JBBiometricsActivationPromptGuard />
+        <JBPushNotificationsBridge />
         {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}
 
         <Stack

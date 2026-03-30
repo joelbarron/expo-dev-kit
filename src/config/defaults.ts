@@ -44,6 +44,17 @@ export const defaultJBExpoConfig: JBAppConfig = {
     notifications: {
       enabled: true,
       path: "/settings/notifications",
+      enablePushListeners: true,
+      autoSyncPushToken: true,
+      pushTokenSyncPath: "",
+      localReminders: {
+        enabled: false,
+        mode: "manual",
+        source: "jb_local_reminders",
+        reservationStartOffsetMinutes: 30,
+        checkoutOffsetMinutes: 15,
+        activeStatuses: ["CREATED", "CONFIRMED", "IN_PROGRESS"],
+      },
     },
     permissions: {
       enabled: true,

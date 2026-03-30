@@ -340,15 +340,12 @@ export type JBSettingsSecurityConfig = {
 };
 
 export type JBSettingsConfig = {
+  notifications?: JBSettingsNotificationsConfig;
   version?: {
     enabled?: boolean;
     title?: string;
     subtitle?: string;
   } & JBSettingsVersionConfig;
-  notifications?: {
-    enabled?: boolean;
-    path?: string;
-  };
   permissions?: {
     enabled?: boolean;
     path?: string;
@@ -357,6 +354,24 @@ export type JBSettingsConfig = {
     enabled?: boolean;
   };
   security?: JBSettingsSecurityConfig;
+};
+
+export type JBSettingsNotificationsLocalRemindersConfig = {
+  enabled?: boolean;
+  mode?: 'manual' | 'on_app_open' | 'on_foreground';
+  source?: string;
+  reservationStartOffsetMinutes?: number;
+  checkoutOffsetMinutes?: number;
+  activeStatuses?: string[];
+};
+
+export type JBSettingsNotificationsConfig = {
+  enabled?: boolean;
+  path?: string;
+  enablePushListeners?: boolean;
+  autoSyncPushToken?: boolean;
+  pushTokenSyncPath?: string;
+  localReminders?: JBSettingsNotificationsLocalRemindersConfig;
 };
 
 export type JBOfflineMode =

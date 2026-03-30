@@ -307,6 +307,10 @@ export const getSettingsConfig = (config: JBAppConfig): JBSettingsConfig => {
     notifications: {
       ...(base.notifications ?? {}),
       ...(override.notifications ?? {}),
+      localReminders: {
+        ...(base.notifications?.localReminders ?? {}),
+        ...(override.notifications?.localReminders ?? {}),
+      },
     },
     permissions: {
       ...(base.permissions ?? {}),
