@@ -92,6 +92,9 @@ export const useJBSettingsSections = (
         remoteConfig?.latest_version ??
         ''
     ).trim();
+    const stage = String(mergedConfig?.stage ?? '').trim().toUpperCase();
+    const isNonProductionStage = Boolean(stage && stage !== 'PRODUCTION');
+    const isDebugEnabled = mergedConfig?.debug === true;
     const versionItems = settingsConfig.version?.enabled === false
       ? []
       : [
@@ -115,6 +118,25 @@ export const useJBSettingsSections = (
                 }
               : undefined,
           },
+          ...(isNonProductionStage
+            ? [
+                {
+                  id: 'app-stage',
+                  title: 'Entorno',
+                  subtitle: stage,
+                },
+              ]
+            : []),
+          ...(isDebugEnabled
+            ? [
+                {
+                  id: 'app-debug',
+                  title: 'Depuración',
+                  subtitle: 'Modo debug habilitado',
+                  badge: 'DEBUG',
+                },
+              ]
+            : []),
         ];
 
     const featureItems = [
