@@ -374,6 +374,7 @@ export type JBSettingsConfig = {
   };
   appearance?: {
     enabled?: boolean;
+    defaultMode?: 'light' | 'dark' | 'system';
   };
   security?: JBSettingsSecurityConfig;
 };

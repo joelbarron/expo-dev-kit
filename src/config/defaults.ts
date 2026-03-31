@@ -68,6 +68,7 @@ export const defaultJBExpoConfig: JBAppConfig = {
     },
     appearance: {
       enabled: true,
+      defaultMode: "system",
     },
     security: {
       biometricsEnabled: false,

@@ -18,8 +18,8 @@ export function useColorScheme(): 'light' | 'dark' {
   }
 
   if (hasHydrated) {
-    return colorScheme ?? 'dark';
+    return colorScheme ?? 'light';
   }
 
-  return 'dark';
+  return 'light';
 }

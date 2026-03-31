@@ -12,16 +12,18 @@ export type JBThemeStoreState = {
 export type CreateJBThemeStoreOptions = {
   storageKey?: string;
   storage?: any;
+  initialMode?: JBThemeMode;
 };
 
 export const createJBThemeStore = (options?: CreateJBThemeStoreOptions) => {
   const storageKey = options?.storageKey ?? 'theme-storage';
   const storage = options?.storage ?? AsyncStorage;
+  const initialMode = options?.initialMode ?? 'light';
 
   return create<JBThemeStoreState>()(
     persist(
       (set) => ({
-        mode: 'system',
+        mode: initialMode,
         setMode: (mode) => set({ mode })
       }),
       {

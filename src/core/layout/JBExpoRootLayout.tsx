@@ -1267,13 +1267,13 @@ export function JBExpoRootLayout({
     [baseConfig, stripeConfig],
   );
   const scheme = useColorScheme();
-  const effectiveMode = colorMode ?? scheme ?? "dark";
+  const effectiveMode = colorMode ?? scheme ?? "light";
   const resolvedMode =
     effectiveMode === "dark"
       ? "dark"
       : effectiveMode === "light"
       ? "light"
-      : scheme ?? "dark";
+      : scheme ?? "light";
   const resolvedUIConfig = uiConfig ?? baseConfig?.ui;
   const navigationTheme = resolveNavigationTheme(
     resolvedMode,
