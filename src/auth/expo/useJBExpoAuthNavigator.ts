@@ -2,6 +2,8 @@ import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 
 import { JBAuthNavigator } from '../screens/types';
+import { getAuthRoutesConfig, getLastCreatedJBExpoConfig } from '../../config';
+import { useAppConfigStore } from '../../runtime';
 
 export type JBExpoAuthNavigatorPaths = {
   signIn?: string;
@@ -34,12 +36,46 @@ const defaultPaths: Required<JBExpoAuthNavigatorPaths> = {
 export const useJBExpoAuthNavigator = (paths?: JBExpoAuthNavigatorPaths): JBAuthNavigator => {
   const router = useRouter();
   const nav = router as any;
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
+  const mergedConfig = useMemo(
+    () =>
+      ({
+        ...baseConfig,
+        auth: {
+          ...baseConfig.auth,
+          ...(appConfig?.auth ?? {}),
+        },
+      } as any),
+    [appConfig?.auth, baseConfig],
+  );
+  const authRoutes = useMemo(
+    () => getAuthRoutesConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const configPaths = useMemo(
+    () => ({
+      signIn: authRoutes.authEntry,
+      signInPassword: authRoutes.signInPassword,
+      signInOtp: authRoutes.signInOtp,
+      signUp: authRoutes.signUpForm,
+      signUpForm: authRoutes.signUpForm,
+      forgotPassword: authRoutes.forgotPassword,
+      resetPassword: authRoutes.resetPassword,
+      verifyEmail: authRoutes.verifyEmail,
+      welcome: authRoutes.welcome,
+      guestExplore: authRoutes.guestExplore,
+      signedIn: authRoutes.signedIn,
+    }),
+    [authRoutes],
+  );
   const resolved = useMemo(
     () => ({
       ...defaultPaths,
+      ...configPaths,
       ...(paths ?? {}),
     }),
-    [paths],
+    [configPaths, paths],
   );
 
   const goToSignIn = useCallback(

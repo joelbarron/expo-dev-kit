@@ -3,8 +3,10 @@ import { useRouter } from 'expo-router';
 import { RefreshControl } from 'react-native';
 import Toast from 'react-native-toast-message';
 
+import { getAuthRoutesConfig, getLastCreatedJBExpoConfig } from '../../../config';
 import { JBMainLayout } from '../../../core';
 import { JBFormButton } from '../../../forms';
+import { useAppConfigStore } from '../../../runtime';
 import { Box, HStack, Text, VStack } from '../../../ui';
 import { parseAuthError } from '../../forms/errorParser';
 import { useJBUserAccountCapabilities, useJBProfiles } from '../hooks';
@@ -85,6 +87,8 @@ const ProfilesListSkeleton = () => (
 
 export function JBUserProfilesScreen() {
   const router = useRouter();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const capabilities = useJBUserAccountCapabilities();
   const {
     profiles,
@@ -96,6 +100,21 @@ export function JBUserProfilesScreen() {
     switchProfile,
   } = useJBProfiles();
   const isProfileMirrorEnabled = Boolean(capabilities.accountConfig.profileMirror?.enabled);
+  const authRoutes = useMemo(
+    () =>
+      getAuthRoutesConfig({
+        ...baseConfig,
+        auth: {
+          ...baseConfig.auth,
+          ...(appConfig?.auth ?? {}),
+        },
+      } as any),
+    [appConfig?.auth, baseConfig]
+  );
+  const profilesBasePath = useMemo(
+    () => normalizeRoutePath(authRoutes.profilesPath, '/user/profiles'),
+    [authRoutes.profilesPath]
+  );
 
   useEffect(() => {
     if (isProfileMirrorEnabled) {
@@ -244,9 +263,9 @@ export function JBUserProfilesScreen() {
       if (profileId == null) {
         return;
       }
-      router.push(`/user/profiles/edit/${profileId}` as any);
+      router.push(`${profilesBasePath}/edit/${profileId}` as any);
     },
-    [router]
+    [profilesBasePath, router]
   );
   const isRefreshing =
     !isProfileMirrorEnabled && isLoadingProfiles && additionalProfiles.length > 0;
@@ -268,7 +287,7 @@ export function JBUserProfilesScreen() {
               variant="solid"
               action="primary"
               text="Agregar nuevo perfil"
-              onPress={() => router.push('/user/profiles/create' as any)}
+              onPress={() => router.push(`${profilesBasePath}/create` as any)}
             />
           </VStack>
         ) : undefined

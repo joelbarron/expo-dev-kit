@@ -30,11 +30,11 @@ export const JBSettingsScreen = ({
 
   const sections = useJBSettingsSections({
     onOpenNotifications: () => {
-      const path = settingsConfig.notifications?.path ?? '/settings/notifications';
+      const path = settingsConfig.notifications?.path ?? settingsConfig.routes?.notifications;
       router.push(path as any);
     },
     onOpenPermissions: () => {
-      const path = settingsConfig.permissions?.path ?? '/settings/permissions';
+      const path = settingsConfig.permissions?.path ?? settingsConfig.routes?.permissions;
       router.push(path as any);
     },
     onOpenSecurity: () => {

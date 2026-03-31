@@ -3,7 +3,11 @@ import { Link } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { TouchableOpacity } from 'react-native';
 
-import { getLastCreatedJBExpoConfig, getSettingsConfig } from '../../../config';
+import {
+  getAuthRoutesConfig,
+  getLastCreatedJBExpoConfig,
+  getSettingsConfig,
+} from '../../../config';
 import { useColorScheme } from '../../../hooks';
 import { useAppConfigStore } from '../../../runtime';
 import { Box, HStack, Text, VStack } from '../../../ui';
@@ -62,13 +66,21 @@ const ActionRow = ({
 };
 
 export const JBUserAccountActions = ({
-  basePath = '/user',
+  basePath,
   title,
   className = '',
 }: JBUserAccountActionsProps) => {
   const baseConfig = getLastCreatedJBExpoConfig();
   const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const capabilities = useJBUserAccountCapabilities();
+  const authRoutes = getAuthRoutesConfig({
+    ...baseConfig,
+    auth: {
+      ...baseConfig.auth,
+      ...(appConfig?.auth ?? {}),
+    },
+  } as any);
+  const resolvedBasePath = String(basePath ?? '').trim() || authRoutes.userBasePath;
   const settingsConfig = getSettingsConfig({
     ...baseConfig,
     settings: {
@@ -101,7 +113,7 @@ export const JBUserAccountActions = ({
         <ActionRow
           title="Cambiar foto de perfil"
           subtitle="Actualiza tu avatar"
-          href={`${basePath}/photo`}
+          href={`${resolvedBasePath}/photo`}
           iconName="camera-outline"
         />
       ) : null}
@@ -110,7 +122,7 @@ export const JBUserAccountActions = ({
         <ActionRow
           title="Editar datos de cuenta"
           subtitle="Actualiza perfil, correo, teléfono y usuario"
-          href={`${basePath}/account-data`}
+          href={`${resolvedBasePath}/account-data`}
           iconName="card-account-details-outline"
         />
       ) : null}
@@ -119,7 +131,7 @@ export const JBUserAccountActions = ({
         <ActionRow
           title="Cambiar contraseña"
           subtitle="Actualiza tu contraseña de acceso"
-          href={`${basePath}/change-password`}
+          href={`${resolvedBasePath}/change-password`}
           iconName="lock-outline"
         />
       ) : null}
@@ -137,7 +149,7 @@ export const JBUserAccountActions = ({
         <ActionRow
           title="Perfiles adicionales"
           subtitle="Gestionar perfiles adicionales de la cuenta"
-          href={`${basePath}/profiles`}
+          href={`${resolvedBasePath}/profiles`}
           iconName="account-switch-outline"
         />
       ) : null}

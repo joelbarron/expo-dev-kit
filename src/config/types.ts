@@ -81,6 +81,27 @@ export type JBAuthWelcomeConfig = {
   guestExploreLabel: string;
 };
 
+export type JBAuthRoutesConfig = {
+  welcome?: string;
+  authEntry?: string;
+  signInPassword?: string;
+  signInOtp?: string;
+  signUpForm?: string;
+  forgotPassword?: string;
+  resetPassword?: string;
+  verifyEmail?: string;
+  signOut?: string;
+  signedIn?: string;
+  guestExplore?: string;
+  userBasePath?: string;
+  accountDataPath?: string;
+  accountSecurityPath?: string;
+  profilePhotoPath?: string;
+  profilesPath?: string;
+  paymentMethodsPath?: string;
+  profileCompletionPath?: string;
+};
+
 export type JBButtonAction =
   | 'default'
   | 'primary'
@@ -340,6 +361,7 @@ export type JBSettingsSecurityConfig = {
 };
 
 export type JBSettingsConfig = {
+  routes?: JBSettingsRoutesConfig;
   notifications?: JBSettingsNotificationsConfig;
   version?: {
     enabled?: boolean;
@@ -372,6 +394,13 @@ export type JBSettingsNotificationsConfig = {
   autoSyncPushToken?: boolean;
   pushTokenSyncPath?: string;
   localReminders?: JBSettingsNotificationsLocalRemindersConfig;
+};
+
+export type JBSettingsRoutesConfig = {
+  root?: string;
+  notifications?: string;
+  permissions?: string;
+  security?: string;
 };
 
 export type JBOfflineMode =
@@ -433,6 +462,7 @@ export type JBAppConfig = {
   navigation?: Record<string, unknown>;
   auth: {
     apiBasePath: string;
+    routes?: JBAuthRoutesConfig;
     showDebugSocial: boolean;
     signUp: {
       minimumAge: number;

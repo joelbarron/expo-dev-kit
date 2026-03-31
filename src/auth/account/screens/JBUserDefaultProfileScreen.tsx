@@ -5,8 +5,9 @@ import { useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
+import { getAuthRoutesConfig, getLastCreatedJBExpoConfig } from '../../../config';
 import { JBFormButton, JBFormDateTimePicker, JBFormInput, JBFormPicker } from '../../../forms';
-import { useAuthStore } from '../../../runtime';
+import { useAppConfigStore, useAuthStore } from '../../../runtime';
 import { Box, HStack, Text, VStack } from '../../../ui';
 import { getFormattedDate } from '../../../utils/data-format';
 import { GENDERS, GENDER_SELECT_OPTIONS } from '../../constants';
@@ -169,12 +170,14 @@ export function JBUserDefaultProfileScreen(
 ) {
   const {
     showPersonalDataCta = true,
-    personalDataHref = '/user/account-data?tab=access',
+    personalDataHref,
     topContent,
     layoutHeader,
   } = props;
   const router = useRouter();
   const auth = useJBAuth();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const defaultProfile = useAuthStore((state: any) => state?.defaultProfile) as ProfileDetail | null;
   const activeProfile = useAuthStore((state: any) => state?.activeProfile) as ProfileDetail | null;
   const capabilities = useJBUserAccountCapabilities();
@@ -183,6 +186,24 @@ export function JBUserDefaultProfileScreen(
 
   const requiredFields = capabilities.accountConfig.requiredProfileFields as Record<string, boolean>;
   const schema = useMemo(() => createSchema(requiredFields), [requiredFields]);
+  const authRoutes = useMemo(
+    () =>
+      getAuthRoutesConfig({
+        ...baseConfig,
+        auth: {
+          ...baseConfig.auth,
+          ...(appConfig?.auth ?? {}),
+        },
+      } as any),
+    [appConfig?.auth, baseConfig]
+  );
+  const resolvedPersonalDataHref = useMemo(() => {
+    const configuredHref = String(personalDataHref ?? '').trim();
+    if (configuredHref) return configuredHref;
+    return `${authRoutes.accountDataPath}${
+      authRoutes.accountDataPath.includes('?') ? '&' : '?'
+    }tab=access`;
+  }, [authRoutes.accountDataPath, personalDataHref]);
 
   const { control, formState, handleSubmit, reset } = useForm<FormValues>({
     mode: 'onChange',
@@ -339,7 +360,7 @@ export function JBUserDefaultProfileScreen(
                     action="primary"
                     text="Ir a editar datos de acceso"
                     className="self-start px-0"
-                    onPress={() => router.push(personalDataHref as any)}
+                    onPress={() => router.push(resolvedPersonalDataHref as any)}
                   />
                 </VStack>
               </Box>

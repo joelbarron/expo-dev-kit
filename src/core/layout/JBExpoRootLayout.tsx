@@ -32,6 +32,7 @@ import {
 import {
   getAuthAccountConfig,
   getAuthAccountScreensConfig,
+  getAuthRoutesConfig,
   getLastCreatedJBExpoConfig,
   JBAppConfig,
   JBAppStage,
@@ -41,6 +42,7 @@ import {
   getRuntimeLoadingConfig,
   getRuntimeOfflineConfig,
   getSettingsConfig,
+  getSettingsRoutesConfig,
   JBStripeConfig,
   JBStripePublishableKeyConfig,
   JBUIConfig,
@@ -249,22 +251,52 @@ const isSameOrDescendantPath = (
   return current === base || current.startsWith(`${base}/`);
 };
 
-const isLikelyAuthPath = (path?: string | null) => {
-  const normalized = normalizePathname(path);
-  const authPrefixes = [
-    "/welcome",
-    "/auth-entry",
-    "/sign-in",
-    "/sign-in-password",
-    "/sign-in-otp",
-    "/sign-up-form",
-    "/forgot-password",
-    "/reset-password",
-    "/verify-email",
-    "/sign-out",
-  ];
+const DEFAULT_AUTH_PATH_PREFIXES = [
+  "/sign-in",
+  "/welcome",
+  "/auth-entry",
+  "/sign-in-password",
+  "/sign-in-otp",
+  "/sign-up-form",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/sign-out",
+];
 
-  return authPrefixes.some((prefix) => isSameOrDescendantPath(normalized, prefix));
+const buildAuthPathPrefixes = (
+  authRoutes: Partial<ReturnType<typeof getAuthRoutesConfig>> | null | undefined,
+): string[] => {
+  const configured = [
+    authRoutes?.welcome,
+    authRoutes?.authEntry,
+    authRoutes?.signInPassword,
+    authRoutes?.signInOtp,
+    authRoutes?.signUpForm,
+    authRoutes?.forgotPassword,
+    authRoutes?.resetPassword,
+    authRoutes?.verifyEmail,
+    authRoutes?.signOut,
+  ]
+    .map((value) => normalizePathname(value))
+    .filter(Boolean);
+
+  return Array.from(new Set([...DEFAULT_AUTH_PATH_PREFIXES, ...configured]));
+};
+
+const isLikelyAuthPath = (
+  path?: string | null,
+  authPrefixes?: string[],
+) => {
+  const normalized = normalizePathname(path);
+  const resolvedAuthPrefixes =
+    Array.isArray(authPrefixes) && authPrefixes.length
+      ? authPrefixes
+      : DEFAULT_AUTH_PATH_PREFIXES;
+
+  return resolvedAuthPrefixes.some((prefix) =>
+    isSameOrDescendantPath(normalized, prefix),
+  );
 };
 
 const defaultLoadingFallbackStyle = {
@@ -320,6 +352,10 @@ function JBProfileCompletionNavigationGuard() {
     () => getAuthAccountConfig(mergedConfig),
     [mergedConfig],
   );
+  const authRoutes = useMemo(
+    () => getAuthRoutesConfig(mergedConfig),
+    [mergedConfig],
+  );
   const accountScreensConfig = useMemo(
     () => getAuthAccountScreensConfig(mergedConfig),
     [mergedConfig],
@@ -329,9 +365,10 @@ function JBProfileCompletionNavigationGuard() {
     () =>
       profileCompletion.profileCompletionPath ||
       accountConfig.profileCompletionPath ||
-      "/account/complete-profile",
+      authRoutes.profileCompletionPath,
     [
       accountConfig.profileCompletionPath,
+      authRoutes.profileCompletionPath,
       profileCompletion.profileCompletionPath,
     ],
   );
@@ -487,16 +524,36 @@ function JBPermissionsNavigationGuard() {
     () =>
       ({
         ...baseConfig,
+        auth: {
+          ...(baseConfig.auth ?? {}),
+          ...(appConfig?.auth ?? {}),
+        },
+        settings: {
+          ...(baseConfig.settings ?? {}),
+          ...(appConfig?.settings ?? {}),
+        },
         permissions: {
           ...(baseConfig.permissions ?? {}),
           ...(appConfig?.permissions ?? {}),
         },
       } as JBAppConfig),
-    [appConfig?.permissions, baseConfig],
+    [appConfig?.auth, appConfig?.permissions, appConfig?.settings, baseConfig],
   );
   const permissionsConfig = useMemo(
     () => getPermissionsConfig(mergedConfig),
     [mergedConfig],
+  );
+  const settingsRoutes = useMemo(
+    () => getSettingsRoutesConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const authRoutes = useMemo(
+    () => getAuthRoutesConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const authPathPrefixes = useMemo(
+    () => buildAuthPathPrefixes(authRoutes),
+    [authRoutes],
   );
   const requiredPermissions = useMemo(
     () =>
@@ -505,10 +562,15 @@ function JBPermissionsNavigationGuard() {
         : [],
     [permissionsConfig.required],
   );
-  const guardPath = useMemo(
-    () => permissionsConfig.guard?.setupPath?.trim() || "/settings/permissions",
-    [permissionsConfig.guard?.setupPath],
-  );
+  const guardPath = useMemo(() => {
+    const configuredPath = String(permissionsConfig.guard?.setupPath ?? "").trim();
+    if (configuredPath) {
+      return configuredPath.startsWith("/")
+        ? configuredPath
+        : `/${configuredPath.replace(/^\/+/, "")}`;
+    }
+    return settingsRoutes.permissions;
+  }, [permissionsConfig.guard?.setupPath, settingsRoutes.permissions]);
   const guardBasePath = useMemo(() => normalizePathname(guardPath), [guardPath]);
   const guardEnabled = Boolean(permissionsConfig.guard?.enabled);
   const authenticatedOnly = Boolean(permissionsConfig.guard?.authenticatedOnly);
@@ -566,7 +628,7 @@ function JBPermissionsNavigationGuard() {
       setMissingPermissions(nextMissing);
 
       const onGuardPath = isSameOrDescendantPath(pathname, guardBasePath);
-      const onAuthPath = isLikelyAuthPath(pathname);
+      const onAuthPath = isLikelyAuthPath(pathname, authPathPrefixes);
 
       if (nextMissing.length === 0) {
         await clearPermissionsGuardNextPromptAt(reminderKey);
@@ -633,6 +695,7 @@ function JBPermissionsNavigationGuard() {
     guardPath,
     isAuthenticated,
     pathname,
+    authPathPrefixes,
     reminderKey,
     requiredPermissions,
     requiredPermissions.length,
@@ -777,16 +840,28 @@ function JBPushNotificationsBridge() {
     () =>
       ({
         ...baseConfig,
+        auth: {
+          ...(baseConfig.auth ?? {}),
+          ...(appConfig?.auth ?? {}),
+        },
         settings: {
           ...(baseConfig.settings ?? {}),
           ...(appConfig?.settings ?? {}),
         },
       } as JBAppConfig),
-    [appConfig?.settings, baseConfig],
+    [appConfig?.auth, appConfig?.settings, baseConfig],
   );
   const settingsConfig = useMemo(
     () => getSettingsConfig(mergedConfig),
     [mergedConfig],
+  );
+  const authRoutes = useMemo(
+    () => getAuthRoutesConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const authPathPrefixes = useMemo(
+    () => buildAuthPathPrefixes(authRoutes),
+    [authRoutes],
   );
 
   const notificationsConfig = settingsConfig.notifications ?? {};
@@ -921,16 +996,28 @@ function JBBiometricsAppLockOverlay() {
     () =>
       ({
         ...baseConfig,
+        auth: {
+          ...(baseConfig.auth ?? {}),
+          ...(appConfig?.auth ?? {}),
+        },
         settings: {
           ...(baseConfig.settings ?? {}),
           ...(appConfig?.settings ?? {}),
         },
       } as JBAppConfig),
-    [appConfig?.settings, baseConfig],
+    [appConfig?.auth, appConfig?.settings, baseConfig],
   );
   const settingsConfig = useMemo(
     () => getSettingsConfig(mergedConfig),
     [mergedConfig],
+  );
+  const authRoutes = useMemo(
+    () => getAuthRoutesConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const authPathPrefixes = useMemo(
+    () => buildAuthPathPrefixes(authRoutes),
+    [authRoutes],
   );
   const securityConfig = settingsConfig.security ?? {};
   const lockMode = securityConfig.biometricsLockMode ?? "on_app_open";
@@ -958,12 +1045,13 @@ function JBBiometricsAppLockOverlay() {
   const shouldProtect = useMemo(() => {
     if (!Boolean(securityConfig.biometricsEnabled)) return false;
     if (!isAuthenticated || authStatus !== "authenticated") return false;
-    if (isLikelyAuthPath(pathname)) return false;
+    if (isLikelyAuthPath(pathname, authPathPrefixes)) return false;
     if (!isEnabled) return false;
     if (!isAvailabilityLoaded) return false;
     return isJBBiometricsAvailable(availability);
   }, [
     authStatus,
+    authPathPrefixes,
     availability,
     isAuthenticated,
     isAvailabilityLoaded,

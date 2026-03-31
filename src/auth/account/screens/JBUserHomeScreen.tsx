@@ -20,7 +20,7 @@ export type JBUserHomeScreenProps = {
 };
 
 export function JBUserHomeScreen({
-  basePath = '/user',
+  basePath,
   header,
   options,
   extraOptions = [],

@@ -3,6 +3,7 @@ import { deepMerge } from './merge';
 import {
   JBAuthAccountConfig,
   JBAuthFooterButtonsConfig,
+  JBAuthRoutesConfig,
   JBAuthAccountScreensConfig,
   JBAuthRequiredProfileFields,
   JBAuthUserDebugConfig,
@@ -16,6 +17,7 @@ import {
   JBLoadingFallbackConfig,
   JBPermissionsConfig,
   JBRuntimeConfig,
+  JBSettingsRoutesConfig,
   JBSettingsConfig,
   JBSocialProviderName
 } from './types';
@@ -51,6 +53,16 @@ const resolveApiHostByStage = (hostConfig: JBApiHostConfig, stage: JBAppStage): 
 };
 
 const trimTrailingSlashes = (value: string): string => value.replace(/\/+$/, '');
+const normalizeAbsoluteRoutePath = (value: unknown, fallback: string): string => {
+  const raw = String(value ?? "").trim();
+  if (!raw) {
+    return fallback;
+  }
+  if (raw.startsWith("/")) {
+    return raw;
+  }
+  return `/${raw.replace(/^\/+/, "")}`;
+};
 const pickBoolean = (value: unknown, fallback: boolean) =>
   typeof value === 'boolean' ? value : fallback;
 const hasAnyGoogleClientId = (providerConfig: {
@@ -137,6 +149,121 @@ export const getApiUrl = (config: JBAppConfig): string => {
 
 export const getAuthBasePath = (config: JBAppConfig): string => {
   return config.auth?.apiBasePath || '/authentication';
+};
+
+export const getAuthRoutesConfig = (
+  config: JBAppConfig,
+): Required<JBAuthRoutesConfig> => {
+  const base = defaultJBExpoConfig.auth?.routes ?? {};
+  const override = config.auth?.routes ?? {};
+
+  const userBasePath = normalizeAbsoluteRoutePath(
+    override.userBasePath ?? base.userBasePath,
+    "/user",
+  );
+
+  const profileCompletionPath = normalizeAbsoluteRoutePath(
+    override.profileCompletionPath ??
+      config.auth?.account?.profileCompletionPath ??
+      base.profileCompletionPath,
+    "/account/complete-profile",
+  );
+
+  return {
+    welcome: normalizeAbsoluteRoutePath(
+      override.welcome ?? base.welcome,
+      "/welcome",
+    ),
+    authEntry: normalizeAbsoluteRoutePath(
+      override.authEntry ?? base.authEntry,
+      "/auth-entry",
+    ),
+    signInPassword: normalizeAbsoluteRoutePath(
+      override.signInPassword ?? base.signInPassword,
+      "/sign-in-password",
+    ),
+    signInOtp: normalizeAbsoluteRoutePath(
+      override.signInOtp ?? base.signInOtp,
+      "/sign-in-otp",
+    ),
+    signUpForm: normalizeAbsoluteRoutePath(
+      override.signUpForm ?? base.signUpForm,
+      "/sign-up-form",
+    ),
+    forgotPassword: normalizeAbsoluteRoutePath(
+      override.forgotPassword ?? base.forgotPassword,
+      "/forgot-password",
+    ),
+    resetPassword: normalizeAbsoluteRoutePath(
+      override.resetPassword ?? base.resetPassword,
+      "/reset-password",
+    ),
+    verifyEmail: normalizeAbsoluteRoutePath(
+      override.verifyEmail ?? base.verifyEmail,
+      "/verify-email",
+    ),
+    signOut: normalizeAbsoluteRoutePath(
+      override.signOut ?? base.signOut,
+      "/sign-out",
+    ),
+    signedIn: normalizeAbsoluteRoutePath(
+      override.signedIn ?? base.signedIn,
+      "/",
+    ),
+    guestExplore: normalizeAbsoluteRoutePath(
+      override.guestExplore ?? base.guestExplore,
+      "/",
+    ),
+    userBasePath,
+    accountDataPath: normalizeAbsoluteRoutePath(
+      override.accountDataPath ?? base.accountDataPath,
+      `${userBasePath}/account-data`,
+    ),
+    accountSecurityPath: normalizeAbsoluteRoutePath(
+      override.accountSecurityPath ?? base.accountSecurityPath,
+      `${userBasePath}/account-security`,
+    ),
+    profilePhotoPath: normalizeAbsoluteRoutePath(
+      override.profilePhotoPath ?? base.profilePhotoPath,
+      `${userBasePath}/photo`,
+    ),
+    profilesPath: normalizeAbsoluteRoutePath(
+      override.profilesPath ?? base.profilesPath,
+      `${userBasePath}/profiles`,
+    ),
+    paymentMethodsPath: normalizeAbsoluteRoutePath(
+      override.paymentMethodsPath ?? base.paymentMethodsPath,
+      "/payments/payment-methods/list",
+    ),
+    profileCompletionPath,
+  };
+};
+
+export const getSettingsRoutesConfig = (
+  config: JBAppConfig,
+): Required<JBSettingsRoutesConfig> => {
+  const base = defaultJBExpoConfig.settings?.routes ?? {};
+  const override = config.settings?.routes ?? {};
+  const root = normalizeAbsoluteRoutePath(
+    override.root ?? base.root,
+    "/settings",
+  );
+
+  return {
+    root,
+    notifications: normalizeAbsoluteRoutePath(
+      override.notifications ?? config.settings?.notifications?.path ?? base.notifications,
+      `${root}/notifications`,
+    ),
+    permissions: normalizeAbsoluteRoutePath(
+      override.permissions ?? config.settings?.permissions?.path ?? base.permissions,
+      `${root}/permissions`,
+    ),
+    security: normalizeAbsoluteRoutePath(
+      override.security ?? config.settings?.security?.biometricsPath ?? base.security,
+      `${root}/security`,
+    ),
+  };
 };
 
 export const getAuthRequiredProfileFields = (
@@ -296,10 +423,12 @@ export const getAuthFooterButtonsConfig = (
 export const getSettingsConfig = (config: JBAppConfig): JBSettingsConfig => {
   const base = defaultJBExpoConfig.settings ?? {};
   const override = config.settings ?? {};
+  const routes = getSettingsRoutesConfig(config);
 
   return {
     ...base,
     ...override,
+    routes,
     version: {
       ...(base.version ?? {}),
       ...(override.version ?? {}),
@@ -311,10 +440,18 @@ export const getSettingsConfig = (config: JBAppConfig): JBSettingsConfig => {
         ...(base.notifications?.localReminders ?? {}),
         ...(override.notifications?.localReminders ?? {}),
       },
+      path: normalizeAbsoluteRoutePath(
+        override.notifications?.path ?? routes.notifications,
+        routes.notifications,
+      ),
     },
     permissions: {
       ...(base.permissions ?? {}),
       ...(override.permissions ?? {}),
+      path: normalizeAbsoluteRoutePath(
+        override.permissions?.path ?? routes.permissions,
+        routes.permissions,
+      ),
     },
     appearance: {
       ...(base.appearance ?? {}),
@@ -323,6 +460,10 @@ export const getSettingsConfig = (config: JBAppConfig): JBSettingsConfig => {
     security: {
       ...(base.security ?? {}),
       ...(override.security ?? {}),
+      biometricsPath: normalizeAbsoluteRoutePath(
+        override.security?.biometricsPath ?? routes.security,
+        routes.security,
+      ),
     },
   };
 };

@@ -8,7 +8,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { TouchableOpacity } from "react-native";
 import Toast from "react-native-toast-message";
 
-import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../../../config";
+import {
+  getAuthRoutesConfig,
+  getLastCreatedJBExpoConfig,
+  resolveJBUIColor,
+} from "../../../config";
 import { JBFormButton } from "../../../forms";
 import { useColorScheme } from "../../../hooks";
 import { useAppConfigStore } from "../../../runtime";
@@ -39,11 +43,17 @@ type JBProfileSwitcherSheetProps = {
 
 const getProfileId = (profile: Record<string, any>): string =>
   String(profile?.id ?? profile?.pk ?? "");
+const normalizeAbsolutePath = (value: unknown): string => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "/";
+  if (raw.startsWith("/")) return raw;
+  return `/${raw.replace(/^\/+/, "")}`;
+};
 
 export const JBProfileSwitcherSheet = ({
   open,
   onClose,
-  basePath = "/user",
+  basePath,
   title = "Cambiar perfil",
   subtitle = "Selecciona el perfil con el que quieres continuar.",
   showCreateProfile = true,
@@ -92,6 +102,28 @@ export const JBProfileSwitcherSheet = ({
         label?: string;
       }>) ?? [],
     [appConfig?.auth?.profileRoles, baseConfig?.auth?.profileRoles],
+  );
+  const authRoutes = useMemo(
+    () =>
+      getAuthRoutesConfig({
+        ...baseConfig,
+        auth: {
+          ...baseConfig.auth,
+          ...(appConfig?.auth ?? {}),
+        },
+      } as any),
+    [appConfig?.auth, baseConfig],
+  );
+  const resolvedBasePath = useMemo(() => {
+    const customBasePath = String(basePath ?? "").trim();
+    if (customBasePath) {
+      return normalizeAbsolutePath(customBasePath);
+    }
+    return authRoutes.userBasePath;
+  }, [authRoutes.userBasePath, basePath]);
+  const createProfilePath = useMemo(
+    () => `${resolvedBasePath}/profiles/create`,
+    [resolvedBasePath],
   );
 
   const closeSheet = useCallback(() => {
@@ -166,10 +198,10 @@ export const JBProfileSwitcherSheet = ({
     if (onCreateProfile) {
       onCreateProfile();
     } else {
-      router.push(`${basePath}/profiles/create` as any);
+      router.push(createProfilePath as any);
     }
     closeSheet();
-  }, [basePath, closeSheet, onCreateProfile, router]);
+  }, [closeSheet, createProfilePath, onCreateProfile, router]);
 
   const renderBackdrop = useCallback(
     (props: any) => (

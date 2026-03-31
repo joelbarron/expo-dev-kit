@@ -8,7 +8,7 @@ import { useAppConfigStore, useAuthStore } from '../../../runtime';
 import { Avatar, AvatarFallbackText, AvatarImage, Box, Heading, HStack, Text, VStack } from '../../../ui';
 import { getColor } from '../../../utils';
 import { getProfileFullName, getProfilePictureUri, getProfileShortName } from '../../utils';
-import { getLastCreatedJBExpoConfig } from '../../../config';
+import { getAuthRoutesConfig, getLastCreatedJBExpoConfig } from '../../../config';
 
 const toTrimmedString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
 
@@ -124,13 +124,31 @@ export const JBUserInfo = ({
     () => getProfilePictureUri(activeProfile as any) || getProfilePictureUri(user as any),
     [activeProfile, user]
   );
+  const authRoutes = useMemo(
+    () =>
+      getAuthRoutesConfig({
+        ...baseConfig,
+        auth: {
+          ...baseConfig.auth,
+          ...(appConfig?.auth ?? {}),
+        },
+      } as any),
+    [appConfig?.auth, baseConfig],
+  );
+  const profileAccountDataPath = useMemo(
+    () =>
+      `${authRoutes.accountDataPath}${
+        authRoutes.accountDataPath.includes('?') ? '&' : '?'
+      }tab=profile`,
+    [authRoutes.accountDataPath],
+  );
 
   const handleEditPhoto = () => {
     if (onPressEditPhoto) {
       onPressEditPhoto();
       return;
     }
-    router.push('/user/photo');
+    router.push(authRoutes.profilePhotoPath as any);
   };
 
   const handleEditProfile = () => {
@@ -138,7 +156,7 @@ export const JBUserInfo = ({
       onPressEditProfile();
       return;
     }
-    router.push('/user/account-data?tab=profile');
+    router.push(profileAccountDataPath as any);
   };
 
   const resolvedTitleClassName =

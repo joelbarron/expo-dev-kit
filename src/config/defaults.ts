@@ -34,6 +34,12 @@ export const defaultJBExpoConfig: JBAppConfig = {
     setReturnUrlSchemeOnAndroid: false,
   },
   settings: {
+    routes: {
+      root: "/settings",
+      notifications: "/settings/notifications",
+      permissions: "/settings/permissions",
+      security: "/settings/security",
+    },
     version: {
       enabled: true,
       title: "Version de la app",
@@ -117,6 +123,26 @@ export const defaultJBExpoConfig: JBAppConfig = {
   navigation: {},
   auth: {
     apiBasePath: "/authentication",
+    routes: {
+      welcome: "/welcome",
+      authEntry: "/auth-entry",
+      signInPassword: "/sign-in-password",
+      signInOtp: "/sign-in-otp",
+      signUpForm: "/sign-up-form",
+      forgotPassword: "/forgot-password",
+      resetPassword: "/reset-password",
+      verifyEmail: "/verify-email",
+      signOut: "/sign-out",
+      signedIn: "/",
+      guestExplore: "/",
+      userBasePath: "/user",
+      accountDataPath: "/user/account-data",
+      accountSecurityPath: "/user/account-security",
+      profilePhotoPath: "/user/photo",
+      profilesPath: "/user/profiles",
+      paymentMethodsPath: "/payments/payment-methods/list",
+      profileCompletionPath: "/account/complete-profile",
+    },
     showDebugSocial: false,
     signUp: {
       minimumAge: 18,

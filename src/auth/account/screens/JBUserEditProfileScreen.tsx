@@ -6,7 +6,11 @@ import { useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
-import { getLastCreatedJBExpoConfig, getSettingsConfig } from '../../../config';
+import {
+  getLastCreatedJBExpoConfig,
+  getSettingsConfig,
+  getSettingsRoutesConfig,
+} from '../../../config';
 import { JBFormButton, JBFormDateTimePicker, JBFormInput, JBFormPicker } from '../../../forms';
 import { useAppConfigStore } from '../../../runtime';
 import { Box, HStack, Text, VStack } from '../../../ui';
@@ -172,11 +176,15 @@ export function JBUserEditProfileScreen({ profileId }: JBUserEditProfileScreenPr
     () => getSettingsConfig(mergedConfig as any),
     [mergedConfig]
   );
+  const settingsRoutes = useMemo(
+    () => getSettingsRoutesConfig(mergedConfig as any),
+    [mergedConfig]
+  );
   const permissionsSettingsPath = useMemo(() => {
     const configuredPath = settingsConfig.permissions?.path?.trim();
-    if (!configuredPath) return '/settings/permissions';
+    if (!configuredPath) return settingsRoutes.permissions;
     return configuredPath.startsWith('/') ? configuredPath : `/${configuredPath}`;
-  }, [settingsConfig.permissions?.path]);
+  }, [settingsConfig.permissions?.path, settingsRoutes.permissions]);
 
   const requiredFields = capabilities.accountConfig.requiredProfileFields as Record<string, boolean>;
   const schema = useMemo(() => createSchema(requiredFields), [requiredFields]);

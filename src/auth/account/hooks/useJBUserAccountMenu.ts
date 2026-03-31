@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
 
-import { getAuthAccountConfig, getLastCreatedJBExpoConfig } from '../../../config';
+import {
+  getAuthAccountConfig,
+  getAuthRoutesConfig,
+  getLastCreatedJBExpoConfig,
+  getSettingsRoutesConfig,
+} from '../../../config';
 import { useAppConfigStore } from '../../../runtime';
 import { JBUserHomeDefaultOptions, JBUserHomeMenuId, JBUserHomeMenuItem } from '../types';
 
@@ -22,13 +27,28 @@ const defaultLegacyOptions: Required<JBUserHomeDefaultOptions> = {
 
 const defaultMenuItemOrder: JBUserHomeMenuId[] = ['security', 'paymentMethods', 'settings', 'signOut', 'notifications'];
 
+type JBUserMenuRoutePaths = {
+  accountSecurityPath: string;
+  notificationsPath: string;
+  settingsPath: string;
+  paymentMethodsPath: string;
+};
+
 export const createJBUserHomeDefaultOptions = (
   basePath = '/user',
-  options?: JBUserHomeDefaultOptions
+  options?: JBUserHomeDefaultOptions,
+  routePaths?: Partial<JBUserMenuRoutePaths>,
 ): Array<JBUserHomeMenuItem> => {
   const resolved = {
     ...defaultLegacyOptions,
     ...(options ?? {}),
+  };
+  const resolvedPaths: JBUserMenuRoutePaths = {
+    accountSecurityPath: routePaths?.accountSecurityPath ?? `${basePath}/account-security`,
+    notificationsPath: routePaths?.notificationsPath ?? '/notifications',
+    settingsPath: routePaths?.settingsPath ?? '/settings',
+    paymentMethodsPath:
+      routePaths?.paymentMethodsPath ?? '/payments/payment-methods/list',
   };
   const items: Array<JBUserHomeMenuItem> = [];
 
@@ -38,7 +58,7 @@ export const createJBUserHomeDefaultOptions = (
       title: 'Cuenta y seguridad',
       subtitle: 'Perfiles, foto, contraseña y datos de la cuenta',
       iconName: 'security',
-      href: `${basePath}/account-security`,
+      href: resolvedPaths.accountSecurityPath,
     });
   }
 
@@ -48,7 +68,7 @@ export const createJBUserHomeDefaultOptions = (
       title: 'Notificaciones',
       subtitle: 'Revisa lo mas reciente de tu actividad',
       iconName: 'notifications-none',
-      href: '/notifications',
+      href: resolvedPaths.notificationsPath,
     });
   }
 
@@ -58,7 +78,7 @@ export const createJBUserHomeDefaultOptions = (
       title: 'Configuracion',
       subtitle: 'Preferencias y ajustes de la aplicacion',
       iconName: 'settings',
-      href: '/settings',
+      href: resolvedPaths.settingsPath,
     });
   }
 
@@ -86,9 +106,15 @@ export const createJBUserHomeDefaultOptions = (
 const getConfiguredDefaultMenuItems = ({
   basePath,
   signOutPath,
+  settingsPath,
+  notificationsPath,
+  paymentMethodsPath,
 }: {
   basePath: string;
   signOutPath: string;
+  settingsPath: string;
+  notificationsPath: string;
+  paymentMethodsPath: string;
 }): Record<JBUserHomeMenuId, JBUserHomeMenuItem> => ({
   security: {
     id: 'account-security',
@@ -102,14 +128,14 @@ const getConfiguredDefaultMenuItems = ({
     title: 'Metodos de pago',
     subtitle: 'Configura tus metodos de pago',
     iconName: 'credit-card',
-    href: '/payments/payment-methods/list',
+    href: paymentMethodsPath,
   },
   settings: {
     id: 'settings',
     title: 'Configuracion',
     subtitle: 'Preferencias y ajustes de la aplicacion',
     iconName: 'settings',
-    href: '/settings',
+    href: settingsPath,
   },
   signOut: {
     id: 'sign-out',
@@ -131,7 +157,7 @@ const getConfiguredDefaultMenuItems = ({
     title: 'Notificaciones',
     subtitle: 'Revisa lo mas reciente de tu actividad',
     iconName: 'notifications-none',
-    href: '/notifications',
+    href: notificationsPath,
   },
 });
 
@@ -177,7 +203,7 @@ const applyMenuOrdering = (
 };
 
 export const useJBUserAccountMenu = ({
-  basePath = '/user',
+  basePath,
   options,
   extraOptions = [],
   includeDefaultOptions = true,
@@ -201,7 +227,15 @@ export const useJBUserAccountMenu = ({
         ...baseConfig.auth,
         ...(appConfig?.auth ?? {}),
       },
+      settings: {
+        ...(baseConfig.settings ?? {}),
+        ...(appConfig?.settings ?? {}),
+      },
     };
+    const authRoutes = getAuthRoutesConfig(mergedConfig as any);
+    const settingsRoutes = getSettingsRoutesConfig(mergedConfig as any);
+    const resolvedBasePath =
+      String(basePath ?? '').trim() || authRoutes.userBasePath;
     const accountConfig = getAuthAccountConfig(mergedConfig as any);
     const legacyResolved = {
       ...defaultLegacyOptions,
@@ -212,9 +246,14 @@ export const useJBUserAccountMenu = ({
       ? configuredMenu.include
       : resolveLegacyIncludes(legacyResolved);
     const order = configuredMenu.order?.length ? configuredMenu.order : include;
+    const resolvedSignOutPath =
+      String(legacyResolved.signOutPath ?? '').trim() || authRoutes.signOut;
     const defaultItems = getConfiguredDefaultMenuItems({
-      basePath,
-      signOutPath: legacyResolved.signOutPath,
+      basePath: resolvedBasePath,
+      signOutPath: resolvedSignOutPath,
+      settingsPath: settingsRoutes.root,
+      notificationsPath: settingsRoutes.notifications,
+      paymentMethodsPath: authRoutes.paymentMethodsPath,
     });
     const mappedDefaults = include
       .map((menuId) => {
@@ -245,6 +284,7 @@ export const useJBUserAccountMenu = ({
     return [...sortedDefaults, ...extraOptions].filter((item) => item?.visible !== false);
   }, [
     appConfig?.auth,
+    appConfig?.settings,
     baseConfig,
     basePath,
     defaultOptions,

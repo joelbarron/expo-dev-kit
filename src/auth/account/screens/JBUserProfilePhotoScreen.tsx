@@ -10,6 +10,7 @@ import {
   getAuthAccountScreensConfig,
   getLastCreatedJBExpoConfig,
   getSettingsConfig,
+  getSettingsRoutesConfig,
 } from '../../../config';
 import { JBFormButton } from '../../../forms';
 import { useAppConfigStore, useAuthStore } from '../../../runtime';
@@ -71,11 +72,15 @@ export function JBUserProfilePhotoScreen() {
     () => getSettingsConfig(mergedConfig as any),
     [mergedConfig]
   );
+  const settingsRoutes = useMemo(
+    () => getSettingsRoutesConfig(mergedConfig as any),
+    [mergedConfig]
+  );
   const permissionsSettingsPath = useMemo(() => {
     const configuredPath = settingsConfig.permissions?.path?.trim();
-    if (!configuredPath) return '/settings/permissions';
+    if (!configuredPath) return settingsRoutes.permissions;
     return configuredPath.startsWith('/') ? configuredPath : `/${configuredPath}`;
-  }, [settingsConfig.permissions?.path]);
+  }, [settingsConfig.permissions?.path, settingsRoutes.permissions]);
   const accountScreensConfig = useMemo(
     () => getAuthAccountScreensConfig(mergedConfig as any),
     [mergedConfig]

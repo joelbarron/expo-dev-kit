@@ -5,7 +5,9 @@ import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
+import { getAuthRoutesConfig, getLastCreatedJBExpoConfig } from '../../../config';
 import { JBFormButton, JBFormDateTimePicker, JBFormInput, JBFormPicker } from '../../../forms';
+import { useAppConfigStore } from '../../../runtime';
 import { Box, VStack } from '../../../ui';
 import { parseAuthError } from '../../forms/errorParser';
 import { useJBAuth } from '../../provider';
@@ -50,9 +52,23 @@ type FormValues = {
 export function JBUserCreateProfileScreen() {
   const router = useRouter();
   const auth = useJBAuth();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const capabilities = useJBUserAccountCapabilities();
   const { roleOptions } = capabilities;
   const isProfileMirrorEnabled = Boolean(capabilities.accountConfig.profileMirror?.enabled);
+  const authRoutes = useMemo(
+    () =>
+      getAuthRoutesConfig({
+        ...baseConfig,
+        auth: {
+          ...baseConfig.auth,
+          ...(appConfig?.auth ?? {}),
+        },
+      } as any),
+    [appConfig?.auth, baseConfig]
+  );
+  const profilesPath = authRoutes.profilesPath;
 
   const pickerRoleOptions = useMemo(
     () =>
@@ -115,7 +131,7 @@ export function JBUserCreateProfileScreen() {
         text1: 'Perfil creado',
         text2: 'El perfil se creó correctamente.',
       });
-      router.replace('/user/profiles' as any);
+      router.replace(profilesPath as any);
     } catch (error) {
       const parsed = parseAuthError(error);
       Object.entries(parsed.fieldErrors).forEach(([field, message]) => {
@@ -143,7 +159,7 @@ export function JBUserCreateProfileScreen() {
               action="primary"
               text="Volver"
               showIcon={false}
-              onPress={() => router.replace('/user/profiles' as any)}
+              onPress={() => router.replace(profilesPath as any)}
             />
           </VStack>
         </Box>

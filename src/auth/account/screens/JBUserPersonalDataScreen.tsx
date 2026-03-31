@@ -6,11 +6,13 @@ import { TouchableOpacity } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
+import { getAuthRoutesConfig, getLastCreatedJBExpoConfig } from '../../../config';
 import { JBFormButton, JBFormInput, JBFormPicker } from '../../../forms';
 import { ConfirmationDialog } from '../../../shared';
 import { Box, HStack, Text, VStack } from '../../../ui';
 import { CheckCircleIcon, Icon } from '../../../ui/icon';
 import { InputSlot } from '../../../ui/input';
+import { useAppConfigStore } from '../../../runtime';
 import { COUNTRY_CALLING_CODE_OPTIONS, DEFAULT_OTP_COUNTRY_CODE } from '../../constants';
 import { parseAuthError } from '../../forms/errorParser';
 import { useJBAuth } from '../../provider';
@@ -140,14 +142,34 @@ export function JBUserPersonalDataScreen(
 ) {
   const {
     showProfileCta = true,
-    profileHref = '/user/account-data?tab=profile',
+    profileHref,
     topContent,
     layoutHeader,
   } = props;
   const router = useRouter();
   const navigation = useNavigation();
   const auth = useJBAuth();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const capabilities = useJBUserAccountCapabilities();
+  const authRoutes = useMemo(
+    () =>
+      getAuthRoutesConfig({
+        ...baseConfig,
+        auth: {
+          ...baseConfig.auth,
+          ...(appConfig?.auth ?? {}),
+        },
+      } as any),
+    [appConfig?.auth, baseConfig]
+  );
+  const resolvedProfileHref = useMemo(() => {
+    const configuredHref = String(profileHref ?? '').trim();
+    if (configuredHref) return configuredHref;
+    return `${authRoutes.accountDataPath}${
+      authRoutes.accountDataPath.includes('?') ? '&' : '?'
+    }tab=profile`;
+  }, [authRoutes.accountDataPath, profileHref]);
 
   const canEdit = capabilities.canEditPersonalData;
   const contactVerificationEnabled = capabilities.accountConfig.enableContactVerification;
@@ -997,7 +1019,7 @@ export function JBUserPersonalDataScreen(
                     action="primary"
                     text="Ir a editar información del perfil"
                     className="self-start px-0"
-                    onPress={() => router.push(profileHref as any)}
+                    onPress={() => router.push(resolvedProfileHref as any)}
                   />
                 </VStack>
               </Box>
