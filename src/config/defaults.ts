@@ -102,6 +102,17 @@ export const defaultJBExpoConfig: JBAppConfig = {
       iosStoreUrl: "",
       androidStoreUrl: "",
     },
+    announcements: {
+      enabled: false,
+      endpointPath: "/core/mobile-announcements/",
+      routePath: "/announcements",
+      autoOpenMode: "first_install_and_new_campaign",
+      openAfterRoutes: {
+        guest: "/welcome",
+        authenticated: "/",
+      },
+      externalOpenMode: "in_app_browser",
+    },
     loading: {
       logoWidth: 180,
       logoHeight: 180,

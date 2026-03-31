@@ -9,6 +9,7 @@ import { getColor } from '../../utils';
 export type JBMainLayoutProps = {
   children: ReactNode;
   scrollable?: boolean;
+  hideTopAccent?: boolean;
   className?: string;
   classNameScrollView?: string;
   contentRoundedTop?: boolean;
@@ -28,6 +29,7 @@ export type JBMainLayoutProps = {
 export const JBMainLayout = ({
   children,
   scrollable = false,
+  hideTopAccent = false,
   className,
   classNameScrollView,
   contentRoundedTop = true,
@@ -68,13 +70,20 @@ export const JBMainLayout = ({
   const contentClipClass = contentRoundedTop ? 'overflow-hidden' : '';
   const footerRoundedTopClass = footerRoundedTop ? footerRoundedTopClassName : '';
   const contentContainerClassName = `flex-1 ${contentRoundedTopClass} ${contentClipClass} ${backgroundClassName}`;
-  const rootClassName = `flex-1 ${backgroundHeaderClassName} pt-2 ${className ?? ''}`;
+  const rootAccentClassName = hideTopAccent
+    ? backgroundClassName
+    : backgroundHeaderClassName;
+  const rootTopPaddingClassName = hideTopAccent ? "pt-0" : "pt-2";
+  const rootClassName = `flex-1 ${rootAccentClassName} ${rootTopPaddingClassName} ${className ?? ''}`;
+  const rootSurfaceBackgroundColor = hideTopAccent
+    ? contentBackgroundColor
+    : rootBackgroundColor;
   const scrollClassName = `pt-0 flex-1 ${classNameScrollView ?? ''}`;
   const footerContainerClassName = `${footerAdjustableHeight ? 'py-4' : 'min-h-[96px]'} px-8 justify-center ${footerRoundedTopClass} ${footerClassName}`;
 
   if (scrollable) {
     return (
-      <Box className={rootClassName} style={{ backgroundColor: rootBackgroundColor }}>
+      <Box className={rootClassName} style={{ backgroundColor: rootSurfaceBackgroundColor }}>
         <Box className="flex-1">
           {header}
           <Box
@@ -106,7 +115,7 @@ export const JBMainLayout = ({
   }
 
   return (
-    <Box className={rootClassName} style={{ backgroundColor: rootBackgroundColor }}>
+    <Box className={rootClassName} style={{ backgroundColor: rootSurfaceBackgroundColor }}>
       <Box className="flex-1">
         {header}
         <Box

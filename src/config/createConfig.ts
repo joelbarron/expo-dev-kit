@@ -503,6 +503,10 @@ export const getRuntimeConfig = (config: JBAppConfig): JBRuntimeConfig => {
       ...(base.appStatus ?? {}),
       ...(override.appStatus ?? {}),
     },
+    announcements: {
+      ...(base.announcements ?? {}),
+      ...(override.announcements ?? {}),
+    },
     loading: {
       ...(base.loading ?? {}),
       ...(override.loading ?? {}),
@@ -516,6 +520,9 @@ export const getRuntimeOfflineConfig = (config: JBAppConfig) =>
 export const getRuntimeAppStatusConfig = (
   config: JBAppConfig
 ): JBAppStatusConfig => getRuntimeConfig(config).appStatus ?? {};
+
+export const getRuntimeAnnouncementsConfig = (config: JBAppConfig) =>
+  getRuntimeConfig(config).announcements ?? {};
 
 export const getRuntimeLoadingConfig = (
   config: JBAppConfig

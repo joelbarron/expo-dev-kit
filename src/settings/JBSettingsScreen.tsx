@@ -4,7 +4,10 @@ import { Stack } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 
-import { getLastCreatedJBExpoConfig, getSettingsConfig } from '../config';
+import {
+  getLastCreatedJBExpoConfig,
+  getSettingsConfig,
+} from '../config';
 import { JBMainLayout } from '../core';
 import { Box, Card, HStack, Text, VStack } from '../ui';
 import { useAppConfigStore } from '../runtime';

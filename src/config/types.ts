@@ -422,6 +422,22 @@ export type JBAppStatusConfig = {
   updateUrl?: string;
 } & JBSettingsVersionConfig;
 
+export type JBAnnouncementsAutoOpenMode = "first_install_and_new_campaign";
+
+export type JBAnnouncementsExternalOpenMode = "in_app_browser";
+
+export type JBAnnouncementsConfig = {
+  enabled?: boolean;
+  endpointPath?: string;
+  routePath?: string;
+  autoOpenMode?: JBAnnouncementsAutoOpenMode;
+  openAfterRoutes?: {
+    guest?: string;
+    authenticated?: string;
+  };
+  externalOpenMode?: JBAnnouncementsExternalOpenMode;
+};
+
 export type JBLoadingFallbackConfig = {
   logoSource?: number | { uri: string };
   logoWidth?: number;
@@ -437,6 +453,7 @@ export type JBLoadingFallbackConfig = {
 export type JBRuntimeConfig = {
   offline?: JBOfflineConfig;
   appStatus?: JBAppStatusConfig;
+  announcements?: JBAnnouncementsConfig;
   loading?: JBLoadingFallbackConfig;
 };
 

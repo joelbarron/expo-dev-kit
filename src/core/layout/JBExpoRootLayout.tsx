@@ -58,6 +58,7 @@ import {
   isJBBiometricsAvailable,
   useJBBiometricsState,
 } from "../../settings";
+import { useJBAnnouncementsGuard } from "../../announcements";
 import { customAxiosAuthenticated } from "../../http";
 import { ConfirmationDialog } from "../../shared";
 import { getColor } from "../../utils";
@@ -826,6 +827,11 @@ function JBBiometricsActivationPromptGuard() {
       }}
     />
   );
+}
+
+function JBAnnouncementsNavigationGuard() {
+  useJBAnnouncementsGuard();
+  return null;
 }
 
 function JBPushNotificationsBridge() {
@@ -1670,6 +1676,7 @@ export function JBExpoRootLayout({
       >
         <JBProfileCompletionNavigationGuard />
         <JBPermissionsNavigationGuard />
+        <JBAnnouncementsNavigationGuard />
         <JBBiometricsActivationPromptGuard />
         <JBPushNotificationsBridge />
         {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}
