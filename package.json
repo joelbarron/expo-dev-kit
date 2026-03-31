@@ -115,6 +115,12 @@
       "react-native": "./src/settings/index.ts",
       "import": "./dist/settings/index.js",
       "default": "./dist/settings/index.js"
+    },
+    "./announcements": {
+      "types": "./dist/announcements/index.d.ts",
+      "react-native": "./src/announcements/index.ts",
+      "import": "./dist/announcements/index.js",
+      "default": "./dist/announcements/index.js"
     }
   },
   "files": [
