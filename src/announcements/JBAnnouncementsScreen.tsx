@@ -2,12 +2,15 @@ import { Stack, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useMemo, useRef, useState } from "react";
 import {
+  BackHandler,
   Dimensions,
   FlatList,
   Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Platform,
+  Pressable,
+  StatusBar,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 
@@ -102,6 +105,15 @@ export const JBAnnouncementsScreen = ({
         profileId: activeProfileId,
       }),
     [activeProfileId, authUserId, isAuthenticated]
+  );
+  const closeButtonTopOffset = useMemo(
+    () =>
+      Platform.select({
+        ios: 52,
+        android: (StatusBar.currentHeight ?? 0) + 12,
+        default: 16,
+      }) ?? 16,
+    []
   );
 
   const { data: campaigns = [], isLoading } = useQuery({
@@ -240,9 +252,16 @@ export const JBAnnouncementsScreen = ({
     goToNext();
   };
 
+  React.useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => true);
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   return (
     <>
-      <Stack.Screen options={{ title, headerShown: false }} />
+      <Stack.Screen options={{ title, headerShown: false, gestureEnabled: false }} />
       <JBMainLayout
         scrollable={false}
         hideTopAccent
@@ -259,19 +278,22 @@ export const JBAnnouncementsScreen = ({
               }}
               isDisabled={slides.length === 0}
             />
-            <JBFormButton
-              text="Omitir"
-              variant="link"
-              action="secondary"
-              onPress={() => {
-                void closeScreen();
-              }}
-            />
           </VStack>
         }
         footerClassName="px-5 py-4"
       >
         <VStack className="flex-1" space="md">
+          {!isLoading && slides.length > 0 ? (
+            <Box className="absolute right-5 z-20" style={{ top: closeButtonTopOffset }}>
+              <Pressable onPress={() => void closeScreen()}>
+                <Box className="h-12 w-12 items-center justify-center rounded-full bg-primary-500">
+                  <Text className="text-3xl font-semibold text-typography-white">
+                    ×
+                  </Text>
+                </Box>
+              </Pressable>
+            </Box>
+          ) : null}
           {isLoading ? (
             <Box className="flex-1 items-center justify-center px-5">
               <Text className="text-center text-typography-600 dark:text-typography-400">
@@ -312,35 +334,38 @@ export const JBAnnouncementsScreen = ({
                   onMomentumScrollEnd={onMomentumEnd}
                   renderItem={({ item }) => (
                     <VStack
-                      className="flex-1 justify-center px-5"
+                      className="flex-1 items-center justify-center px-5"
                       space="md"
                       style={{ width: SCREEN_WIDTH }}
                     >
-                      <Box className="h-[290px] w-full overflow-hidden rounded-2xl bg-background-100 dark:bg-background-0">
-                        {item.image_url?.trim() ? (
-                          <Image
-                            source={{ uri: item.image_url.trim() }}
-                            style={{ width: "100%", height: "100%" }}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <Box className="flex-1 items-center justify-center px-5">
-                            <Text className="text-center text-typography-500 dark:text-typography-400">
-                              Sin imagen
-                            </Text>
-                          </Box>
-                        )}
-                      </Box>
-                      <VStack space="sm">
-                        <Text
-                          size="xl"
-                          className="font-semibold text-typography-black dark:text-typography-white"
-                        >
-                          {item.title || "Novedades"}
-                        </Text>
-                        <Text className="text-typography-700 dark:text-typography-300">
-                          {item.body || ""}
-                        </Text>
+                      <VStack className="w-full" space="md">
+                        <Box className="h-[290px] w-full rounded-2xl bg-background-100 dark:bg-background-0">
+                          {item.image_url?.trim() ? (
+                            <Box className="h-full w-full items-center justify-center bg-background-100 dark:bg-background-0">
+                              <Image
+                                source={{ uri: item.image_url.trim() }}
+                                style={{ width: "100%", height: "100%" }}
+                                resizeMode="contain"
+                              />
+                            </Box>
+                          ) : (
+                            <Box className="flex-1 items-center justify-center px-5">
+                              <Text className="text-center text-typography-500 dark:text-typography-400">
+                                Sin imagen
+                              </Text>
+                            </Box>
+                          )}
+                        </Box>
+                        <VStack className="w-full pt-2" space="sm">
+                          <Text
+                            className="text-[34px] font-semibold leading-[40px] text-typography-black dark:text-typography-white"
+                          >
+                            {item.title || "Novedades"}
+                          </Text>
+                          <Text className="text-lg leading-7 text-typography-700 dark:text-typography-300">
+                            {item.body || ""}
+                          </Text>
+                        </VStack>
                       </VStack>
                     </VStack>
                   )}
