@@ -1,12 +1,11 @@
 import { useCallback, useState } from 'react';
 
 import { getLastCreatedJBExpoConfig } from '../../config';
-import { JBFormButton } from '../../forms';
 import { useAppConfigStore } from '../../runtime';
 import { VStack } from '../../ui';
 import { JBAuthAccountConfirmationForm } from '../forms';
 import { useJBAuth } from '../provider';
-import { AuthScreenLayout, JBAuthVerifyEmailVisual } from '../ui';
+import { AuthScreenLayout, JBAuthFooterButton, JBAuthVerifyEmailVisual } from '../ui';
 import { JBAuthNavigator } from './types';
 
 export type JBAuthAccountConfirmationScreenProps = {
@@ -116,11 +115,8 @@ export function JBAuthAccountConfirmationScreen(props: JBAuthAccountConfirmation
       footer={
         <VStack space="md">
           {actionState.showRetryVerification ? (
-            <JBFormButton
-              variant="solid"
-              action="primary"
-              size="xl"
-              className="px-4"
+            <JBAuthFooterButton
+              slot="primary"
               text={actionState.retryLabel}
               loading={actionState.retryLoading}
               isDisabled={actionState.retryDisabled}
@@ -128,11 +124,9 @@ export function JBAuthAccountConfirmationScreen(props: JBAuthAccountConfirmation
             />
           ) : null}
           {actionState.showResend ? (
-            <JBFormButton
+            <JBAuthFooterButton
+              slot="primary"
               variant="outline"
-              action="primary"
-              size="xl"
-              className="px-4"
               text={actionState.resendLabel}
               loading={actionState.resendLoading}
               isDisabled={actionState.resendDisabled}
@@ -140,13 +134,9 @@ export function JBAuthAccountConfirmationScreen(props: JBAuthAccountConfirmation
             />
           ) : null}
           {actionState.showGoToSignIn ? (
-            <JBFormButton
-              variant="link"
-              action="primary"
-              size="sm"
-              className="self-center px-0"
+            <JBAuthFooterButton
+              slot="secondary"
               text={actionState.goToSignInLabel}
-              textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
               onPress={actionState.onGoToSignIn ?? handleGoToSignIn}
             />
           ) : null}

@@ -29,8 +29,11 @@ const defaultColors: JBThemeColors = {
   background: {
     0: '#070b10',
     50: '#0a1018',
+    100: '#eef5fb',
+    150: '#e2edf7',
     200: '#121b26',
-    400: '#121b26',
+    400: '#c5d8ea',
+    900: '#2f4f6b',
     950: '#121b26',
     light: '#fbfbfb',
     dark: '#181719'
@@ -45,7 +48,9 @@ const defaultColors: JBThemeColors = {
     600: '#475569',
     700: '#334155',
     800: '#1e293b',
-    900: '#0f172a'
+    900: '#0f172a',
+    white: '#ffffff',
+    black: '#0f172a'
   },
   muted: {
     50: '#f8fafc',

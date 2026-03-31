@@ -92,11 +92,35 @@
       "import": "./dist/utils/index.js",
       "default": "./dist/utils/index.js"
     },
+    "./payments": {
+      "types": "./dist/payments/index.d.ts",
+      "react-native": "./src/payments/index.ts",
+      "import": "./dist/payments/index.js",
+      "default": "./dist/payments/index.js"
+    },
+    "./navigation": {
+      "types": "./dist/navigation/index.d.ts",
+      "react-native": "./src/navigation/index.ts",
+      "import": "./dist/navigation/index.js",
+      "default": "./dist/navigation/index.js"
+    },
     "./ui": {
       "types": "./dist/ui/index.d.ts",
       "react-native": "./src/ui/index.ts",
       "import": "./dist/ui/index.js",
       "default": "./dist/ui/index.js"
+    },
+    "./settings": {
+      "types": "./dist/settings/index.d.ts",
+      "react-native": "./src/settings/index.ts",
+      "import": "./dist/settings/index.js",
+      "default": "./dist/settings/index.js"
+    },
+    "./announcements": {
+      "types": "./dist/announcements/index.d.ts",
+      "react-native": "./src/announcements/index.ts",
+      "import": "./dist/announcements/index.js",
+      "default": "./dist/announcements/index.js"
     }
   },
   "files": [
@@ -127,6 +151,7 @@
     "@hookform/resolvers": ">=5",
     "@legendapp/motion": ">=2",
     "@react-native-async-storage/async-storage": ">=2",
+    "@react-native-community/netinfo": ">=11",
     "@react-native-community/datetimepicker": ">=8",
     "@react-native-picker/picker": ">=2",
     "@react-navigation/bottom-tabs": ">=7",
@@ -141,6 +166,8 @@
     "expo-haptics": ">=15",
     "expo-image-picker": ">=16",
     "expo-linking": ">=8",
+    "expo-local-authentication": ">=17",
+    "expo-location": ">=19",
     "expo-notifications": ">=0.31",
     "expo-router": ">=6",
     "expo-secure-store": ">=13",
@@ -173,6 +200,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@legendapp/motion": "^2.5.3",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-community/netinfo": "^11.4.1",
     "@react-native-community/datetimepicker": "^8.4.4",
     "@react-native-picker/picker": "^2.11.1",
     "@react-navigation/bottom-tabs": "^7.4.0",
@@ -188,6 +216,8 @@
     "expo-haptics": "^15.0.7",
     "expo-image-picker": "^16.1.4",
     "expo-linking": "^8.0.8",
+    "expo-local-authentication": "^17.0.7",
+    "expo-location": "^19.0.8",
     "expo-notifications": "^55.0.7",
     "expo-router": "^6.0.23",
     "expo-secure-store": "^14.2.3",

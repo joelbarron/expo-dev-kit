@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { createJBAppConfigStore, CreateJBAppConfigStoreOptions } from '../store/appConfigStore';
 import { createJBAuthStore, CreateJBAuthStoreOptions } from '../store/authStore';
+import { createJBOfflineStore, CreateJBOfflineStoreOptions } from '../store/offlineStore';
 import { createJBThemeStore, CreateJBThemeStoreOptions } from '../store/themeStore';
 import { configureJBThemeColors, JBThemeColors } from '../utils/colors';
 
@@ -14,6 +15,7 @@ type RuntimeStoreOptions = {
   auth?: Omit<CreateJBAuthStoreOptions, 'storage'>;
   theme?: RuntimeThemeOptions;
   appConfig?: Omit<CreateJBAppConfigStoreOptions<any, any>, 'storage'>;
+  offline?: CreateJBOfflineStoreOptions;
 };
 
 let authStore = createJBAuthStore({
@@ -27,6 +29,8 @@ let themeStore = createJBThemeStore({
 let appConfigStore = createJBAppConfigStore({
   storage: AsyncStorage
 });
+
+let offlineStore = createJBOfflineStore();
 
 export const configureJBExpoRuntime = (options?: RuntimeStoreOptions) => {
   const storage = options?.storage ?? AsyncStorage;
@@ -47,6 +51,10 @@ export const configureJBExpoRuntime = (options?: RuntimeStoreOptions) => {
   appConfigStore = createJBAppConfigStore({
     storage,
     ...(options?.appConfig ?? {})
+  });
+
+  offlineStore = createJBOfflineStore({
+    ...(options?.offline ?? {})
   });
 };
 
@@ -93,3 +101,17 @@ useAppConfigStore.getState = () => appConfigStore.getState();
 useAppConfigStore.setState = (partial: any, replace?: boolean) =>
   replace === true ? appConfigStore.setState(partial, true) : appConfigStore.setState(partial);
 useAppConfigStore.subscribe = (listener: any) => appConfigStore.subscribe(listener);
+
+export const useOfflineStore: any = <TSelected = any>(
+  selector?: Selector<any, TSelected>
+): TSelected | any => {
+  if (selector) {
+    return offlineStore(selector);
+  }
+  return offlineStore();
+};
+
+useOfflineStore.getState = () => offlineStore.getState();
+useOfflineStore.setState = (partial: any, replace?: boolean) =>
+  replace === true ? offlineStore.setState(partial, true) : offlineStore.setState(partial);
+useOfflineStore.subscribe = (listener: any) => offlineStore.subscribe(listener);

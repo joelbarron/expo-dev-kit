@@ -1,7 +1,11 @@
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEffect, useState } from 'react';
 
 import { JBFormButton } from '../../../forms';
+import { useColorScheme } from '../../../hooks';
 import { Avatar, AvatarFallbackText, AvatarImage, Card, HStack, Text, VStack } from '../../../ui';
+import { getColor } from '../../../utils';
+import { resolveProfilePictureUri } from '../../utils';
 
 type JBUserPhotoPickerCardProps = {
   currentPhotoUri?: string | null;
@@ -11,6 +15,7 @@ type JBUserPhotoPickerCardProps = {
   onTakePhoto?: () => void;
   onClearPreview?: () => void;
   isBusy?: boolean;
+  cacheKey?: string | number | null;
 };
 
 export const JBUserPhotoPickerCard = ({
@@ -21,9 +26,18 @@ export const JBUserPhotoPickerCard = ({
   onTakePhoto,
   onClearPreview,
   isBusy = false,
+  cacheKey,
 }: JBUserPhotoPickerCardProps) => {
-  const imageUri = previewUri || currentPhotoUri || undefined;
+  const scheme = useColorScheme();
+  const typography = getColor('typography') ?? {};
+  const imageUri = resolveProfilePictureUri(previewUri || currentPhotoUri || '', {
+    cacheKey,
+  }) || undefined;
   const [failedImageUri, setFailedImageUri] = useState<string | null>(null);
+  const actionColor =
+    scheme === 'dark'
+      ? typography[50] ?? '#f8fafc'
+      : typography.black ?? typography[900] ?? '#0f172a';
 
   useEffect(() => {
     if (!imageUri) {
@@ -38,9 +52,9 @@ export const JBUserPhotoPickerCard = ({
   const canRenderImage = Boolean(imageUri && failedImageUri !== imageUri);
 
   return (
-    <Card className="px-4 py-5">
-      <VStack space="lg" className="items-center">
-        <Avatar size="2xl" className="bg-primary-600">
+    <Card className="w-full rounded-3xl border-0 bg-background-100 px-5 py-6 dark:bg-background-200">
+      <VStack space="xl" className="items-center">
+        <Avatar size="2xl" className="bg-primary-500">
           <AvatarFallbackText>{displayName}</AvatarFallbackText>
           {canRenderImage ? (
             <AvatarImage
@@ -52,8 +66,13 @@ export const JBUserPhotoPickerCard = ({
 
         <VStack className="w-full" space="sm">
           <JBFormButton
-            buttonType="edit"
-            text="Seleccionar foto"
+            variant="outline"
+            action="primary"
+            iconName="image-multiple-outline"
+            iconPosition="start"
+            text="Seleccionar de galería"
+            iconColor={actionColor}
+            textClassName="text-[15px] font-bold text-typography-900 dark:text-typography-50"
             loading={false}
             isDisabled={isBusy}
             onPress={onPickFromLibrary}
@@ -61,9 +80,12 @@ export const JBUserPhotoPickerCard = ({
           {onTakePhoto ? (
             <JBFormButton
               variant="outline"
-              action="primary"
+              action="secondary"
               text="Tomar foto"
               iconName="camera-outline"
+              iconPosition="start"
+              iconColor={actionColor}
+              textClassName="text-[15px] font-bold text-typography-900 dark:text-typography-50"
               isDisabled={isBusy}
               onPress={onTakePhoto}
             />
@@ -74,7 +96,6 @@ export const JBUserPhotoPickerCard = ({
               action="primary"
               text="Descartar selección"
               className="self-center px-0"
-              textClassName="text-sm font-medium text-primary-600 dark:text-primary-300"
               isDisabled={isBusy}
               onPress={onClearPreview}
             />
@@ -82,8 +103,14 @@ export const JBUserPhotoPickerCard = ({
         </VStack>
 
         {previewUri ? (
-          <HStack className="w-full items-center justify-center rounded-xl bg-primary-500/10 px-3 py-2">
-            <Text size="sm" className="text-primary-300 font-medium">Vista previa lista para guardar</Text>
+          <HStack className="mt-4 w-full items-center justify-center rounded-2xl bg-primary-500/10 px-3 py-3">
+            <MaterialCommunityIcons name="check-circle-outline" size={16} color="#22c55e" />
+            <Text
+              size="sm"
+              className="ml-2 font-semibold text-primary-700 dark:text-primary-300"
+            >
+              Vista previa lista para guardar
+            </Text>
           </HStack>
         ) : null}
       </VStack>

@@ -1,17 +1,23 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 
-import { getLastCreatedJBExpoConfig } from '../../../config';
+import {
+  getAuthAccountScreensConfig,
+  getLastCreatedJBExpoConfig,
+  getSettingsConfig,
+  getSettingsRoutesConfig,
+} from '../../../config';
 import { JBFormButton } from '../../../forms';
 import { useAppConfigStore, useAuthStore } from '../../../runtime';
-import { Box, Text, VStack } from '../../../ui';
+import { Box, VStack } from '../../../ui';
 import { parseAuthError } from '../../forms/errorParser';
 import { useJBAuth } from '../../provider';
-import { getProfileFullName } from '../../utils';
+import { getProfileFullName, getProfilePictureUri } from '../../utils';
 import { AuthScreenLayout } from '../../ui';
 import { JBUserPhotoPickerCard } from '../components';
 
@@ -44,29 +50,69 @@ const shouldRetryAsDataUri = (error: unknown): boolean => {
 };
 
 export function JBUserProfilePhotoScreen() {
+  const router = useRouter();
   const auth = useJBAuth();
   const appConfig = useAppConfigStore((state: any) => state?.appConfig);
   const baseConfig = getLastCreatedJBExpoConfig();
-  const cropConfig = appConfig?.auth?.userSettings?.screens?.photo?.crop ?? baseConfig.auth.userSettings.screens.photo.crop;
+  const mergedConfig = useMemo(
+    () => ({
+      ...baseConfig,
+      auth: {
+        ...baseConfig.auth,
+        ...(appConfig?.auth ?? {}),
+      },
+      settings: {
+        ...(baseConfig.settings ?? {}),
+        ...(appConfig?.settings ?? {}),
+      },
+    }),
+    [appConfig?.auth, appConfig?.settings, baseConfig]
+  );
+  const settingsConfig = useMemo(
+    () => getSettingsConfig(mergedConfig as any),
+    [mergedConfig]
+  );
+  const settingsRoutes = useMemo(
+    () => getSettingsRoutesConfig(mergedConfig as any),
+    [mergedConfig]
+  );
+  const permissionsSettingsPath = useMemo(() => {
+    const configuredPath = settingsConfig.permissions?.path?.trim();
+    if (!configuredPath) return settingsRoutes.permissions;
+    return configuredPath.startsWith('/') ? configuredPath : `/${configuredPath}`;
+  }, [settingsConfig.permissions?.path, settingsRoutes.permissions]);
+  const accountScreensConfig = useMemo(
+    () => getAuthAccountScreensConfig(mergedConfig as any),
+    [mergedConfig]
+  );
+  const cropConfig = accountScreensConfig.screens.photo.crop;
   const activeProfile = useAuthStore((state: any) => state?.activeProfile);
   const [selectedPhoto, setSelectedPhoto] = useState<SelectedPhoto | null>(null);
+  const [optimisticPhotoUri, setOptimisticPhotoUri] = useState<string | null>(null);
+  const [photoCacheKey, setPhotoCacheKey] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const { control, formState, setValue, clearErrors, reset } = useForm<FormValues>({
+  const { setValue, clearErrors, reset } = useForm<FormValues>({
     mode: 'onChange',
     defaultValues: { pictureBase64: '' },
     resolver: zodResolver(schema),
   });
 
   const profilePicture = useMemo(() => {
-    const profile = activeProfile as any;
-    return (
-      (typeof profile?.picture === 'string' && profile.picture) ||
-      (typeof profile?.avatar === 'string' && profile.avatar) ||
-      (typeof profile?.image === 'string' && profile.image) ||
-      ''
-    );
-  }, [activeProfile]);
+    return getProfilePictureUri(activeProfile as any, {
+      cacheKey: photoCacheKey,
+    });
+  }, [activeProfile, photoCacheKey]);
+
+  const resolvedPhotoUri = useMemo(() => {
+    if (selectedPhoto?.uri) {
+      return selectedPhoto.uri;
+    }
+    if (optimisticPhotoUri) {
+      return optimisticPhotoUri;
+    }
+    return profilePicture;
+  }, [optimisticPhotoUri, profilePicture, selectedPhoto?.uri]);
 
   const displayName = useMemo(
     () => getProfileFullName(activeProfile as any) || String((activeProfile as any)?.username ?? 'Perfil'),
@@ -91,10 +137,34 @@ export function JBUserProfilePhotoScreen() {
     [clearErrors, setValue]
   );
 
+  const openPermissionsSetup = useCallback(() => {
+    router.push(permissionsSettingsPath as any);
+  }, [permissionsSettingsPath, router]);
+
+  const handlePermissionDenied = useCallback(
+    (resource: string, canAskAgain?: boolean | null) => {
+      if (canAskAgain === false) {
+        Toast.show({
+          type: 'error',
+          text1: 'Permiso bloqueado',
+          text2: `Activa ${resource} en permisos para continuar.`,
+        });
+        openPermissionsSetup();
+        return;
+      }
+      Toast.show({
+        type: 'error',
+        text1: 'Permiso requerido',
+        text2: `Autoriza ${resource} para continuar.`,
+      });
+    },
+    [openPermissionsSetup]
+  );
+
   const pickFromLibrary = useCallback(async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Toast.show({ type: 'error', text1: 'Permiso requerido', text2: 'Autoriza acceso a tus fotos para continuar.' });
+      handlePermissionDenied('el acceso a tus fotos', permission.canAskAgain);
       return;
     }
 
@@ -109,12 +179,12 @@ export function JBUserProfilePhotoScreen() {
 
     if (result.canceled) return;
     applySelectedAsset(result.assets?.[0]);
-  }, [applySelectedAsset, cropConfig]);
+  }, [applySelectedAsset, cropConfig, handlePermissionDenied]);
 
   const takePhoto = useCallback(async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Toast.show({ type: 'error', text1: 'Permiso requerido', text2: 'Autoriza acceso a la cámara para continuar.' });
+      handlePermissionDenied('el acceso a la camara', permission.canAskAgain);
       return;
     }
 
@@ -127,7 +197,7 @@ export function JBUserProfilePhotoScreen() {
 
     if (result.canceled) return;
     applySelectedAsset(result.assets?.[0]);
-  }, [applySelectedAsset, cropConfig]);
+  }, [applySelectedAsset, cropConfig, handlePermissionDenied]);
 
   const submitSave = useCallback(async () => {
     const pictureBase64 = selectedPhoto?.base64;
@@ -148,6 +218,8 @@ export function JBUserProfilePhotoScreen() {
       }
     }
 
+    setOptimisticPhotoUri(selectedPhoto?.uri ?? null);
+    setPhotoCacheKey(Date.now());
     try {
       await auth.getMe();
     } catch {
@@ -158,7 +230,8 @@ export function JBUserProfilePhotoScreen() {
     setSelectedPhoto(null);
     reset({ pictureBase64: '' });
     setIsSaving(false);
-  }, [auth, reset, selectedPhoto]);
+    router.back();
+  }, [auth, reset, router, selectedPhoto]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -176,12 +249,13 @@ export function JBUserProfilePhotoScreen() {
 
   return (
     <AuthScreenLayout
-      footerAdjustableHeight
+      subtitle="Elige una foto clara para que anfitriones y huéspedes te identifiquen rápidamente."
       footerClassName="pt-4 pb-6"
       footer={
         <VStack space="sm" className="pt-4">
           <JBFormButton
-            buttonType="save"
+            variant="solid"
+            action="primary"
             text="Guardar foto"
             loading={isSaving}
             isDisabled={!canSave}
@@ -192,16 +266,8 @@ export function JBUserProfilePhotoScreen() {
     >
       <Box className="w-full">
         <VStack space="lg">
-          <VStack space="xs">
-            <Text size="lg" className="font-semibold text-white">
-              Actualiza tu foto de perfil
-            </Text>
-            <Text size="sm" className="text-typography-300">
-              Elige una imagen y recórtala en formato cuadrado antes de guardarla.
-            </Text>
-          </VStack>
           <JBUserPhotoPickerCard
-            currentPhotoUri={profilePicture}
+            currentPhotoUri={resolvedPhotoUri}
             previewUri={selectedPhoto?.uri ?? null}
             displayName={displayName}
             onPickFromLibrary={() => void pickFromLibrary()}
@@ -211,6 +277,7 @@ export function JBUserProfilePhotoScreen() {
               reset({ pictureBase64: '' });
             }}
             isBusy={isSaving}
+            cacheKey={photoCacheKey}
           />
         </VStack>
       </Box>

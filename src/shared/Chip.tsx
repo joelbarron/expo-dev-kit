@@ -1,10 +1,26 @@
-// @ts-nocheck
-import { Box } from "../ui/box";
-import { Text } from "../ui/text";
 import * as Haptics from "expo-haptics";
 import React from "react";
-import { TouchableOpacity } from "react-native";
+import { StyleProp, TouchableOpacity, ViewStyle } from "react-native";
+
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../config";
+import { useColorScheme } from "../hooks";
+import { Box } from "../ui/box";
+import { Text } from "../ui/text";
 import { VStack } from "../ui/vstack";
+
+type ChipProps = {
+  title: string;
+  subtitle?: string | null;
+  icon?: React.ReactNode;
+  className?: string;
+  titleClassName?: string;
+  pressable?: boolean;
+  onPress?: () => void;
+  isActive?: boolean;
+  activeBgClassName?: string;
+  inactiveBgClassName?: string;
+  style?: StyleProp<ViewStyle>;
+};
 
 export const Chip = ({
   title,
@@ -18,37 +34,53 @@ export const Chip = ({
   activeBgClassName = "bg-primary-500",
   inactiveBgClassName = "bg-slate-500",
   style = {},
-}: {
-  title: string;
-  subtitle?: string | null;
-  icon?: any;
-  className?: string;
-  titleClassName?: string;
-  pressable?: boolean;
-  onPress?: () => void;
-  isActive?: boolean;
-  activeBgClassName?: string;
-  inactiveBgClassName?: string;
-  style?: any;
-}) => {
+}: ChipProps) => {
+  const colorScheme = useColorScheme();
+  const config = getLastCreatedJBExpoConfig();
+  const chipConfig = config?.ui?.chip;
+  const chipStateConfig = isActive ? chipConfig?.active : chipConfig?.inactive;
+  const resolvedBackgroundColor = resolveJBUIColor(
+    chipStateConfig?.backgroundColor,
+    colorScheme,
+  );
+  const resolvedBorderColor = resolveJBUIColor(
+    chipStateConfig?.borderColor,
+    colorScheme,
+  );
+  const resolvedTextColor = resolveJBUIColor(
+    chipStateConfig?.textColor,
+    colorScheme,
+  );
+
   const _renderChip = () => (
     <Box
-      className={`h-[27px] justify-center items-center flex-row  px-3 rounded-xl ${className} ${
+      className={`h-[27px] justify-center items-center flex-row px-3 rounded-xl ${
         isActive ? activeBgClassName : inactiveBgClassName
-      }`}
-      style={style}
+      } ${className}`}
+      style={[
+        style,
+        resolvedBackgroundColor ? { backgroundColor: resolvedBackgroundColor } : null,
+        resolvedBorderColor ? { borderColor: resolvedBorderColor, borderWidth: 1 } : null,
+      ]}
     >
-      {/* <FontAwesome name={iconName} color="zinc" size={25} /> */}
       {icon}
       <VStack>
-        <Text className={`${titleClassName} ${icon ? "ml-3" : ""}`} size="lg">
+        <Text
+          className={`${titleClassName} ${icon ? "ml-3" : ""}`}
+          size="lg"
+          style={resolvedTextColor ? { color: resolvedTextColor } : undefined}
+        >
           {title}
         </Text>
-        {subtitle && (
-          <Text className={`${titleClassName} ${icon ? "ml-3" : ""}`} size="lg">
+        {subtitle ? (
+          <Text
+            className={`${titleClassName} ${icon ? "ml-3" : ""}`}
+            size="lg"
+            style={resolvedTextColor ? { color: resolvedTextColor } : undefined}
+          >
             {subtitle}
           </Text>
-        )}
+        ) : null}
       </VStack>
     </Box>
   );
@@ -59,12 +91,10 @@ export const Chip = ({
   return (
     <TouchableOpacity
       onPress={onPress}
-      onPressIn={(ev) => {
+      onPressIn={() => {
         if (process.env.EXPO_OS === "ios") {
-          // Add a soft haptic feedback when pressing down on the tabs.
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-        // props.onPressIn?.(ev);
       }}
     >
       {_renderChip()}

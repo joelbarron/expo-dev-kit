@@ -3,10 +3,16 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { JBAppConfig, getApiUrl, getAuthBasePath } from '../config';
 import { createSecureStoreTokenStorage } from './storage';
 import {
+  AccountSocialAccountsResponse,
   AccountConfirmationPayload,
   AccountConfirmationResendPayload,
+  AvailabilityResponse,
   ApiDetailResponse,
+  ContactVerificationRequestPayload,
+  ContactVerificationVerifyPayload,
   CreateAuthenticatedAxiosOptions,
+  DeleteAccountPayload,
+  EmailAvailabilityPayload,
   JbDrfAuthConfig,
   JbDrfAuthEndpoints,
   JbDrfWebAuthResponse,
@@ -19,6 +25,7 @@ import {
   PasswordChangePayload,
   PasswordResetConfirmPayload,
   PasswordResetRequestPayload,
+  PhoneAvailabilityPayload,
   ProfilesResponse,
   RefreshPayload,
   RegisterPayload,
@@ -26,8 +33,10 @@ import {
   SwitchProfilePayload,
   TokenPair,
   TokenStorage,
+  UpdateProfilePayload,
   UpdateProfilePicturePayload,
   UnlinkSocialPayload,
+  UsernameAvailabilityPayload,
   VerifyOtpPayload
 } from './types';
 
@@ -60,6 +69,13 @@ export const createAuthEndpoints = (basePath?: string): JbDrfAuthEndpoints => {
     profiles: `${root}/profiles/`,
     profilePicture: `${root}/profile/picture/`,
     accountUpdate: `${root}/account/update/`,
+    accountEmailAvailability: `${root}/account/email-availability/`,
+    accountPhoneAvailability: `${root}/account/phone-availability/`,
+    accountUsernameAvailability: `${root}/account/username-availability/`,
+    accountContactVerificationRequest: `${root}/account/contact-verification/request/`,
+    accountContactVerificationVerify: `${root}/account/contact-verification/verify/`,
+    accountSocialAccounts: `${root}/account/social-accounts/`,
+    accountDelete: `${root}/account/delete/`,
     passwordResetRequest: `${root}/password-reset/request/`,
     passwordResetConfirm: `${root}/password-reset/confirm/`,
     passwordResetChange: `${root}/password-reset/change/`
@@ -88,6 +104,23 @@ const normalizeDetailResponse = (data: Record<string, unknown>): ApiDetailRespon
   ...data,
   emailSent: (data.emailSent as boolean | undefined) ?? (data.email_sent as boolean | undefined)
 });
+
+const normalizeAccountUpdatePayload = (payload: AccountUpdatePayload) => {
+  const normalized = { ...payload } as Record<string, unknown>;
+
+  if (payload.emailVerificationProofToken && !payload.email_verification_proof_token) {
+    normalized.email_verification_proof_token = payload.emailVerificationProofToken;
+  }
+
+  if (payload.phoneVerificationProofToken && !payload.phone_verification_proof_token) {
+    normalized.phone_verification_proof_token = payload.phoneVerificationProofToken;
+  }
+
+  delete normalized.emailVerificationProofToken;
+  delete normalized.phoneVerificationProofToken;
+
+  return normalized;
+};
 
 const withClientPayload = <TPayload extends { client?: 'web' | 'mobile'; device?: unknown }>(
   payload: TPayload,
@@ -133,9 +166,19 @@ export type AuthClient = {
   resendAccountConfirmation: (payload: AccountConfirmationResendPayload) => Promise<ApiDetailResponse>;
   getMe: () => Promise<JbDrfWebAuthResponse>;
   getProfiles: () => Promise<ProfilesResponse>;
+  getProfileById: (profileId: number | string) => Promise<Record<string, unknown>>;
   createProfile: (payload: CreateProfilePayload) => Promise<Record<string, unknown>>;
+  updateProfile: (profileId: number | string, payload: UpdateProfilePayload) => Promise<Record<string, unknown>>;
+  deleteProfile: (profileId: number | string) => Promise<Record<string, unknown>>;
   updateProfilePicture: (payload: UpdateProfilePicturePayload) => Promise<Record<string, unknown>>;
   updateAccount: (payload: AccountUpdatePayload, method?: 'PATCH' | 'PUT') => Promise<Record<string, unknown>>;
+  checkEmailAvailability: (payload: EmailAvailabilityPayload) => Promise<AvailabilityResponse>;
+  checkPhoneAvailability: (payload: PhoneAvailabilityPayload) => Promise<AvailabilityResponse>;
+  checkUsernameAvailability: (payload: UsernameAvailabilityPayload) => Promise<AvailabilityResponse>;
+  requestContactVerification: (payload: ContactVerificationRequestPayload) => Promise<Record<string, unknown>>;
+  verifyContactVerification: (payload: ContactVerificationVerifyPayload) => Promise<Record<string, unknown>>;
+  getAccountSocialAccounts: () => Promise<AccountSocialAccountsResponse>;
+  deleteAccount: (payload: DeleteAccountPayload) => Promise<unknown>;
   requestPasswordReset: (payload: PasswordResetRequestPayload) => Promise<Record<string, unknown>>;
   confirmPasswordReset: (payload: PasswordResetConfirmPayload) => Promise<Record<string, unknown>>;
   changePassword: (payload: PasswordChangePayload) => Promise<Record<string, unknown>>;
@@ -155,6 +198,8 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
   const defaultClient = config.defaultClient ?? 'mobile';
 
   const withBaseUrl = (path: string) => `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  const buildProfileDetailPath = (profileId: number | string) =>
+    `${String(endpoints.profiles).replace(/\/?$/, '/')}${profileId}/`;
 
   const getAccessToken = () => tokenStorage.getAccessToken();
   const setAccessToken = (token: string) => tokenStorage.setAccessToken(token);
@@ -427,12 +472,37 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
     return response.data;
   };
 
+  const getProfileById = async (profileId: number | string): Promise<Record<string, unknown>> => {
+    const response = await createAuthenticatedAxiosWithRefresh().get<Record<string, unknown>>(
+      withBaseUrl(buildProfileDetailPath(profileId))
+    );
+    return response.data;
+  };
+
   const createProfile = async (payload: CreateProfilePayload): Promise<Record<string, unknown>> => {
     const response = await createAuthenticatedAxiosWithRefresh().post<Record<string, unknown>>(
       withBaseUrl(endpoints.profiles),
       payload
     );
     return response.data;
+  };
+
+  const updateProfile = async (
+    profileId: number | string,
+    payload: UpdateProfilePayload
+  ): Promise<Record<string, unknown>> => {
+    const response = await createAuthenticatedAxiosWithRefresh().patch<Record<string, unknown>>(
+      withBaseUrl(buildProfileDetailPath(profileId)),
+      payload
+    );
+    return response.data;
+  };
+
+  const deleteProfile = async (profileId: number | string): Promise<Record<string, unknown>> => {
+    const response = await createAuthenticatedAxiosWithRefresh().delete<Record<string, unknown>>(
+      withBaseUrl(buildProfileDetailPath(profileId))
+    );
+    return response.data ?? {};
   };
 
   const updateProfilePicture = async (
@@ -449,11 +519,79 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
     payload: AccountUpdatePayload,
     method: 'PATCH' | 'PUT' = 'PATCH'
   ): Promise<Record<string, unknown>> => {
+    const normalizedPayload = normalizeAccountUpdatePayload(payload);
     const client = createAuthenticatedAxiosWithRefresh();
     const response =
       method === 'PUT'
-        ? await client.put<Record<string, unknown>>(withBaseUrl(endpoints.accountUpdate), payload)
-        : await client.patch<Record<string, unknown>>(withBaseUrl(endpoints.accountUpdate), payload);
+        ? await client.put<Record<string, unknown>>(withBaseUrl(endpoints.accountUpdate), normalizedPayload)
+        : await client.patch<Record<string, unknown>>(withBaseUrl(endpoints.accountUpdate), normalizedPayload);
+    return response.data;
+  };
+
+  const checkEmailAvailability = async (
+    payload: EmailAvailabilityPayload
+  ): Promise<AvailabilityResponse> => {
+    const response = await createAuthenticatedAxiosWithRefresh().get<AvailabilityResponse>(
+      withBaseUrl(endpoints.accountEmailAvailability),
+      { params: payload }
+    );
+    return response.data;
+  };
+
+  const checkPhoneAvailability = async (
+    payload: PhoneAvailabilityPayload
+  ): Promise<AvailabilityResponse> => {
+    const response = await createAuthenticatedAxiosWithRefresh().get<AvailabilityResponse>(
+      withBaseUrl(endpoints.accountPhoneAvailability),
+      { params: payload }
+    );
+    return response.data;
+  };
+
+  const checkUsernameAvailability = async (
+    payload: UsernameAvailabilityPayload
+  ): Promise<AvailabilityResponse> => {
+    const response = await createAuthenticatedAxiosWithRefresh().get<AvailabilityResponse>(
+      withBaseUrl(endpoints.accountUsernameAvailability),
+      { params: payload }
+    );
+    return response.data;
+  };
+
+  const requestContactVerification = async (
+    payload: ContactVerificationRequestPayload
+  ): Promise<Record<string, unknown>> => {
+    const response = await createAuthenticatedAxiosWithRefresh().post<Record<string, unknown>>(
+      withBaseUrl(endpoints.accountContactVerificationRequest),
+      payload
+    );
+    return response.data;
+  };
+
+  const verifyContactVerification = async (
+    payload: ContactVerificationVerifyPayload
+  ): Promise<Record<string, unknown>> => {
+    const response = await createAuthenticatedAxiosWithRefresh().post<Record<string, unknown>>(
+      withBaseUrl(endpoints.accountContactVerificationVerify),
+      payload
+    );
+    return response.data;
+  };
+
+  const getAccountSocialAccounts = async (): Promise<AccountSocialAccountsResponse> => {
+    const response = await createAuthenticatedAxiosWithRefresh().get<AccountSocialAccountsResponse>(
+      withBaseUrl(endpoints.accountSocialAccounts)
+    );
+    return response.data;
+  };
+
+  const deleteAccount = async (payload: DeleteAccountPayload): Promise<unknown> => {
+    const response = await createAuthenticatedAxiosWithRefresh().delete(
+      withBaseUrl(endpoints.accountDelete),
+      {
+        data: payload
+      }
+    );
     return response.data;
   };
 
@@ -488,9 +626,20 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
   };
 
   const changePassword = async (payload: PasswordChangePayload): Promise<Record<string, unknown>> => {
+    const normalizedPayload: Record<string, unknown> = {};
+    if (payload.oldPassword) {
+      normalizedPayload.oldPassword = payload.oldPassword;
+    }
+    if (payload.newPassword) {
+      normalizedPayload.newPassword = payload.newPassword;
+    }
+    if (payload.newPasswordConfirm) {
+      normalizedPayload.newPasswordConfirm = payload.newPasswordConfirm;
+    }
+
     const response = await createAuthenticatedAxiosWithRefresh().post<Record<string, unknown>>(
       withBaseUrl(endpoints.passwordResetChange),
-      payload
+      normalizedPayload
     );
 
     return response.data;
@@ -538,9 +687,19 @@ export const createAuthClient = (config: JbDrfAuthConfig): AuthClient => {
     resendAccountConfirmation,
     getMe,
     getProfiles,
+    getProfileById,
     createProfile,
+    updateProfile,
+    deleteProfile,
     updateProfilePicture,
     updateAccount,
+    checkEmailAvailability,
+    checkPhoneAvailability,
+    checkUsernameAvailability,
+    requestContactVerification,
+    verifyContactVerification,
+    getAccountSocialAccounts,
+    deleteAccount,
     requestPasswordReset,
     confirmPasswordReset,
     changePassword,

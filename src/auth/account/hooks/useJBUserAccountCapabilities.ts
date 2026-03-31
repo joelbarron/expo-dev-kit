@@ -1,57 +1,23 @@
 import { useMemo } from 'react';
 
-import { getLastCreatedJBExpoConfig } from '../../../config';
-import { JBAuthProfileRoleOption, JBAuthUserSettingsConfig } from '../../../config/types';
+import {
+  getAuthAccountConfig,
+  getAuthAccountScreensConfig,
+  getLastCreatedJBExpoConfig,
+} from '../../../config';
+import {
+  JBAuthAccountConfig,
+  JBAuthAccountScreensConfig,
+  JBAuthProfileRoleOption,
+} from '../../../config/types';
 import { useAppConfigStore, useAuthStore } from '../../../runtime';
 
-const pickBoolean = (value: unknown, fallback: boolean) =>
-  typeof value === 'boolean' ? value : fallback;
-
-const mergeUserSettings = (
-  base: JBAuthUserSettingsConfig,
-  override: Partial<JBAuthUserSettingsConfig> | undefined
-): JBAuthUserSettingsConfig => ({
-  enabled: pickBoolean(override?.enabled, base.enabled),
-  routing: {
-    homePathAfterProfileSwitch:
-      override?.routing?.homePathAfterProfileSwitch ?? base.routing.homePathAfterProfileSwitch,
-  },
-  screens: {
-    profiles: {
-      enabled: pickBoolean(override?.screens?.profiles?.enabled, base.screens.profiles.enabled),
-      allowSwitch: pickBoolean(override?.screens?.profiles?.allowSwitch, base.screens.profiles.allowSwitch),
-      allowCreate: pickBoolean(override?.screens?.profiles?.allowCreate, base.screens.profiles.allowCreate),
-    },
-    changePassword: {
-      enabled: pickBoolean(
-        override?.screens?.changePassword?.enabled,
-        base.screens.changePassword.enabled
-      ),
-    },
-    photo: {
-      enabled: pickBoolean(override?.screens?.photo?.enabled, base.screens.photo.enabled),
-      crop: {
-        enabled: pickBoolean(override?.screens?.photo?.crop?.enabled, base.screens.photo.crop.enabled),
-        allowsEditing: pickBoolean(
-          override?.screens?.photo?.crop?.allowsEditing,
-          base.screens.photo.crop.allowsEditing
-        ),
-        aspect: override?.screens?.photo?.crop?.aspect ?? base.screens.photo.crop.aspect,
-      },
-    },
-    personalData: {
-      enabled: pickBoolean(
-        override?.screens?.personalData?.enabled,
-        base.screens.personalData.enabled
-      ),
-    },
-  },
-});
-
 export type JBUserAccountCapabilities = {
-  config: JBAuthUserSettingsConfig;
+  config: JBAuthAccountScreensConfig;
+  accountConfig: JBAuthAccountConfig;
   roleOptions: JBAuthProfileRoleOption[];
   showAccountSection: boolean;
+  canEditDefaultProfile: boolean;
   canSeeProfiles: boolean;
   canSwitchProfiles: boolean;
   canCreateProfile: boolean;
@@ -69,10 +35,17 @@ export const useJBUserAccountCapabilities = (): JBUserAccountCapabilities => {
   const nonDefaultProfiles = useAuthStore((state: any) => state?.profiles);
 
   return useMemo(() => {
-    const mergedUserSettings = mergeUserSettings(
-      baseConfig.auth.userSettings,
-      appConfig?.auth?.userSettings
-    );
+    const mergedConfig = {
+      ...baseConfig,
+      auth: {
+        ...baseConfig.auth,
+        ...(appConfig?.auth ?? {}),
+      },
+    } as any;
+
+    const accountScreensConfig = getAuthAccountScreensConfig(mergedConfig);
+    const accountConfig = getAuthAccountConfig(mergedConfig);
+    const isProfileMirrorEnabled = Boolean(accountConfig.profileMirror?.enabled);
 
     const roleOptions = (appConfig?.auth?.profileRoles ?? baseConfig.auth.profileRoles ?? []) as JBAuthProfileRoleOption[];
     const profilesList = [defaultProfile, activeProfile, ...(Array.isArray(nonDefaultProfiles) ? nonDefaultProfiles : [])]
@@ -90,22 +63,40 @@ export const useJBUserAccountCapabilities = (): JBUserAccountCapabilities => {
       }, []);
 
     const profilesCount = profilesList.length;
-    const canSeeProfiles = mergedUserSettings.enabled && mergedUserSettings.screens.profiles.enabled;
-    const canCreateProfile = canSeeProfiles && mergedUserSettings.screens.profiles.allowCreate;
+    const canSeeProfiles =
+      accountScreensConfig.enabled &&
+      accountScreensConfig.screens.profiles.enabled &&
+      !isProfileMirrorEnabled;
+    const canCreateProfile = canSeeProfiles && accountScreensConfig.screens.profiles.allowCreate;
     const canSwitchProfiles =
-      canSeeProfiles &&
-      mergedUserSettings.screens.profiles.allowSwitch &&
-      profilesCount > 1;
+      accountScreensConfig.enabled &&
+      accountScreensConfig.screens.profiles.allowSwitch &&
+      profilesCount > 1 &&
+      (canSeeProfiles || isProfileMirrorEnabled);
+    const canEditDefaultProfile =
+      accountScreensConfig.enabled && Boolean(accountConfig.allowDefaultProfileEdit);
 
-    const canChangePassword = mergedUserSettings.enabled && mergedUserSettings.screens.changePassword.enabled;
-    const canChangePhoto = mergedUserSettings.enabled && mergedUserSettings.screens.photo.enabled;
-    const canEditPersonalData = mergedUserSettings.enabled && mergedUserSettings.screens.personalData.enabled;
+    const canChangePassword =
+      accountScreensConfig.enabled &&
+      accountScreensConfig.screens.changePassword.enabled;
+    const canChangePhoto =
+      accountScreensConfig.enabled &&
+      accountScreensConfig.screens.photo.enabled;
+    const canEditPersonalData =
+      accountScreensConfig.enabled &&
+      accountScreensConfig.screens.personalData.enabled;
 
     return {
-      config: mergedUserSettings,
+      config: accountScreensConfig,
+      accountConfig,
       roleOptions,
       showAccountSection:
-        canSeeProfiles || canChangePassword || canChangePhoto || canEditPersonalData,
+        canEditDefaultProfile ||
+        canSeeProfiles ||
+        canChangePassword ||
+        canChangePhoto ||
+        canEditPersonalData,
+      canEditDefaultProfile,
       canSeeProfiles,
       canSwitchProfiles,
       canCreateProfile,

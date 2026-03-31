@@ -7,6 +7,10 @@ type JBLoginDeviceInfo = {
   notificationToken?: string;
 };
 
+type JBLoginDeviceInfoOptions = {
+  requestNotificationPermission?: boolean;
+};
+
 const resolveFallbackName = (platform: string): string => {
   const model =
     (Platform as any)?.constants?.Model ||
@@ -22,7 +26,9 @@ const resolveFallbackToken = (platform: string): string => {
   return `${platform}-${systemVersion}`;
 };
 
-const getNotificationToken = async (): Promise<string | undefined> => {
+const getNotificationToken = async (
+  options?: JBLoginDeviceInfoOptions
+): Promise<string | undefined> => {
   if (Platform.OS === 'web') {
     return undefined;
   }
@@ -32,7 +38,7 @@ const getNotificationToken = async (): Promise<string | undefined> => {
     const currentPermissions = await Notifications.getPermissionsAsync();
     let status = currentPermissions.status;
 
-    if (status !== 'granted') {
+    if (status !== 'granted' && options?.requestNotificationPermission) {
       const requested = await Notifications.requestPermissionsAsync();
       status = requested.status;
     }
@@ -84,12 +90,14 @@ const getDeviceName = async (platform: string): Promise<string> => {
   }
 };
 
-export const loginDeviceInfo = async (): Promise<JBLoginDeviceInfo> => {
+export const loginDeviceInfo = async (
+  options?: JBLoginDeviceInfoOptions
+): Promise<JBLoginDeviceInfo> => {
   const platform = Platform.OS;
   const [name, token, notificationToken] = await Promise.all([
     getDeviceName(platform),
     getDeviceIdentityToken(),
-    getNotificationToken(),
+    getNotificationToken(options),
   ]);
 
   return {

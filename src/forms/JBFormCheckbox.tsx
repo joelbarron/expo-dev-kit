@@ -1,5 +1,7 @@
 // @ts-nocheck
 import { Controller } from "react-hook-form";
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../config";
+import { useColorScheme } from "../hooks";
 import {
   Checkbox,
   CheckboxIcon,
@@ -17,6 +19,7 @@ import {
   FormControlLabelText,
 } from "../ui/form-control";
 import { AlertCircleIcon, CheckIcon } from "../ui/icon";
+import { getColor } from "../utils";
 
 export const CustomFormCheckbox = ({
   control,
@@ -40,6 +43,19 @@ export const CustomFormCheckbox = ({
   checkboxLabelClassName = "",
   ...rest
 }: any) => {
+  const scheme = useColorScheme();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const typography = getColor("typography") ?? {};
+  const defaultLightTextColor =
+    typography.black ?? typography[900] ?? "#0f172a";
+  const defaultDarkTextColor =
+    typography.white ?? typography[50] ?? "#f8fafc";
+  const resolvedFormTextColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.textColor,
+    scheme,
+    scheme === "dark" ? defaultDarkTextColor : defaultLightTextColor,
+  );
+
   return (
     <Controller
       control={control}
@@ -53,7 +69,10 @@ export const CustomFormCheckbox = ({
           className={containerClassName}
         >
           <FormControlLabel className="">
-            <FormControlLabelText className={`text-white ${labelClassName}`}>
+            <FormControlLabelText
+              className={labelClassName}
+              style={{ color: resolvedFormTextColor }}
+            >
               {label}
             </FormControlLabelText>
           </FormControlLabel>
@@ -90,7 +109,10 @@ export const CustomFormCheckbox = ({
             <CheckboxIndicator>
               <CheckboxIcon as={CheckIcon} />
             </CheckboxIndicator>
-            <CheckboxLabel className={checkboxLabelClassName}>
+            <CheckboxLabel
+              className={checkboxLabelClassName}
+              style={{ color: resolvedFormTextColor }}
+            >
               {label}
             </CheckboxLabel>
           </Checkbox>

@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleProp, StyleSheet, Text, useWindowDimensions, View, ViewStyle } from 'react-native';
 
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from '../../config';
 import { JBMainLayout } from '../../core';
 import { useColorScheme } from '../../hooks';
 import { getColor } from '../../utils/colors';
@@ -9,6 +10,7 @@ export type AuthScreenLayoutProps = {
   title?: string;
   subtitle?: string;
   children: ReactNode;
+  header?: ReactNode;
   footer?: ReactNode;
   footerClassName?: string;
   footerStyle?: StyleProp<ViewStyle>;
@@ -21,6 +23,7 @@ export const AuthScreenLayout = ({
   title,
   subtitle,
   children,
+  header,
   footer,
   footerClassName,
   footerStyle,
@@ -30,9 +33,23 @@ export const AuthScreenLayout = ({
 }: AuthScreenLayoutProps) => {
   const scheme = useColorScheme();
   const background = getColor('background') ?? {};
+  const typography = getColor('typography') ?? {};
   const isDark = scheme === 'dark';
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const uiConfig = baseConfig?.ui;
+  const mainBackgroundColor = resolveJBUIColor(
+    uiConfig?.main?.backgroundColor,
+    scheme,
+    isDark ? background[0] ?? '#070b10' : background.light ?? '#fbfbfb'
+  );
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
+  const titleColor = isDark
+    ? typography.white ?? typography[50] ?? '#f8fafc'
+    : typography.black ?? typography[900] ?? '#0f172a';
+  const subtitleColor = isDark
+    ? typography[300] ?? '#cbd5e1'
+    : typography[500] ?? '#64748b';
 
   const content = (
     <View
@@ -43,8 +60,8 @@ export const AuthScreenLayout = ({
     >
       {title || subtitle ? (
         <View style={styles.header}>
-          {title ? <Text style={[styles.title, { color: isDark ? '#ffffff' : '#27272a' }]}>{title}</Text> : null}
-          {subtitle ? <Text style={[styles.subtitle, { color: '#9ca3af' }]}>{subtitle}</Text> : null}
+          {title ? <Text style={[styles.title, { color: titleColor }]}>{title}</Text> : null}
+          {subtitle ? <Text style={[styles.subtitle, { color: subtitleColor }]}>{subtitle}</Text> : null}
         </View>
       ) : null}
 
@@ -69,6 +86,7 @@ export const AuthScreenLayout = ({
       >
         <JBMainLayout
           className="flex-1"
+          header={header}
           footer={footer}
           footerClassName={footerClassName}
           footerStyle={footerStyle}
@@ -91,7 +109,7 @@ export const AuthScreenLayout = ({
     <KeyboardAvoidingView
       style={[
         styles.root,
-        { backgroundColor: isDark ? background[0] ?? '#070b10' : background.light ?? '#fbfbfb' }
+        { backgroundColor: mainBackgroundColor }
       ]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >

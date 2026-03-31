@@ -13,6 +13,7 @@ export type JBAuthNavigator = {
   goToVerifyEmail?: (params?: { email?: string; uid?: string; token?: string }) => void;
   goToVerifyEmailReplace?: (params?: { email?: string; uid?: string; token?: string }) => void;
   goToWelcome?: () => void;
+  goToGuestExplore?: () => void;
   onSignedIn?: () => void;
   onSignedOut?: () => void;
 };

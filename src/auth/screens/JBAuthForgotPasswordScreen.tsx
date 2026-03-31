@@ -1,9 +1,8 @@
 import { useCallback, useState } from 'react';
 
-import { JBFormButton } from '../../forms';
 import { JBAuthForgotPasswordForm } from '../forms';
 import { useJBAuth } from '../provider';
-import { AuthScreenLayout } from '../ui';
+import { AuthScreenLayout, JBAuthFooterButton } from '../ui';
 import { JBAuthNavigator } from './types';
 
 export type JBAuthForgotPasswordScreenProps = {
@@ -59,11 +58,8 @@ export function JBAuthForgotPasswordScreen(props: JBAuthForgotPasswordScreenProp
       footerAdjustableHeight
       footerClassName="pt-4 pb-6"
       footer={(
-        <JBFormButton
-          variant="solid"
-          action="primary"
-          size="xl"
-          className="px-4"
+        <JBAuthFooterButton
+          slot="primary"
           buttonType="email"
           iconPosition="start"
           text="Enviar enlace de recuperación"

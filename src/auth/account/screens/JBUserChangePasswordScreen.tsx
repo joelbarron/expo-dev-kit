@@ -51,18 +51,37 @@ export function JBUserChangePasswordScreen() {
 
   const submitForm = useCallback(async (values: FormValues) => {
     try {
-      await auth.changePassword({ oldPassword: values.oldPassword, password: values.password });
+      await auth.changePassword({
+        oldPassword: values.oldPassword,
+        newPassword: values.password,
+        newPasswordConfirm: values.passwordConfirm,
+      });
       Toast.show({ type: 'success', text1: 'Contraseña actualizada', text2: 'Tu contraseña se cambió correctamente.' });
       router.back();
     } catch (error) {
       const parsed = parseAuthError(error);
       Object.entries(parsed.fieldErrors).forEach(([field, message]) => {
-        setError(field as any, { type: 'manual', message });
+        const fieldMap: Record<string, keyof FormValues> = {
+          oldPassword: 'oldPassword',
+          newPassword: 'password',
+          newPasswordConfirm: 'passwordConfirm',
+        };
+        const targetField = fieldMap[field];
+        if (!targetField) return;
+        setError(targetField, { type: 'manual', message: String(message) });
       });
+
+      const oldPasswordMessage = parsed.fieldErrors.oldPassword;
+      const fallbackMessage =
+        parsed.rootMessage ||
+        oldPasswordMessage ||
+        parsed.fieldErrors.newPassword ||
+        'No se pudo actualizar la contraseña.';
+
       Toast.show({
         type: 'error',
         text1: 'Error al cambiar contraseña',
-        text2: parsed.rootMessage || 'No se pudo actualizar la contraseña.',
+        text2: fallbackMessage,
       });
     }
   }, [auth, router, setError]);
@@ -76,6 +95,7 @@ export function JBUserChangePasswordScreen() {
       footer={
         <JBFormButton
           buttonType="save"
+          showIcon={false}
           text="Guardar cambios"
           loading={isLoading}
           isDisabled={!formState.isValid}

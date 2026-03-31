@@ -1,6 +1,10 @@
 import { Entypo } from '@expo/vector-icons';
 import { Redirect, Stack, usePathname, useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
+
+import { getAuthRoutesConfig, getLastCreatedJBExpoConfig } from '../../config';
+import { useAppConfigStore } from '../../runtime';
 
 export type JBExpoAuthStackLayoutProps = {
   isAuthenticated: boolean;
@@ -18,7 +22,25 @@ export function JBExpoAuthStackLayout(props: JBExpoAuthStackLayoutProps) {
   } = props;
   const router = useRouter();
   const pathname = usePathname();
-  const isSignOutRoute = pathname === '/sign-out' || pathname.endsWith('/sign-out');
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const appConfig = useAppConfigStore((state: any) => state?.appConfig);
+  const mergedConfig = useMemo(
+    () =>
+      ({
+        ...baseConfig,
+        auth: {
+          ...baseConfig.auth,
+          ...(appConfig?.auth ?? {}),
+        },
+      } as any),
+    [appConfig?.auth, baseConfig],
+  );
+  const authRoutes = useMemo(
+    () => getAuthRoutesConfig(mergedConfig),
+    [mergedConfig],
+  );
+  const isSignOutRoute =
+    pathname === authRoutes.signOut || pathname.endsWith(authRoutes.signOut);
 
   if (isAuthenticated && !isSignOutRoute) {
     return <Redirect href={redirectHref as any} />;
@@ -69,7 +91,9 @@ export function JBExpoAuthStackLayout(props: JBExpoAuthStackLayoutProps) {
           gestureEnabled: false,
           headerLeft: () => (
             <View>
-              <TouchableOpacity onPress={() => router.replace('/sign-in-password' as any)}>
+              <TouchableOpacity
+                onPress={() => router.replace(authRoutes.signInPassword as any)}
+              >
                 <Entypo name="chevron-small-left" size={40} color={headerTintColor} />
               </TouchableOpacity>
             </View>
@@ -83,7 +107,9 @@ export function JBExpoAuthStackLayout(props: JBExpoAuthStackLayoutProps) {
           gestureEnabled: false,
           headerLeft: () => (
             <View>
-              <TouchableOpacity onPress={() => router.replace('/sign-in-password' as any)}>
+              <TouchableOpacity
+                onPress={() => router.replace(authRoutes.signInPassword as any)}
+              >
                 <Entypo name="chevron-small-left" size={40} color={headerTintColor} />
               </TouchableOpacity>
             </View>

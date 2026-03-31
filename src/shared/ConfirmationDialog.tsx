@@ -50,8 +50,8 @@ type ConfirmationDialogProps = {
 };
 
 const defaultIcon = (
-  <Box className="mb-2 h-[52px] w-[52px] items-center justify-center rounded-full bg-background-error">
-    <Icon as={TrashIcon} size="lg" className="stroke-error-500" />
+  <Box className="mb-1 h-[52px] w-[52px] items-center justify-center rounded-full bg-error-50 dark:bg-error-950/30">
+    <Icon as={TrashIcon} size="lg" className="stroke-error-600 dark:stroke-error-400" />
   </Box>
 );
 
@@ -61,7 +61,7 @@ const resolveDialogActionTextClass = (
   extraClassName = ""
 ) => {
   if (variant === "solid") {
-    return `text-sm font-semibold text-white ${extraClassName}`.trim();
+    return `text-sm font-semibold ${extraClassName}`.trim();
   }
 
   const colorClassMap: Record<DialogActionColor, string> = {
@@ -100,7 +100,7 @@ export const ConfirmationDialog = ({
   onDisAgree,
   footerLayout = "row",
   footerClassName = "",
-  contentClassName = "w-full max-w-[415px] items-center gap-4",
+  contentClassName = "w-full max-w-[415px] items-center gap-4 rounded-3xl border border-outline-200 bg-background-light px-5 py-5 dark:border-outline-700 dark:bg-background-0",
   disagreeTextButtonClassName = "",
   agreeButtonProps,
   disagreeButtonProps,
@@ -133,14 +133,14 @@ export const ConfirmationDialog = ({
         {showIcon ? (icon ?? defaultIcon) : null}
 
         <AlertDialogHeader className="mb-1">
-          <Heading size="lg" className="text-center">
+          <Heading size="lg" className="text-center text-typography-black dark:text-typography-white">
             {title}
           </Heading>
         </AlertDialogHeader>
 
-        <AlertDialogBody>
+        <AlertDialogBody className="w-full">
           {typeof content === "string" ? (
-            <Text size="md" className="text-center">
+            <Text size="md" className="text-center text-typography-700 dark:text-typography-300">
               {content}
             </Text>
           ) : (
@@ -148,7 +148,7 @@ export const ConfirmationDialog = ({
           )}
         </AlertDialogBody>
 
-        <AlertDialogFooter className={`mt-4 ${footerLayoutClass} ${footerClassName}`.trim()}>
+        <AlertDialogFooter className={`mt-5 w-full ${footerLayoutClass} ${footerClassName}`.trim()}>
           {!hideDisagree ? (
             <JBFormButton
               variant={disagreeVariant}

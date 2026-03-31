@@ -9,6 +9,8 @@ import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef } from "react";
 import { Controller } from "react-hook-form";
 import { TouchableOpacity as RNTouchableOpacity } from "react-native";
+import { getLastCreatedJBExpoConfig, resolveJBUIColor } from "../config";
+import { useColorScheme } from "../hooks";
 import { Box } from "../ui/box";
 import {
   FormControl,
@@ -25,7 +27,6 @@ import { AlertCircleIcon, ChevronDownIcon, Icon, LockIcon } from "../ui/icon";
 import { Text } from "../ui/text";
 import { getColor } from "../utils/colors";
 
-const backgroundColor = getColor("background");
 const TouchableOpacity: any = RNTouchableOpacity;
 
 type CustomFormPickerProps = {
@@ -65,7 +66,7 @@ type CustomFormPickerProps = {
     meta?: { isSelected: boolean; value: any },
   ) => React.ReactNode;
   snapPoints?: string[];
-  sheetBackgroundColor?: string;
+  sheetBackgroundColor?: string | null;
   sheetTitle?: string;
   sheetContentClassName?: string;
   listContentClassName?: string;
@@ -113,7 +114,7 @@ export const CustomFormPicker = ({
   renderOption = null,
   renderCustomOption = null,
   snapPoints = ["40%", "65%", "90%"],
-  sheetBackgroundColor = backgroundColor[950],
+  sheetBackgroundColor = null,
   sheetTitle = "",
   sheetContentClassName = "pt-5",
   listContentClassName = "pb-24",
@@ -131,6 +132,34 @@ export const CustomFormPicker = ({
   helperTextClassName = "",
   errorTextClassName = "",
 }: CustomFormPickerProps) => {
+  const scheme = useColorScheme();
+  const baseConfig = getLastCreatedJBExpoConfig();
+  const background = getColor("background") ?? {};
+  const typography = getColor("typography") ?? {};
+  const resolvedFormBackgroundColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.backgroundColor,
+    scheme,
+    scheme === "dark" ? background[200] ?? "#121b26" : background[50] ?? "#ffffff",
+  );
+  const defaultLightTextColor =
+    typography.black ?? typography[900] ?? "#0f172a";
+  const defaultDarkTextColor =
+    typography.white ?? typography[50] ?? "#f8fafc";
+  const resolvedInputTextColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.textColor,
+    scheme,
+    scheme === "dark" ? defaultDarkTextColor : defaultLightTextColor,
+  );
+  const resolvedSheetBackgroundColor = resolveJBUIColor(
+    baseConfig?.ui?.forms?.bottomSheetBackgroundColor,
+    scheme,
+    scheme === "dark" ? background[950] ?? "#121b26" : background[50] ?? "#ffffff",
+  );
+  const effectiveSheetBackgroundColor =
+    sheetBackgroundColor ?? resolvedSheetBackgroundColor;
+  const resolvedLabelColor = resolvedInputTextColor;
+  const resolvedOptionTextColor = resolvedInputTextColor;
+
   // ref
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const shouldReopenOnFocusRef = useRef(false);
@@ -220,7 +249,11 @@ export const CustomFormPicker = ({
             optionRenderer(item, index, { isSelected, value })
           ) : (
             <Box className="h-10 w-full justify-center">
-              <Text size="md" className={optionTextClassName}>
+              <Text
+                size="md"
+                className={optionTextClassName}
+                style={{ color: isSelected ? "#ffffff" : resolvedOptionTextColor }}
+              >
                 {itemLabel}
               </Text>
             </Box>
@@ -244,7 +277,7 @@ export const CustomFormPicker = ({
         enableOverDrag={false}
         backdropComponent={renderBackdrop}
         backgroundStyle={{
-          backgroundColor: sheetBackgroundColor,
+          backgroundColor: effectiveSheetBackgroundColor,
         }}
       >
         <BottomSheetFlatList
@@ -263,7 +296,11 @@ export const CustomFormPicker = ({
           ListHeaderComponent={
             <Box className={sheetContentClassName}>
               <HStack className="w-full px-5 pb-4 items-center justify-between">
-                <Text size="lg" className="font-semibold">
+                <Text
+                  size="lg"
+                  className="font-semibold"
+                  style={{ color: resolvedLabelColor }}
+                >
                   {sheetTitle || `Seleccionar ${label.toLowerCase()}`}
                 </Text>
                 {hasManageAction ? (
@@ -308,13 +345,19 @@ export const CustomFormPicker = ({
           {/* className="h-16 border border-gray-400 rounded-md p-2 justify-between items-center" */}
           <HStack
             className={`${triggerClassName} ${triggerBackgroundClassName}`}
+            style={{ backgroundColor: resolvedFormBackgroundColor }}
           >
             <Text
               size="lg"
               className={
                 isDisabled || !(value?.[valueField] ?? value?.value)
                   ? "text-gray-500"
-                  : `text-white ${triggerTextClassName}`
+                  : triggerTextClassName
+              }
+              style={
+                isDisabled || !(value?.[valueField] ?? value?.value)
+                  ? undefined
+                  : { color: resolvedLabelColor }
               }
             >
               {value?.[labelField] ?? value?.label ?? "Seleccionar un elemento"}
@@ -323,6 +366,7 @@ export const CustomFormPicker = ({
               as={isDisabled ? LockIcon : ChevronDownIcon}
               size="md"
               className={iconClassName}
+              color={resolvedLabelColor}
             />
           </HStack>
         </TouchableOpacity>
@@ -352,7 +396,10 @@ export const CustomFormPicker = ({
             className={containerClassName}
           >
             <FormControlLabel className="mb-3">
-              <FormControlLabelText className={`text-white ${labelClassName}`}>
+              <FormControlLabelText
+                className={labelClassName}
+                style={{ color: resolvedLabelColor }}
+              >
                 {label}
               </FormControlLabelText>
             </FormControlLabel>
