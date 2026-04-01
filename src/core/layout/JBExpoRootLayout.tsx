@@ -504,7 +504,11 @@ function JBProfileCompletionNavigationGuard() {
   );
 }
 
-function JBPermissionsNavigationGuard() {
+function JBPermissionsNavigationGuard({
+  gateNavigationLockRef,
+}: {
+  gateNavigationLockRef: React.MutableRefObject<boolean>;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const { authStatus, isAuthenticated } = useJBAuth();
@@ -649,16 +653,18 @@ function JBPermissionsNavigationGuard() {
         return;
       }
 
-      if (onGuardPath || isNavigatingRef.current) {
+      if (onGuardPath || isNavigatingRef.current || gateNavigationLockRef.current) {
         return;
       }
 
       if (guardMode === "strict") {
         attemptedPathRef.current = pathname;
         isNavigatingRef.current = true;
+        gateNavigationLockRef.current = true;
         router.replace(guardPath as any);
         setTimeout(() => {
           isNavigatingRef.current = false;
+          gateNavigationLockRef.current = false;
         }, 450);
         return;
       }
@@ -673,9 +679,11 @@ function JBPermissionsNavigationGuard() {
 
       attemptedPathRef.current = pathname;
       isNavigatingRef.current = true;
+      gateNavigationLockRef.current = true;
       router.push(guardPath as any);
       setTimeout(() => {
         isNavigatingRef.current = false;
+        gateNavigationLockRef.current = false;
       }, 450);
     };
 
@@ -697,6 +705,7 @@ function JBPermissionsNavigationGuard() {
     isAuthenticated,
     pathname,
     authPathPrefixes,
+    gateNavigationLockRef,
     reminderKey,
     requiredPermissions,
     requiredPermissions.length,
@@ -829,8 +838,17 @@ function JBBiometricsActivationPromptGuard() {
   );
 }
 
-function JBAnnouncementsNavigationGuard() {
-  useJBAnnouncementsGuard();
+function JBAnnouncementsNavigationGuard({
+  gateNavigationLockRef,
+  blockAutoOpen,
+}: {
+  gateNavigationLockRef: React.MutableRefObject<boolean>;
+  blockAutoOpen?: boolean;
+}) {
+  useJBAnnouncementsGuard({
+    gateNavigationLockRef,
+    blockAutoOpen,
+  });
   return null;
 }
 
@@ -1402,6 +1420,7 @@ export function JBExpoRootLayout({
   );
   const [isBootstrapReady, setIsBootstrapReady] = useState(false);
   const bootCompletedRef = useRef(false);
+  const gateNavigationLockRef = useRef(false);
 
   useEffect(() => {
     if (!manageNativeSplash || Platform.OS === "web") {
@@ -1463,21 +1482,65 @@ export function JBExpoRootLayout({
   }, [runtimeOfflineConfig.mode, setOfflineMode]);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
+    const OFFLINE_DEBOUNCE_MS = 3000;
+    const appStateRef = { current: AppState.currentState };
+    let offlineTimer: ReturnType<typeof setTimeout> | null = null;
+    let lastKnownConnected = true;
+
+    const clearOfflineTimer = () => {
+      if (offlineTimer) {
+        clearTimeout(offlineTimer);
+        offlineTimer = null;
+      }
+    };
+
+    const applyConnectivity = (isConnected: boolean) => {
+      lastKnownConnected = isConnected;
+      if (isConnected) {
+        clearOfflineTimer();
+        setConnectivity(true);
+        return;
+      }
+
+      if (appStateRef.current !== "active") {
+        return;
+      }
+
+      clearOfflineTimer();
+      offlineTimer = setTimeout(() => {
+        if (appStateRef.current === "active" && !lastKnownConnected) {
+          setConnectivity(false);
+        }
+      }, OFFLINE_DEBOUNCE_MS);
+    };
+
+    const handleNetInfoState = (state: {
+      isConnected: boolean | null;
+      isInternetReachable: boolean | null;
+    }) => {
       const isConnected = Boolean(
         state.isConnected && state.isInternetReachable !== false,
       );
-      setConnectivity(isConnected);
+      applyConnectivity(isConnected);
+    };
+
+    const netInfoSubscription = NetInfo.addEventListener(handleNetInfoState);
+    const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+      appStateRef.current = nextState;
+      if (nextState !== "active") {
+        clearOfflineTimer();
+        return;
+      }
+      void NetInfo.fetch().then(handleNetInfoState);
     });
 
-    void NetInfo.fetch().then((state) => {
-      const isConnected = Boolean(
-        state.isConnected && state.isInternetReachable !== false,
-      );
-      setConnectivity(isConnected);
-    });
+    void NetInfo.fetch().then(handleNetInfoState);
 
-    return () => unsubscribe();
+    return () => {
+      clearOfflineTimer();
+      appStateSubscription.remove();
+      netInfoSubscription();
+    };
   }, [setConnectivity]);
 
   useEffect(() => {
@@ -1675,8 +1738,8 @@ export function JBExpoRootLayout({
         onAuthStateChanged={handleAuthStateChanged}
       >
         <JBProfileCompletionNavigationGuard />
-        <JBPermissionsNavigationGuard />
-        <JBAnnouncementsNavigationGuard />
+        <JBPermissionsNavigationGuard gateNavigationLockRef={gateNavigationLockRef} />
+        <JBAnnouncementsNavigationGuard gateNavigationLockRef={gateNavigationLockRef} />
         <JBBiometricsActivationPromptGuard />
         <JBPushNotificationsBridge />
         {withStatusBar ? <StatusBar style={effectiveStatusBarStyle} /> : null}

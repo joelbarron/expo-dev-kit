@@ -9,7 +9,14 @@ import {
 import { useAppConfigStore, useAuthStore } from "../runtime";
 import { getJBPermissionStatus } from "../settings";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  MutableRefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AppState, Platform } from "react-native";
 
 import {
@@ -139,7 +146,16 @@ const pickNextAutoOpenCampaign = async (
   return null;
 };
 
-export const useJBAnnouncementsGuard = () => {
+type JBAnnouncementsGuardOptions = {
+  gateNavigationLockRef?: MutableRefObject<boolean>;
+  blockAutoOpen?: boolean;
+};
+
+export const useJBAnnouncementsGuard = (
+  options: JBAnnouncementsGuardOptions = {}
+) => {
+  const gateNavigationLockRef = options.gateNavigationLockRef;
+  const blockAutoOpen = options.blockAutoOpen === true;
   const router = useRouter();
   const pathname = usePathname();
   const { authStatus, isAuthenticated } = useJBAuth();
@@ -232,9 +248,6 @@ export const useJBAnnouncementsGuard = () => {
     },
     [isAuthenticated, landingPath]
   );
-  const permissionsStrictMode =
-    permissionsConfig.guard?.enabled === true &&
-    permissionsConfig.guard?.mode === "strict";
   const permissionsPath = normalizeRoutePath(
     permissionsConfig.guard?.setupPath ?? settingsRoutes.permissions,
     settingsRoutes.permissions
@@ -250,9 +263,11 @@ export const useJBAnnouncementsGuard = () => {
   );
 
   useEffect(() => {
+    if (blockAutoOpen) return;
     if (!guardEnabled) return;
     if (autoOpenMode !== "first_install_and_new_campaign") return;
     if (authStatus === "configuring") return;
+    if (gateNavigationLockRef?.current) return;
     if (isNavigatingRef.current) return;
 
     const now = Date.now();
@@ -265,34 +280,33 @@ export const useJBAnnouncementsGuard = () => {
     );
     if (!isOnLanding) return;
     if (isSameOrDescendantPath(pathname, routePath)) return;
-    if (permissionsStrictMode && isSameOrDescendantPath(pathname, permissionsPath)) {
+    if (isSameOrDescendantPath(pathname, permissionsPath)) {
       return;
     }
 
     let cancelled = false;
 
     const run = async () => {
-      if (permissionsStrictMode) {
-        const requiredPermissions = Array.isArray(permissionsConfig.required)
-          ? permissionsConfig.required
-          : [];
-        if (requiredPermissions.length > 0) {
-          const statuses = await Promise.all(
-            requiredPermissions.map(async (permission) => {
-              const status = await getJBPermissionStatus(permission as any);
-              return status;
-            })
-          );
-          if (cancelled) return;
-          if (statuses.some((status) => status !== "granted")) {
-            return;
-          }
+      const requiredPermissions = Array.isArray(permissionsConfig.required)
+        ? permissionsConfig.required
+        : [];
+      if (requiredPermissions.length > 0) {
+        const statuses = await Promise.all(
+          requiredPermissions.map(async (permission) => {
+            const status = await getJBPermissionStatus(permission as any);
+            return status;
+          })
+        );
+        if (cancelled) return;
+        if (statuses.some((status) => status !== "granted")) {
+          return;
         }
       }
 
       const campaigns = await JBAnnouncementsService.fetchActive({
         endpointPath,
         platform: Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "all",
+        preferAuthenticatedClient: isAuthenticated,
       });
       if (cancelled) return;
       if (!Array.isArray(campaigns) || campaigns.length === 0) return;
@@ -307,8 +321,12 @@ export const useJBAnnouncementsGuard = () => {
 
       const nextCampaign = await pickNextAutoOpenCampaign(sortedCampaigns, scope);
       if (cancelled || !nextCampaign) return;
+      if (gateNavigationLockRef?.current) return;
 
       isNavigatingRef.current = true;
+      if (gateNavigationLockRef) {
+        gateNavigationLockRef.current = true;
+      }
       lastOpenAtRef.current = Date.now();
       openAnnouncements(router as any, {
         routePath,
@@ -317,6 +335,9 @@ export const useJBAnnouncementsGuard = () => {
       });
       setTimeout(() => {
         isNavigatingRef.current = false;
+        if (gateNavigationLockRef) {
+          gateNavigationLockRef.current = false;
+        }
       }, 500);
     };
 
@@ -329,13 +350,15 @@ export const useJBAnnouncementsGuard = () => {
     activeTick,
     authStatus,
     autoOpenMode,
+    blockAutoOpen,
     endpointPath,
+    gateNavigationLockRef,
     guardEnabled,
+    isAuthenticated,
     landingCandidates,
     pathname,
     permissionsConfig.required,
     permissionsPath,
-    permissionsStrictMode,
     routePath,
     router,
     scope,
