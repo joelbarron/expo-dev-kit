@@ -320,3 +320,23 @@ export const resolveFeatureFromPath = (
 
   return null;
 };
+
+// ---------------------------------------------------------------------------
+// Guest browse mode — lightweight, session-scoped flag.
+// Activated by goToGuestExplore(), auto-cleared on cold start.
+// ---------------------------------------------------------------------------
+
+let _guestBrowsing = false;
+
+export const guestBrowse = {
+  /** Mark the session as guest-browsing (called automatically by goToGuestExplore). */
+  activate: () => {
+    _guestBrowsing = true;
+  },
+  /** End guest browsing (call when the user authenticates). */
+  deactivate: () => {
+    _guestBrowsing = false;
+  },
+  /** Whether the user is currently browsing as guest. */
+  isActive: () => _guestBrowsing,
+};

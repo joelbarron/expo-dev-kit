@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { JBAuthNavigator } from '../screens/types';
 import { getAuthRoutesConfig, getLastCreatedJBExpoConfig } from '../../config';
 import { useAppConfigStore } from '../../runtime';
+import { guestBrowse } from '../../navigation';
 
 export type JBExpoAuthNavigatorPaths = {
   signIn?: string;
@@ -120,7 +121,10 @@ export const useJBExpoAuthNavigator = (paths?: JBExpoAuthNavigatorPaths): JBAuth
   );
   const goToWelcome = useCallback(() => nav.replace(resolved.welcome), [nav, resolved.welcome]);
   const goToGuestExplore = useCallback(
-    () => nav.replace(resolved.guestExplore),
+    () => {
+      guestBrowse.activate();
+      nav.replace(resolved.guestExplore);
+    },
     [nav, resolved.guestExplore]
   );
   const onSignedIn = useCallback(() => nav.replace(resolved.signedIn), [nav, resolved.signedIn]);
