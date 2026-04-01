@@ -17,6 +17,7 @@ import {
   JBLoadingFallbackConfig,
   JBPermissionsConfig,
   JBRuntimeConfig,
+  JBUIHeaderConfig,
   JBSettingsRoutesConfig,
   JBSettingsConfig,
   JBSocialProviderName
@@ -263,6 +264,16 @@ export const getSettingsRoutesConfig = (
       override.security ?? config.settings?.security?.biometricsPath ?? base.security,
       `${root}/security`,
     ),
+  };
+};
+
+export const getUIHeaderConfig = (config: JBAppConfig): JBUIHeaderConfig => {
+  const base = defaultJBExpoConfig.ui?.header ?? {};
+  const override = config.ui?.header ?? {};
+
+  return {
+    ...base,
+    ...override,
   };
 };
 

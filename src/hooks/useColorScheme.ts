@@ -6,5 +6,5 @@ export function useColorScheme(): 'light' | 'dark' {
   const systemScheme = useRNColorScheme();
   const themeMode = useThemeStore((state: any) => state.mode);
 
-  return themeMode === 'system' ? (systemScheme ?? 'dark') : themeMode;
+  return themeMode === 'system' ? (systemScheme ?? 'light') : themeMode;
 }

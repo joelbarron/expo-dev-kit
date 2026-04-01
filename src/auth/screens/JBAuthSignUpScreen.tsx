@@ -101,6 +101,7 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
     .filter((provider) => ["google", "apple", "facebook"].includes(provider));
   const hasProvider = (provider: string) =>
     normalizedSocialProviders.includes(provider);
+  const footerClassName = Platform.OS === "android" ? "pt-0 pb-1" : "pt-4 pb-6";
   const signUpDefaultValues = useMemo(() => {
     if (!isConfigDebug) {
       return undefined;
@@ -271,7 +272,7 @@ export function JBAuthSignUpScreen(props: JBAuthSignUpScreenProps) {
   return (
     <AuthScreenLayout
       footerAdjustableHeight
-      footerClassName="pt-4 pb-6"
+      footerClassName={footerClassName}
       footer={isHubVariant ? hubFooter : formFooter}
     >
       {createdEmail ? <JBAuthAlert type="success" message="Cuenta creada. Verifica tu correo para activar tu cuenta." /> : null}

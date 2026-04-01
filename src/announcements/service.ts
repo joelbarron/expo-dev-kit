@@ -1,4 +1,4 @@
-import { customAxios } from "../http";
+import { customAxios, customAxiosAuthenticated } from "../http";
 
 import { JBAnnouncementCampaign } from "./types";
 
@@ -52,12 +52,16 @@ export class JBAnnouncementsService {
   static async fetchActive(options?: {
     endpointPath?: string;
     platform?: "ios" | "android" | "all";
+    preferAuthenticatedClient?: boolean;
   }): Promise<JBAnnouncementCampaign[]> {
     const endpointPath =
       String(options?.endpointPath ?? "").trim() || "/core/mobile-announcements/";
     const platform = String(options?.platform ?? "").trim().toLowerCase();
+    const httpClient = options?.preferAuthenticatedClient
+      ? customAxiosAuthenticated
+      : customAxios;
 
-    const response = await customAxios.get(endpointPath, {
+    const response = await httpClient.get(endpointPath, {
       params: {
         platform:
           platform === "ios" || platform === "android" ? platform : undefined,

@@ -68,6 +68,7 @@ export const defaultJBExpoConfig: JBAppConfig = {
     },
     appearance: {
       enabled: true,
+      defaultMode: "system",
     },
     security: {
       biometricsEnabled: false,
@@ -281,6 +282,15 @@ export const defaultJBExpoConfig: JBAppConfig = {
   },
   ui: {
     header: {
+      mode: "native",
+      minContentHeight: 52,
+      backIcon: {
+        ios: "arrow-back-ios-new",
+        android: "arrow-back",
+        default: "arrow-back",
+      },
+      titleAlign: "center",
+      paddingHorizontal: 16,
       backgroundColor: {
         light: "primary.500",
         dark: "background.950",

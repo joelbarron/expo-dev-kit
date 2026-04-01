@@ -96,6 +96,7 @@ export function JBAuthSignInEntryScreen(props: JBAuthSignInEntryScreenProps) {
 
   const hasProvider = (provider: string) => normalizedSocialProviders.includes(provider);
   const debugLogItems = socialDebugLogs.items;
+  const footerClassName = Platform.OS === "android" ? "pt-0 pb-1" : "pt-4 pb-6";
 
   const completeSocialLogin = useCallback(
     async (payload: LoginSocialPayload, role?: string) => {
@@ -160,7 +161,7 @@ export function JBAuthSignInEntryScreen(props: JBAuthSignInEntryScreenProps) {
   return (
     <AuthScreenLayout
       footerAdjustableHeight
-      footerClassName="pt-4 pb-6"
+      footerClassName={footerClassName}
       footer={
         <VStack space="md" className="pt-6">
           <JBAuthFooterButton

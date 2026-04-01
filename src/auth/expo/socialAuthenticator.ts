@@ -116,8 +116,11 @@ const authenticateWithGoogleNative = async (
     throw new Error("Google native sdk is unavailable.");
   }
 
+  const configuredWebClientId =
+    config.clientId?.trim() || config.resolvedClientId?.trim() || undefined;
+
   GoogleSignin.configure({
-    webClientId: config.clientId?.trim() || undefined,
+    webClientId: configuredWebClientId,
     iosClientId:
       Platform.OS === "ios"
         ? (config as JBAuthSocialConfig["google"])?.iosClientId?.trim() || undefined
@@ -139,7 +142,9 @@ const authenticateWithGoogleNative = async (
   const signInResult = await GoogleSignin.signIn();
   const idToken = signInResult?.idToken ?? signInResult?.data?.idToken;
   if (!idToken) {
-    throw new Error("Google native authentication did not return idToken.");
+    throw new Error(
+      "Google native authentication did not return idToken. Verify auth.social.google.clientId/webClientId and platform client IDs."
+    );
   }
 
   return {

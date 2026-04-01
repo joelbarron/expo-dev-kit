@@ -1,4 +1,10 @@
 export type JBAppFeature = string;
+export { JBStackHeader } from "../core/layout/JBStackHeader";
+export {
+  createJBStackScreenOptions,
+  type JBCreateStackScreenOptionsParams,
+  type JBStackHeaderSlotContext,
+} from "../core/layout/createJBStackScreenOptions";
 
 type JBRoleMatrix = Partial<Record<string, JBAppFeature[]>>;
 

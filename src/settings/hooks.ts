@@ -53,7 +53,7 @@ export const useJBSettingsSections = (
   const baseConfig = getLastCreatedJBExpoConfig();
   const remoteConfig = useAppConfigStore((state: any) => state?.appConfig);
   const updateInfo = useAppConfigStore((state: any) => state?.updateInfo);
-  const themeMode = useThemeStore((state: any) => state?.mode ?? 'system');
+  const themeMode = useThemeStore((state: any) => state?.mode ?? 'light');
   const setThemeMode = useThemeStore((state: any) => state?.setMode);
 
   return useMemo(() => {

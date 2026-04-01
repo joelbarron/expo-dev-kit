@@ -117,11 +117,19 @@ export const JBAnnouncementsScreen = ({
   );
 
   const { data: campaigns = [], isLoading } = useQuery({
-    queryKey: ["announcements", "active", endpointPath, platform],
+    queryKey: [
+      "announcements",
+      "active",
+      endpointPath,
+      platform,
+      isAuthenticated,
+      scope,
+    ],
     queryFn: async () => {
       const result = await JBAnnouncementsService.fetchActive({
         endpointPath,
         platform,
+        preferAuthenticatedClient: isAuthenticated,
       });
       return Array.isArray(result) ? result : [];
     },

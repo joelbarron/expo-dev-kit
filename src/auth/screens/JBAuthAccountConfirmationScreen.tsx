@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { getLastCreatedJBExpoConfig } from '../../config';
 import { useAppConfigStore } from '../../runtime';
@@ -105,13 +106,14 @@ export function JBAuthAccountConfirmationScreen(props: JBAuthAccountConfirmation
     },
     []
   );
+  const footerClassName = Platform.OS === "android" ? "pt-0 pb-1" : "pt-4 pb-6";
 
   return (
     <AuthScreenLayout
       title="Verificar cuenta"
       subtitle="Revisa tu correo y abre el enlace de verificación para activar tu cuenta. Cuando termines, regresa aquí para continuar."
       footerAdjustableHeight
-      footerClassName="pt-4 pb-6"
+      footerClassName={footerClassName}
       footer={
         <VStack space="md">
           {actionState.showRetryVerification ? (

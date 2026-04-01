@@ -1,5 +1,5 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 import Toast from 'react-native-toast-message';
@@ -23,6 +23,7 @@ import {
 import {
   buildPermissionsGuardReminderKey,
   clearPermissionsGuardNextPromptAt,
+  setPermissionsGuardNextPromptAt,
 } from './guardReminder';
 import { JBPermissionState } from './types';
 import { useAuthStore } from '../runtime';
@@ -78,6 +79,9 @@ export const JBPermissionsSetupScreen = ({
   showContinueButton = true,
 }: JBPermissionsSetupScreenProps) => {
   const router = useRouter();
+  const params = useLocalSearchParams<{ source?: string }>();
+  const source = Array.isArray(params.source) ? params.source[0] : params.source;
+  const openedFromSettings = String(source ?? '').trim().toLowerCase() === 'settings';
   const baseConfig = getLastCreatedJBExpoConfig();
   const remoteConfig = useAppConfigStore((state: any) => state?.appConfig);
   const mergedConfig = useMemo(
@@ -148,6 +152,12 @@ export const JBPermissionsSetupScreen = ({
     [permissionState, requiredPermissions],
   );
   const canContinue = missingRequired.length === 0;
+  const guardMode = permissionsConfig.guard?.mode === 'strict' ? 'strict' : 'remindable';
+  const remindAfterHours = Number(permissionsConfig.guard?.remindAfterHours ?? 24);
+  const remindAfterMs =
+    Number.isFinite(remindAfterHours) && remindAfterHours > 0
+      ? remindAfterHours * 60 * 60 * 1000
+      : 24 * 60 * 60 * 1000;
   const reminderKey = useMemo(
     () =>
       buildPermissionsGuardReminderKey({
@@ -179,6 +189,23 @@ export const JBPermissionsSetupScreen = ({
     void clearPermissionsGuardNextPromptAt(reminderKey);
   }, [canContinue, reminderKey]);
 
+  useEffect(() => {
+    return () => {
+      if (openedFromSettings) return;
+      if (!showContinueButton) return;
+      if (guardMode !== 'remindable') return;
+      if (canContinue) return;
+      void setPermissionsGuardNextPromptAt(reminderKey, Date.now() + remindAfterMs);
+    };
+  }, [
+    canContinue,
+    guardMode,
+    openedFromSettings,
+    remindAfterMs,
+    reminderKey,
+    showContinueButton,
+  ]);
+
   return (
     <>
       <Stack.Screen
@@ -197,6 +224,20 @@ export const JBPermissionsSetupScreen = ({
                 variant="solid"
                 onPress={() => {
                   if (!canContinue) {
+                    if (!openedFromSettings && guardMode === 'remindable') {
+                      void setPermissionsGuardNextPromptAt(
+                        reminderKey,
+                        Date.now() + remindAfterMs
+                      );
+                      Toast.show({
+                        type: 'info',
+                        text1: 'Te recordaremos más tarde',
+                        text2:
+                          'Aún faltan permisos obligatorios. Podrás configurarlos después.',
+                      });
+                      router.back();
+                      return;
+                    }
                     Toast.show({
                       type: 'error',
                       text1: 'Faltan permisos requeridos',

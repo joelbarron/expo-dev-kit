@@ -1,5 +1,6 @@
 import { ReactElement, ReactNode } from 'react';
-import { ScrollView, StyleProp, ViewStyle } from 'react-native';
+import { Platform, ScrollView, StyleProp, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { getLastCreatedJBExpoConfig, resolveJBUIColor } from '../../config';
 import { useColorScheme } from '../../hooks';
@@ -47,6 +48,7 @@ export const JBMainLayout = ({
 }: JBMainLayoutProps) => {
   const baseConfig = getLastCreatedJBExpoConfig();
   const mode = useColorScheme();
+  const insets = useSafeAreaInsets();
   const backgroundColors = getColor('background');
   const uiConfig = baseConfig?.ui;
   const rootBackgroundColor = resolveJBUIColor(
@@ -73,13 +75,18 @@ export const JBMainLayout = ({
   const rootAccentClassName = hideTopAccent
     ? backgroundClassName
     : backgroundHeaderClassName;
-  const rootTopPaddingClassName = hideTopAccent ? "pt-0" : "pt-2";
+  const rootTopPaddingClassName = hideTopAccent
+    ? "pt-0"
+    : Platform.OS === 'android'
+      ? "pt-0"
+      : "pt-2";
   const rootClassName = `flex-1 ${rootAccentClassName} ${rootTopPaddingClassName} ${className ?? ''}`;
   const rootSurfaceBackgroundColor = hideTopAccent
     ? contentBackgroundColor
     : rootBackgroundColor;
   const scrollClassName = `pt-0 flex-1 ${classNameScrollView ?? ''}`;
   const footerContainerClassName = `${footerAdjustableHeight ? 'py-4' : 'min-h-[96px]'} px-8 justify-center ${footerRoundedTopClass} ${footerClassName}`;
+  const androidFooterInset = Platform.OS === 'android' ? Math.max(insets.bottom, 0) : 0;
 
   if (scrollable) {
     return (
@@ -106,6 +113,9 @@ export const JBMainLayout = ({
                 style={[{ backgroundColor: footerBackgroundColor }, footerStyle]}
               >
                 {footer}
+                {androidFooterInset > 0 ? (
+                  <Box style={{ height: androidFooterInset }} />
+                ) : null}
               </Box>
             ) : null}
           </Box>
@@ -131,6 +141,9 @@ export const JBMainLayout = ({
               style={[{ backgroundColor: footerBackgroundColor }, footerStyle]}
             >
               {footer}
+              {androidFooterInset > 0 ? (
+                <Box style={{ height: androidFooterInset }} />
+              ) : null}
             </Box>
           ) : null}
         </Box>
