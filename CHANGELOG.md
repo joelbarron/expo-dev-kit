@@ -1,5 +1,11 @@
 # @joelbarron/expo-dev-kit
 
+## 0.1.10
+
+### Patch Changes
+
+- f5aa86d: fixes
+
 ## 0.1.9
 
 ### Patch Changes
