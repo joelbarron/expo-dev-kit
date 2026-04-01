@@ -240,7 +240,22 @@ export type JBUIColorModeValue = {
 
 export type JBUIColorConfig = JBUIColorValue | JBUIColorModeValue;
 
+export type JBUIHeaderMode = 'native' | 'custom';
+export type JBUIHeaderTitleAlign = 'left' | 'center';
+export type JBUIHeaderBackIconConfig =
+  | string
+  | {
+      ios?: string;
+      android?: string;
+      default?: string;
+    };
+
 export type JBUIHeaderConfig = {
+  mode?: JBUIHeaderMode;
+  minContentHeight?: number;
+  backIcon?: JBUIHeaderBackIconConfig;
+  titleAlign?: JBUIHeaderTitleAlign;
+  paddingHorizontal?: number;
   backgroundColor?: JBUIColorConfig;
   tintColor?: JBUIColorConfig;
 };

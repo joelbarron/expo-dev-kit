@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { Platform } from "react-native";
 
 import { VStack } from "../../ui";
 import { JBAuthOtpSignInForm } from "../forms";
@@ -69,11 +70,12 @@ export function JBAuthSignInOtpScreen(props: JBAuthSignInOtpScreenProps) {
     },
     []
   );
+  const footerClassName = Platform.OS === "android" ? "pt-0 pb-1" : "pt-4 pb-6";
 
   return (
     <AuthScreenLayout
       footerAdjustableHeight
-      footerClassName="pt-4 pb-6"
+      footerClassName={footerClassName}
       footer={
         <VStack space="md" className="pt-6">
           <JBAuthFooterButton

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { JBAuthForgotPasswordForm } from '../forms';
 import { useJBAuth } from '../provider';
@@ -51,12 +52,13 @@ export function JBAuthForgotPasswordScreen(props: JBAuthForgotPasswordScreenProp
     },
     []
   );
+  const footerClassName = Platform.OS === "android" ? "pt-0 pb-1" : "pt-4 pb-6";
 
   return (
     <AuthScreenLayout
       subtitle="Ingresa el correo asociado a tu cuenta y te enviaremos un enlace para restablecer tu contraseña."
       footerAdjustableHeight
-      footerClassName="pt-4 pb-6"
+      footerClassName={footerClassName}
       footer={(
         <JBAuthFooterButton
           slot="primary"
