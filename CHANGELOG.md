@@ -1,5 +1,11 @@
 # @joelbarron/expo-dev-kit
 
+## 0.1.9
+
+### Patch Changes
+
+- 938eb50: fixes
+
 ## 0.1.8
 
 ### Patch Changes
