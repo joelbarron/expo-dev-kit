@@ -179,7 +179,7 @@ export const CustomFormDateTimePicker = ({
             >
                 <Text
                   size="md"
-                  className={value ? "" : "text-gray-400"}
+                  className={value ? "" : "text-typography-500"}
                   style={value ? { color: resolvedFormTextColor } : undefined}
                 >
                   {value

@@ -292,10 +292,10 @@ export const JBProfileSwitcherSheet = ({
                 onPress={() => void handleSwitchProfile(item)}
               >
                 <HStack
-                  className={`mb-2 items-center rounded-2xl px-4 py-3 ${
+                  className={`mb-2 items-center rounded-2xl px-4 py-3 border ${
                     isActive
-                      ? "bg-primary-500/15"
-                      : "bg-background-150 dark:bg-background-200"
+                      ? "bg-primary-500/15 border-primary-500/40"
+                      : "bg-background-150 border-primary-500/15 dark:bg-white/[0.04] dark:border-white/10"
                   }`}
                   space="md"
                 >

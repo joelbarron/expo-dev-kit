@@ -61,15 +61,15 @@ export function JBExpoAppProviders({
 
   return (
     <GestureHandlerRootView style={gestureHandlerRootStyle}>
-      <BottomSheetModalProvider>
-        <QueryClientProvider client={resolvedQueryClient}>
-          <GluestackUIProvider mode={colorMode} themeOverrides={themeOverrides}>
+      <QueryClientProvider client={resolvedQueryClient}>
+        <GluestackUIProvider mode={colorMode} themeOverrides={themeOverrides}>
+          <BottomSheetModalProvider>
             <JBAppMetaProvider value={appMeta}>{content}</JBAppMetaProvider>
-          </GluestackUIProvider>
-        </QueryClientProvider>
+          </BottomSheetModalProvider>
+        </GluestackUIProvider>
 
         {withToast ? <Toast config={toastConfig ?? defaultToastConfig} position={toastPosition} /> : null}
-      </BottomSheetModalProvider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }

@@ -216,7 +216,7 @@ export function JBFormHierarchicalPicker({
   return (
     <FormControl isInvalid={!!error} isDisabled={isDisabled} isRequired={!!rules?.required}>
       <FormControlLabel className="mb-3">
-        <FormControlLabelText className="text-white">{label}</FormControlLabelText>
+        <FormControlLabelText className="text-typography-900">{label}</FormControlLabelText>
       </FormControlLabel>
 
       <TouchableOpacity disabled={isDisabled} onPress={open}>
@@ -234,7 +234,7 @@ export function JBFormHierarchicalPicker({
         >
           <Text
             size="md"
-            className={`${parentField.value && childField.value ? "text-white" : "text-gray-400"} ${triggerTextClassName}`}
+            className={`${parentField.value && childField.value ? "text-typography-900" : "text-typography-500"} ${triggerTextClassName}`}
             numberOfLines={1}
           >
             {currentLabel}
