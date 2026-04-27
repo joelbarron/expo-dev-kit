@@ -65,8 +65,8 @@ const resolveDialogActionTextClass = (
   }
 
   const colorClassMap: Record<DialogActionColor, string> = {
-    default: "text-typography-900 dark:text-typography-50",
-    secondary: "text-typography-900 dark:text-typography-50",
+    default: "text-typography-900",
+    secondary: "text-typography-900",
     primary: "text-primary-600 dark:text-primary-300",
     positive: "text-green-600 dark:text-green-400",
     negative: "text-red-600 dark:text-red-400",
@@ -133,14 +133,14 @@ export const ConfirmationDialog = ({
         {showIcon ? (icon ?? defaultIcon) : null}
 
         <AlertDialogHeader className="mb-1">
-          <Heading size="lg" className="text-center text-typography-black dark:text-typography-white">
+          <Heading size="lg" className="text-center text-typography-900">
             {title}
           </Heading>
         </AlertDialogHeader>
 
         <AlertDialogBody className="w-full">
           {typeof content === "string" ? (
-            <Text size="md" className="text-center text-typography-700 dark:text-typography-300">
+            <Text size="md" className="text-center text-typography-700">
               {content}
             </Text>
           ) : (

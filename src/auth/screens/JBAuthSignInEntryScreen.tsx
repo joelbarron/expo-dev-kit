@@ -148,6 +148,7 @@ export function JBAuthSignInEntryScreen(props: JBAuthSignInEntryScreenProps) {
         }
         await completeSocialLogin(baseSocialPayload);
       } catch (error: any) {
+        console.error("[jb-auth][social] sign-in error:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
         Toast.show({
           type: "error",
           text1: "Error de autenticación",
@@ -224,7 +225,7 @@ export function JBAuthSignInEntryScreen(props: JBAuthSignInEntryScreenProps) {
                     .reverse()
                     .map((item) => (
                       <Box key={item.id} className="rounded-md bg-background-0 px-2 py-1 dark:bg-background-300">
-                        <Text className="text-[10px] font-medium text-typography-600 dark:text-typography-200">
+                        <Text className="text-[10px] font-medium text-typography-600">
                           {new Date(item.timestamp).toLocaleTimeString()}
                         </Text>
                         <Text className="text-xs text-typography-900 dark:text-white">
@@ -235,7 +236,7 @@ export function JBAuthSignInEntryScreen(props: JBAuthSignInEntryScreenProps) {
                 </VStack>
               ) : (
                 <Box className="py-4">
-                  <Text className="text-xs text-typography-600 dark:text-typography-200">
+                  <Text className="text-xs text-typography-600">
                     Sin logs aún. Prueba Google / Facebook / Apple / SMS.
                   </Text>
                 </Box>

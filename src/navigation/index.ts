@@ -31,56 +31,17 @@ type FeatureMeta = {
   paths: string[];
 };
 
-const DEFAULT_FEATURE_ORDER: JBAppFeature[] = [
-  "explore",
-  "favorites",
-  "reservations",
-  "account",
-];
+const DEFAULT_FEATURE_ORDER: JBAppFeature[] = [];
 
-const DEFAULT_ROLE_MATRIX: Record<string, JBAppFeature[]> = {
-  GUEST: ["explore", "favorites", "reservations", "account"],
-  HOST: ["explore", "reservations", "account"],
-  STAFF: ["reservations", "account"],
-  ADMIN: ["explore", "reservations", "account"],
-};
+const DEFAULT_ROLE_MATRIX: Record<string, JBAppFeature[]> = {};
 
 const DEFAULT_GUEST_CONFIG: Required<JBGuestNavigationConfig> = {
-  visibleTabs: ["explore", "favorites", "reservations", "account"],
-  blockedTabs: ["favorites", "reservations", "account"],
-  loginPath: "/welcome",
+  visibleTabs: [],
+  blockedTabs: [],
+  loginPath: "/",
 };
 
-const DEFAULT_FEATURES: Record<JBAppFeature, JBFeatureConfig> = {
-  explore: {
-    route: "/",
-    paths: [
-      "/",
-      "/explore/filters",
-      "/listings/detail/:id",
-      "/listings/description/:id",
-      "/listings/cancellation-policy",
-      "/listings/house-rules",
-      "/listings/safety",
-      "/listings/faqs",
-      "/listings/report/:id",
-      "/shared/profile-info/:id",
-      "/shared/map-fullscreen",
-    ],
-  },
-  favorites: {
-    route: "/favorites",
-    paths: ["/favorites", "/favorites/*"],
-  },
-  reservations: {
-    route: "/reservations",
-    paths: ["/reservations", "/reservations/*", "/listings/availability/:id", "/payments/*"],
-  },
-  account: {
-    route: "/account",
-    paths: ["/account", "/user/*", "/settings", "/settings/permissions", "/notifications"],
-  },
-};
+const DEFAULT_FEATURES: Record<JBAppFeature, JBFeatureConfig> = {};
 
 const normalizeRole = (value: unknown): string =>
   String(value ?? "GUEST").trim().toUpperCase() || "GUEST";
@@ -141,9 +102,9 @@ const getFeatureOrder = (
   const orderedDefaults = DEFAULT_FEATURE_ORDER.filter((feature) =>
     configuredFeatures.includes(feature),
   );
-  const extraFeatures = configuredFeatures
-    .filter((feature) => !orderedDefaults.includes(feature))
-    .sort((left, right) => left.localeCompare(right));
+  const extraFeatures = configuredFeatures.filter(
+    (feature) => !orderedDefaults.includes(feature),
+  );
   return [...orderedDefaults, ...extraFeatures];
 };
 

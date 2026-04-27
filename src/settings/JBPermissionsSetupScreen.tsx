@@ -56,7 +56,7 @@ const statusMeta: Record<JBPermissionState, { label: string; colorClassName: str
   },
   unavailable: {
     label: 'No disponible',
-    colorClassName: 'text-typography-500 dark:text-typography-400',
+    colorClassName: 'text-typography-500',
   },
 };
 
@@ -261,13 +261,13 @@ export const JBPermissionsSetupScreen = ({
           <VStack space="xs">
             <Text
               size="md"
-              className="text-typography-700 dark:text-typography-300"
+              className="text-typography-700"
             >
               Configura los permisos necesarios para usar la app correctamente.
             </Text>
             <Text
               size="sm"
-              className="text-typography-600 dark:text-typography-400"
+              className="text-typography-600"
             >
               Los permisos obligatorios están marcados y bloquean la continuación
               hasta ser concedidos.
@@ -298,7 +298,7 @@ export const JBPermissionsSetupScreen = ({
                         <HStack className="items-center" space="sm">
                           <Text
                             size="md"
-                            className="font-semibold text-typography-black dark:text-typography-white"
+                            className="font-semibold text-typography-900"
                           >
                             {permission.label}
                           </Text>
@@ -306,7 +306,7 @@ export const JBPermissionsSetupScreen = ({
                             <Box className="rounded-md border border-outline-200 bg-background-100 px-2 py-1 dark:border-outline-700 dark:bg-background-800">
                               <Text
                                 size="2xs"
-                                className="font-semibold text-typography-600 dark:text-typography-300"
+                                className="font-semibold text-typography-600"
                               >
                                 Obligatorio
                               </Text>
@@ -315,7 +315,7 @@ export const JBPermissionsSetupScreen = ({
                         </HStack>
                         <Text
                           size="xs"
-                          className="text-typography-600 dark:text-typography-400"
+                          className="text-typography-600"
                         >
                           {permission.description}
                         </Text>

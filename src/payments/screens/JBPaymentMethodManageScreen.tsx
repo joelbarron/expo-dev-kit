@@ -11,7 +11,7 @@ import { Text } from "../../ui/text";
 import { VStack } from "../../ui/vstack";
 
 const FOOTER_CANCEL_TEXT_CLASS_NAME =
-  "text-[15px] font-semibold text-typography-white dark:text-typography-white";
+  "text-[15px] font-semibold text-typography-900";
 
 type ConfirmSetupIntentResponse = {
   setupIntent?: {
@@ -157,7 +157,7 @@ export function JBPaymentMethodManageScreen({
             </Box>
           ) : (
             <Card className="px-4 py-4">
-              <Text className="text-typography-700 dark:text-typography-300">
+              <Text className="text-typography-700">
                 No se pudo inicializar el método de pago.
               </Text>
             </Card>
@@ -194,7 +194,7 @@ export function JBPaymentMethodManageScreen({
     >
       <Box className="px-5 pt-4 pb-5">
         <VStack space="md">
-          <Text className="text-typography-600 dark:text-typography-400">{description}</Text>
+          <Text className="text-typography-600">{description}</Text>
 
           <Card className="border-0 px-4 py-4">
             {renderCardInput({

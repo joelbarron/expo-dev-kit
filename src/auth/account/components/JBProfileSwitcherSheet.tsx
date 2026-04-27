@@ -256,11 +256,11 @@ export const JBProfileSwitcherSheet = ({
           <Text
             size="lg"
             bold
-            className="text-typography-black dark:text-typography-white"
+            className="text-typography-900"
           >
             {title}
           </Text>
-          <Text className="text-typography-600 dark:text-typography-400">
+          <Text className="text-typography-600">
             {subtitle}
           </Text>
         </VStack>
@@ -311,14 +311,14 @@ export const JBProfileSwitcherSheet = ({
                     <Text
                       bold
                       size="md"
-                      className="text-typography-black dark:text-typography-white"
+                      className="text-typography-900"
                       numberOfLines={1}
                     >
                       {profileName}
                     </Text>
                     <Text
                       size="xs"
-                      className="text-typography-500 dark:text-typography-400"
+                      className="text-typography-500"
                       numberOfLines={1}
                     >
                       {getProfileRoleLabel(item)}
@@ -347,7 +347,7 @@ export const JBProfileSwitcherSheet = ({
           }}
           ListEmptyComponent={
             <Box className="py-6">
-              <Text className="text-typography-500 dark:text-typography-400">
+              <Text className="text-typography-500">
                 {isLoadingProfiles
                   ? "Cargando perfiles..."
                   : "No hay perfiles disponibles."}

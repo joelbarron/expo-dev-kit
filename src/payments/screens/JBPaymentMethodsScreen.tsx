@@ -15,7 +15,7 @@ import { JBPaymentMethodSelector } from "../JBPaymentMethodSelector";
 import type { JBPaymentMethod, JBPaymentMethodId } from "../types";
 
 const FOOTER_CANCEL_TEXT_CLASS_NAME =
-  "text-[15px] font-semibold text-typography-white dark:text-typography-white";
+  "text-[15px] font-semibold text-typography-900";
 
 export type JBPaymentMethodsScreenMode = "select" | "manage";
 
@@ -184,17 +184,17 @@ export function JBPaymentMethodsScreen({
           ) : (
             <VStack className="w-full" space="md">
               <VStack space="xs">
-                <Heading size="xl" className="text-typography-black dark:text-typography-white">
+                <Heading size="xl" className="text-typography-900">
                   {title}
                 </Heading>
-                <Text className="text-sm text-typography-600 dark:text-typography-400">
+                <Text className="text-sm text-typography-600">
                   {manageDescription}
                 </Text>
               </VStack>
 
               {!methods?.length ? (
                 <Box className="rounded-2xl border border-outline-200 px-4 py-4 dark:border-outline-700">
-                  <Text className="text-typography-600 dark:text-typography-400">{emptyText}</Text>
+                  <Text className="text-typography-600">{emptyText}</Text>
                 </Box>
               ) : (
                 <VStack className="w-full" space="md">
@@ -221,7 +221,7 @@ export function JBPaymentMethodsScreen({
 
               {error ? (
                 <Box className="rounded-2xl border border-outline-200 px-4 py-4 dark:border-outline-700">
-                  <Text className="text-typography-700 dark:text-typography-300">
+                  <Text className="text-typography-700">
                     No se pudieron cargar los métodos de pago.
                   </Text>
                   <JBFormButton

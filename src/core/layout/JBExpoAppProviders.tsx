@@ -7,7 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast, { ToastConfig, ToastProps } from 'react-native-toast-message';
 
 import { createExpoQueryClient, CreateExpoQueryClientOptions } from '../../query/createQueryClient';
-import { GluestackUIProvider, ModeType } from '../../ui/gluestack-ui-provider';
+import { GluestackUIProvider, ModeType, ThemeOverrides } from '../../ui/gluestack-ui-provider';
 import { FullScreenToastProvider } from '../toast/FullScreenToast';
 import { toastConfig as defaultToastConfig } from '../toast/toastConfig';
 import { JBAppMeta, JBAppMetaProvider } from './appMeta';
@@ -24,6 +24,7 @@ export type JBExpoAppProvidersProps = {
   toastPosition?: ToastProps['position'];
   gestureHandlerRootStyle?: StyleProp<ViewStyle>;
   appMeta?: JBAppMeta;
+  themeOverrides?: ThemeOverrides;
 };
 
 export function JBExpoAppProviders({
@@ -37,7 +38,8 @@ export function JBExpoAppProviders({
   toastConfig,
   toastPosition = 'bottom',
   gestureHandlerRootStyle = { flex: 1 },
-  appMeta
+  appMeta,
+  themeOverrides
 }: JBExpoAppProvidersProps) {
   const queryClientRef = useRef<QueryClient | null>(null);
 
@@ -61,7 +63,7 @@ export function JBExpoAppProviders({
     <GestureHandlerRootView style={gestureHandlerRootStyle}>
       <BottomSheetModalProvider>
         <QueryClientProvider client={resolvedQueryClient}>
-          <GluestackUIProvider mode={colorMode}>
+          <GluestackUIProvider mode={colorMode} themeOverrides={themeOverrides}>
             <JBAppMetaProvider value={appMeta}>{content}</JBAppMetaProvider>
           </GluestackUIProvider>
         </QueryClientProvider>

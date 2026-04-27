@@ -14,15 +14,14 @@ type JBUserHomeMenuItemRowProps = {
 
 export const JBUserHomeMenuItemRow = ({ item, onPress }: JBUserHomeMenuItemRowProps) => {
   const colorScheme = useColorScheme();
-  const typographyColor = getColor('typography');
+  const primaryColor = getColor('primary');
+  const mutedColor = getColor('muted');
   const iconColor =
     colorScheme === 'dark'
-      ? typographyColor[50] ?? typographyColor.white ?? '#f8fafc'
-      : typographyColor.black ?? typographyColor[900] ?? '#0f172a';
+      ? primaryColor?.[400] ?? primaryColor?.[500] ?? '#0ea5e9'
+      : primaryColor?.[600] ?? primaryColor?.[500] ?? '#0284c7';
   const chevronColor =
-    colorScheme === 'dark'
-      ? typographyColor[300] ?? typographyColor[200] ?? '#cbd5e1'
-      : typographyColor[500] ?? typographyColor[400] ?? '#64748b';
+    typeof mutedColor === 'string' ? mutedColor : '#8A8A93';
   const optionIconName = item.iconName ?? 'chevron-right';
 
   return (
@@ -31,10 +30,10 @@ export const JBUserHomeMenuItemRow = ({ item, onPress }: JBUserHomeMenuItemRowPr
         <HStack space="sm" className="flex-1 items-center pr-3">
           <MaterialIcons name={optionIconName} size={22} color={iconColor} className="mr-3" />
           <VStack className="flex-1">
-            <Text bold size="md" className="text-typography-900 dark:text-typography-50">
+            <Text bold size="md" className="text-typography-900">
               {item.title}
             </Text>
-            <Text size="sm" className="text-typography-500 dark:text-typography-300">
+            <Text size="sm" className="text-typography-500">
               {item.subtitle}
             </Text>
           </VStack>

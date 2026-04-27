@@ -56,7 +56,7 @@ export const JBSettingsScreen = ({
             <VStack key={section.id} space="sm">
               <Text
                 size="sm"
-                className="font-semibold text-typography-600 dark:text-typography-400"
+                className="font-semibold text-typography-600"
               >
                 {section.title}
               </Text>
@@ -65,7 +65,7 @@ export const JBSettingsScreen = ({
                   <VStack space="sm">
                     <Text
                       size="xs"
-                      className="text-typography-600 dark:text-typography-400"
+                      className="text-typography-600"
                     >
                       Elige cómo quieres ver la interfaz.
                     </Text>
@@ -89,7 +89,7 @@ export const JBSettingsScreen = ({
                                 className={`font-semibold ${
                                   item.isActive
                                     ? 'text-white'
-                                    : 'text-typography-700 dark:text-typography-200'
+                                    : 'text-typography-700'
                                 }`}
                               >
                                 {item.title}
@@ -116,7 +116,7 @@ export const JBSettingsScreen = ({
                             <HStack className="items-center" space="sm">
                               <Text
                                 size="md"
-                                className="font-semibold text-typography-black dark:text-typography-white"
+                                className="font-semibold text-typography-900"
                               >
                                 {item.title}
                               </Text>
@@ -134,7 +134,7 @@ export const JBSettingsScreen = ({
                             {item.subtitle ? (
                               <Text
                                 size="xs"
-                                className="text-typography-600 dark:text-typography-400"
+                                className="text-typography-600"
                               >
                                 {item.subtitle}
                               </Text>
