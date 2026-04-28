@@ -1,5 +1,13 @@
 # @joelbarron/expo-dev-kit
 
+## 0.1.11
+
+### Patch Changes
+
+- 01c630c: fixes
+- 488a9d1: fixes and new features
+- 4d725fb: fixes in gh actions
+
 ## 0.1.10
 
 ### Patch Changes
