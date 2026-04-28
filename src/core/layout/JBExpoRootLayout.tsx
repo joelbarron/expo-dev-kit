@@ -1293,6 +1293,8 @@ export function JBExpoRootLayout({
       ? "light"
       : scheme ?? "light";
   const resolvedUIConfig = uiConfig ?? baseConfig?.ui;
+  const resolvedThemeOverrides =
+    providersProps.themeOverrides ?? resolvedUIConfig?.themeOverrides;
   const navigationTheme = resolveNavigationTheme(
     resolvedMode,
     resolvedUIConfig,
@@ -1687,6 +1689,7 @@ export function JBExpoRootLayout({
         {...providersProps}
         appMeta={appMeta}
         colorMode={effectiveMode}
+        themeOverrides={resolvedThemeOverrides}
         navigationTheme={navigationTheme}
         queryClientOptions={{
           onUnauthorized: () => {

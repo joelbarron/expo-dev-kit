@@ -72,7 +72,7 @@ export const JBUserPhotoPickerCard = ({
             iconPosition="start"
             text="Seleccionar de galería"
             iconColor={actionColor}
-            textClassName="text-[15px] font-bold text-typography-900 dark:text-typography-50"
+            textClassName="text-[15px] font-bold text-typography-900"
             loading={false}
             isDisabled={isBusy}
             onPress={onPickFromLibrary}
@@ -85,7 +85,7 @@ export const JBUserPhotoPickerCard = ({
               iconName="camera-outline"
               iconPosition="start"
               iconColor={actionColor}
-              textClassName="text-[15px] font-bold text-typography-900 dark:text-typography-50"
+              textClassName="text-[15px] font-bold text-typography-900"
               isDisabled={isBusy}
               onPress={onTakePhoto}
             />

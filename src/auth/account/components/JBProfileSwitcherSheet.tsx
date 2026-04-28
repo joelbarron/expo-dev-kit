@@ -256,11 +256,11 @@ export const JBProfileSwitcherSheet = ({
           <Text
             size="lg"
             bold
-            className="text-typography-black dark:text-typography-white"
+            className="text-typography-900"
           >
             {title}
           </Text>
-          <Text className="text-typography-600 dark:text-typography-400">
+          <Text className="text-typography-600">
             {subtitle}
           </Text>
         </VStack>
@@ -292,10 +292,10 @@ export const JBProfileSwitcherSheet = ({
                 onPress={() => void handleSwitchProfile(item)}
               >
                 <HStack
-                  className={`mb-2 items-center rounded-2xl px-4 py-3 ${
+                  className={`mb-2 items-center rounded-2xl px-4 py-3 border ${
                     isActive
-                      ? "bg-primary-500/15"
-                      : "bg-background-150 dark:bg-background-200"
+                      ? "bg-primary-500/15 border-primary-500/40"
+                      : "bg-background-150 border-primary-500/15 dark:bg-white/[0.04] dark:border-white/10"
                   }`}
                   space="md"
                 >
@@ -311,14 +311,14 @@ export const JBProfileSwitcherSheet = ({
                     <Text
                       bold
                       size="md"
-                      className="text-typography-black dark:text-typography-white"
+                      className="text-typography-900"
                       numberOfLines={1}
                     >
                       {profileName}
                     </Text>
                     <Text
                       size="xs"
-                      className="text-typography-500 dark:text-typography-400"
+                      className="text-typography-500"
                       numberOfLines={1}
                     >
                       {getProfileRoleLabel(item)}
@@ -347,7 +347,7 @@ export const JBProfileSwitcherSheet = ({
           }}
           ListEmptyComponent={
             <Box className="py-6">
-              <Text className="text-typography-500 dark:text-typography-400">
+              <Text className="text-typography-500">
                 {isLoadingProfiles
                   ? "Cargando perfiles..."
                   : "No hay perfiles disponibles."}

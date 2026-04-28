@@ -160,24 +160,24 @@ export const JBUserInfo = ({
   };
 
   const resolvedTitleClassName =
-    isHeader || !isPrimaryTone ? 'text-typography-900 dark:text-typography-50' : 'text-white';
+    isHeader || !isPrimaryTone ? 'text-typography-900' : 'text-white';
   const resolvedSubtitleClassName =
-    isHeader || !isPrimaryTone ? 'text-typography-500 dark:text-typography-300' : 'text-white/85';
+    isHeader || !isPrimaryTone ? 'text-typography-500' : 'text-white/85';
   const resolvedEditButtonClassName =
     isHeader || !isPrimaryTone
-      ? 'border-outline-200 bg-background-100 dark:border-outline-700 dark:bg-background-200'
+      ? 'border-primary-500/30 bg-primary-500/10'
       : 'border-white/35 bg-white/15 dark:border-white/35 dark:bg-white/10';
   const resolvedEditTextClassName =
     isHeader || !isPrimaryTone ? 'text-primary-600 dark:text-primary-300' : 'text-white';
   const roleBadgeBaseClassName =
     isHeader || !isPrimaryTone
-      ? 'bg-background-100 border border-outline-200 dark:bg-background-200 dark:border-outline-700'
+      ? 'bg-primary-500/10 border border-primary-500/30'
       : 'bg-white/15 border border-white/30 dark:bg-white/10 dark:border-white/25';
   const roleBadgeBaseTextClassName =
-    isHeader || !isPrimaryTone ? 'text-typography-700 dark:text-typography-200' : 'text-white';
+    isHeader || !isPrimaryTone ? 'text-primary-700 dark:text-primary-300' : 'text-white';
   const avatarBaseClassName =
     isHeader || !isPrimaryTone
-      ? 'overflow-hidden rounded-full border border-outline-200 bg-primary-500 dark:border-outline-700'
+      ? 'overflow-hidden rounded-full border border-primary-500/30 bg-primary-500'
       : 'overflow-hidden rounded-full border border-white/35 bg-primary-500';
   const editIconColor =
     isHeader || !isPrimaryTone

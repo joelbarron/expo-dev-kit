@@ -67,10 +67,10 @@ export const JBSettingsSecurityScreen = ({
     : `${biometricLabel} desactivado`;
 
   const statusToneClassName = !biometricsFeatureEnabled
-    ? 'text-typography-600 dark:text-typography-400'
+    ? 'text-typography-600'
     : isEnabled
     ? 'text-green-600 dark:text-green-400'
-    : 'text-typography-600 dark:text-typography-300';
+    : 'text-typography-600';
 
   const handleToggle = async () => {
     if (!biometricsFeatureEnabled) {
@@ -148,13 +148,13 @@ export const JBSettingsSecurityScreen = ({
           <VStack space="xs">
             <Text
               size="md"
-              className="text-typography-700 dark:text-typography-300"
+              className="text-typography-700"
             >
               Protege tu sesión con desbloqueo biométrico.
             </Text>
             <Text
               size="sm"
-              className="text-typography-600 dark:text-typography-400"
+              className="text-typography-600"
             >
               Puedes activar o desactivar {biometricLabel} en cualquier momento.
             </Text>
@@ -174,13 +174,13 @@ export const JBSettingsSecurityScreen = ({
                   <VStack className="flex-1" space="xs">
                     <Text
                       size="md"
-                      className="font-semibold text-typography-black dark:text-typography-white"
+                      className="font-semibold text-typography-900"
                     >
                       Desbloqueo biométrico
                     </Text>
                     <Text
                       size="xs"
-                      className="text-typography-600 dark:text-typography-400"
+                      className="text-typography-600"
                     >
                       Estado: <Text className={`font-semibold ${statusToneClassName}`}>{statusText}</Text>
                     </Text>

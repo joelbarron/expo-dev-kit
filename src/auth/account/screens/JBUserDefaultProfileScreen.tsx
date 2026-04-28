@@ -352,7 +352,7 @@ export function JBUserDefaultProfileScreen(
             {showPersonalDataCta && capabilities.canEditPersonalData ? (
               <Box className="rounded-2xl bg-background-150 px-4 py-4 dark:bg-background-200">
                 <VStack space="sm">
-                  <Text size="sm" className="text-typography-600 dark:text-typography-300">
+                  <Text size="sm" className="text-typography-600">
                     Si deseas modificar correo, teléfono o nombre de usuario, haz clic aquí.
                   </Text>
                   <JBFormButton

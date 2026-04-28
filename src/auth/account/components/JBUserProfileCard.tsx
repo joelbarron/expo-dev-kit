@@ -84,7 +84,7 @@ export const JBUserProfileCard = ({
               className={
                 isActive
                   ? 'text-primary-700 dark:text-primary-300 font-semibold'
-                  : 'text-typography-400 dark:text-typography-400'
+                  : 'text-typography-400'
               }
             >
               {isActive ? 'Perfil activo' : 'Perfil adicional'}

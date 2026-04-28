@@ -111,13 +111,13 @@ export const JBPaymentMethodCard = memo(
               </Box>
               <VStack className="flex-1" space="xs">
                 <Text
-                  className="text-typography-800 dark:text-typography-100"
+                  className="text-typography-800"
                   numberOfLines={1}
                 >
                   {brand}
                 </Text>
                 <Text
-                  className="text-sm font-semibold text-typography-black dark:text-typography-white"
+                  className="text-sm font-semibold text-typography-900"
                   numberOfLines={1}
                 >
                   {"**** **** **** "}
@@ -151,7 +151,7 @@ export const JBPaymentMethodCard = memo(
             </VStack>
           </HStack>
 
-          <Text className="mt-2 text-xs text-typography-600 dark:text-typography-400">
+          <Text className="mt-2 text-xs text-typography-600">
             Expira{" "}
             {expMonth && expYear
               ? `${String(expMonth).padStart(2, "0")}/${expYear}`

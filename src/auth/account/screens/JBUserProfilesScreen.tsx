@@ -295,13 +295,13 @@ export function JBUserProfilesScreen() {
     >
       <Box className="w-full px-6 pt-6">
         <VStack space="md">
-          <Text size="sm" className="text-typography-500 dark:text-typography-300">
+          <Text size="sm" className="text-typography-500">
             Gestiona perfiles adicionales de la cuenta y cambia el perfil activo cuando lo necesites.
           </Text>
 
           {isProfileMirrorEnabled ? (
             <Box className="rounded-2xl bg-background-150 px-4 py-4 dark:bg-background-200">
-              <Text size="sm" className="text-typography-600 dark:text-typography-300">
+              <Text size="sm" className="text-typography-600">
                 La gestión de perfiles adicionales no está disponible porque la sincronización de
                 perfiles está habilitada.
               </Text>

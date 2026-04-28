@@ -51,10 +51,10 @@ const ActionRow = ({
             <MaterialCommunityIcons name={iconName} size={20} color={iconColor} />
           </Box>
           <VStack className="ml-3 flex-1" space="xs">
-            <Text bold size="md" className="text-typography-900 dark:text-typography-50">
+            <Text bold size="md" className="text-typography-900">
               {title}
             </Text>
-            <Text size="sm" className="text-typography-500 dark:text-typography-300">
+            <Text size="sm" className="text-typography-500">
               {subtitle}
             </Text>
           </VStack>
@@ -103,7 +103,7 @@ export const JBUserAccountActions = ({
     <VStack space="md" className={className}>
       {title ? (
         <HStack className="items-center justify-between">
-          <Text bold size="lg" className="text-typography-900 dark:text-typography-50">
+          <Text bold size="lg" className="text-typography-900">
             {title}
           </Text>
         </HStack>

@@ -324,6 +324,11 @@ export type JBUIChipConfig = {
   inactive?: JBUIChipStateConfig;
 };
 
+export type JBUIThemeOverrides = {
+  light?: Record<string, string>;
+  dark?: Record<string, string>;
+};
+
 export type JBUIConfig = {
   header?: JBUIHeaderConfig;
   tabs?: JBUITabsConfig;
@@ -336,6 +341,9 @@ export type JBUIConfig = {
   socialButtons?: JBUISocialButtonsConfig;
   button?: JBUIButtonConfig;
   chip?: JBUIChipConfig;
+  // CSS-var color tokens injected at runtime by the GluestackUIProvider.
+  // Use the `--color-typography-X` / `--color-background-X` etc. naming.
+  themeOverrides?: JBUIThemeOverrides;
 };
 
 export type JBPermissionKey =

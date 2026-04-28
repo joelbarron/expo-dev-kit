@@ -1011,7 +1011,7 @@ export function JBUserPersonalDataScreen(
             {showProfileCta && capabilities.canEditDefaultProfile ? (
               <Box className="rounded-2xl bg-background-150 px-4 py-4 dark:bg-background-200">
                 <VStack space="sm">
-                  <Text size="sm" className="text-typography-600 dark:text-typography-300">
+                  <Text size="sm" className="text-typography-600">
                     Si deseas editar tu información personal como nombre y apellidos, hazlo desde tu perfil.
                   </Text>
                   <JBFormButton
@@ -1029,18 +1029,18 @@ export function JBUserPersonalDataScreen(
               <TouchableOpacity activeOpacity={0.85} onPress={() => handleOpenSection('email')}>
                 <VStack space="xs" className="w-full">
                   <HStack className="items-center justify-between">
-                    <Text size="md" className="font-semibold text-typography-900 dark:text-typography-50">
+                    <Text size="md" className="font-semibold text-typography-900">
                       Correo electrónico
                     </Text>
                     <HStack space="sm" className="items-center">
                       {renderPendingSaveBadge(hasEmailPendingSave)}
-                      <Text size="sm" className="font-medium text-typography-500 dark:text-typography-300">
+                      <Text size="sm" className="font-medium text-typography-500">
                         {openSection === 'email' ? 'Ocultar' : 'Editar'}
                       </Text>
                     </HStack>
                   </HStack>
                   {openSection !== 'email' ? (
-                    <Text size="sm" className="text-typography-500 dark:text-typography-300">
+                    <Text size="sm" className="text-typography-500">
                       {emailSummary}
                     </Text>
                   ) : null}
@@ -1074,7 +1074,7 @@ export function JBUserPersonalDataScreen(
 
                   {contactVerificationEnabled && emailChanged ? (
                     <VStack space="sm" className="rounded-xl bg-background-100 px-3 py-3 dark:bg-background-50/10">
-                      <Text size="xs" className="text-typography-500 dark:text-typography-300">
+                      <Text size="xs" className="text-typography-500">
                         Verifica tu nuevo correo con el código que te enviaremos por email.
                       </Text>
                       <HStack space="sm" className="w-full items-center">
@@ -1133,18 +1133,18 @@ export function JBUserPersonalDataScreen(
               <TouchableOpacity activeOpacity={0.85} onPress={() => handleOpenSection('phone')}>
                 <VStack space="xs" className="w-full">
                   <HStack className="items-center justify-between">
-                    <Text size="md" className="font-semibold text-typography-900 dark:text-typography-50">
+                    <Text size="md" className="font-semibold text-typography-900">
                       Teléfono
                     </Text>
                     <HStack space="sm" className="items-center">
                       {renderPendingSaveBadge(hasPhonePendingSave)}
-                      <Text size="sm" className="font-medium text-typography-500 dark:text-typography-300">
+                      <Text size="sm" className="font-medium text-typography-500">
                         {openSection === 'phone' ? 'Ocultar' : 'Editar'}
                       </Text>
                     </HStack>
                   </HStack>
                   {openSection !== 'phone' ? (
-                    <Text size="sm" className="text-typography-500 dark:text-typography-300">
+                    <Text size="sm" className="text-typography-500">
                       {phoneSummary}
                     </Text>
                   ) : null}
@@ -1190,7 +1190,7 @@ export function JBUserPersonalDataScreen(
 
                   {contactVerificationEnabled && phoneChanged ? (
                     <VStack space="sm" className="rounded-xl bg-background-100 px-3 py-3 dark:bg-background-50/10">
-                      <Text size="xs" className="text-typography-500 dark:text-typography-300">
+                      <Text size="xs" className="text-typography-500">
                         Verifica tu nuevo teléfono con el código que enviaremos por SMS.
                       </Text>
                       <HStack space="sm" className="w-full items-center">
@@ -1249,18 +1249,18 @@ export function JBUserPersonalDataScreen(
               <TouchableOpacity activeOpacity={0.85} onPress={() => handleOpenSection('username')}>
                 <VStack space="xs" className="w-full">
                   <HStack className="items-center justify-between">
-                    <Text size="md" className="font-semibold text-typography-900 dark:text-typography-50">
+                    <Text size="md" className="font-semibold text-typography-900">
                       Nombre de usuario
                     </Text>
                     <HStack space="sm" className="items-center">
                       {renderPendingSaveBadge(hasUsernamePendingSave)}
-                      <Text size="sm" className="font-medium text-typography-500 dark:text-typography-300">
+                      <Text size="sm" className="font-medium text-typography-500">
                         {openSection === 'username' ? 'Ocultar' : 'Editar'}
                       </Text>
                     </HStack>
                   </HStack>
                   {openSection !== 'username' ? (
-                    <Text size="sm" className="text-typography-500 dark:text-typography-300">
+                    <Text size="sm" className="text-typography-500">
                       {usernameSummary}
                     </Text>
                   ) : null}

@@ -52,7 +52,7 @@ export function JBPaymentMethodSelector({
 
   return (
     <VStack space="md" className="w-full">
-      <Heading size="xl" className="text-typography-black dark:text-typography-white">
+      <Heading size="xl" className="text-typography-900">
         {title}
       </Heading>
 
@@ -71,7 +71,7 @@ export function JBPaymentMethodSelector({
         </VStack>
       ) : (
         <Box className="rounded-2xl border border-outline-200 px-4 py-4 dark:border-outline-700">
-          <Text className="text-typography-600 dark:text-typography-400">{emptyText}</Text>
+          <Text className="text-typography-600">{emptyText}</Text>
         </Box>
       )}
 

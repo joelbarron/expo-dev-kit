@@ -17,7 +17,7 @@ import { Input, InputField } from "../ui/input";
 import { Text } from "../ui/text";
 import { VStack } from "../ui/vstack";
 
-type TransactionMode = "EXPENSE" | "INCOME";
+type TransactionMode = "EXPENSE" | "INCOME" | "NEUTRAL";
 
 type Props = {
   control: any;
@@ -54,8 +54,14 @@ export function CustomFormCurrencyAmount({
   locale = "es-MX",
 }: Props) {
   const [isFocused, setIsFocused] = useState(false);
-  const amountColor = mode === "INCOME" ? "#22C55E" : "#F43F5E";
-  const sign = mode === "INCOME" ? "+" : "-";
+  // NEUTRAL mode: no sign, default text color (no red/green tint).
+  const amountColor =
+    mode === "INCOME"
+      ? "#22C55E"
+      : mode === "EXPENSE"
+        ? "#F43F5E"
+        : undefined;
+  const sign = mode === "INCOME" ? "+" : mode === "EXPENSE" ? "-" : "";
 
   return (
     <Controller
@@ -78,28 +84,30 @@ export function CustomFormCurrencyAmount({
         return (
         <FormControl isInvalid={!!error} isDisabled={isDisabled} isRequired>
           <FormControlLabel className="mb-3">
-            <FormControlLabelText className="text-white">{label}</FormControlLabelText>
+            <FormControlLabelText className="text-typography-900">{label}</FormControlLabelText>
           </FormControlLabel>
 
           <VStack className="rounded-2xl bg-background-200 p-4 pb-5" space="md">
             <HStack className="justify-start">
-              <HStack className="rounded-full bg-background-400 px-3 py-1.5">
-                <Text size="sm" className="font-semibold">
+              <HStack className="rounded-full bg-background-400 dark:bg-primary-500/20 px-3 py-1.5">
+                <Text size="sm" className="font-semibold text-typography-900">
                   {currency}
                 </Text>
               </HStack>
             </HStack>
 
             <HStack className="w-full min-h-[76px] items-end justify-end" space="sm">
-              <Text
-                className="shrink-0"
-                style={{ color: amountColor, fontSize: 48, lineHeight: 52, fontWeight: "700" }}
-              >
-                {sign}
-              </Text>
+              {sign ? (
+                <Text
+                  className="shrink-0"
+                  style={{ ...(amountColor ? { color: amountColor } : null), fontSize: 48, lineHeight: 52, fontWeight: "700" }}
+                >
+                  {sign}
+                </Text>
+              ) : null}
               {isDisabled ? (
                 <Text
-                  style={{ color: amountColor, fontSize: 48, lineHeight: 52, fontWeight: "700" }}
+                  style={{ ...(amountColor ? { color: amountColor } : null), fontSize: 48, lineHeight: 52, fontWeight: "700" }}
                 >
                   {formattedValue}
                 </Text>
@@ -125,7 +133,7 @@ export function CustomFormCurrencyAmount({
                     adjustsFontSizeToFit
                     minimumFontScale={0.55}
                     style={{
-                      color: amountColor,
+                      ...(amountColor ? { color: amountColor } : null),
                       fontSize: 48,
                       lineHeight: 58,
                       fontWeight: "700",

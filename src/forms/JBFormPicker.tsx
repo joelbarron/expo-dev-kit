@@ -87,6 +87,14 @@ type CustomFormPickerProps = {
   labelClassName?: string;
   helperTextClassName?: string;
   errorTextClassName?: string;
+  /**
+   * When true, the picker stores an array of selected items and supports
+   * toggling multiple options at once. Tapping an option keeps the sheet open
+   * until the user dismisses it via the "Listo" button on the header.
+   * Default: false (single-select behavior).
+   */
+  multi?: boolean;
+  doneLabel?: string;
 };
 
 export const CustomFormPicker = ({
@@ -104,6 +112,8 @@ export const CustomFormPicker = ({
   isDisabled = false,
   isReadOnly = false,
   defaultValue = null,
+  multi = false,
+  doneLabel = "Listo",
   containerStyle = undefined,
   rightContent = null,
   manageLabel = undefined,
@@ -228,19 +238,41 @@ export const CustomFormPicker = ({
       renderOption || renderCustomOption || renderItem || null;
     const itemValue = item?.[valueField];
     const itemLabel = item?.[labelField];
-    const selectedValue = value?.[valueField] ?? value?.value;
-    const isSelected = selectedValue === itemValue;
+
+    let isSelected = false;
+    if (multi) {
+      isSelected =
+        Array.isArray(value) &&
+        value.some((v) => (v?.[valueField] ?? v?.value) === itemValue);
+    } else {
+      const selectedValue = value?.[valueField] ?? value?.value;
+      isSelected = selectedValue === itemValue;
+    }
+
+    const handleSelect = () => {
+      if (multi) {
+        const current = Array.isArray(value) ? value : [];
+        const next = isSelected
+          ? current.filter(
+              (v) => (v?.[valueField] ?? v?.value) !== itemValue,
+            )
+          : [...current, item];
+        onChange(next);
+        // do not dismiss; user closes via the "Listo" header button
+        return;
+      }
+      if (onChangeCustom) {
+        onChangeCustom(item, onChange);
+      } else {
+        onChange(item);
+      }
+      bottomSheetModalRef.current?.dismiss();
+    };
+
     return (
       <Box className={optionContainerClassName}>
         <TouchableOpacity
-          onPress={() => {
-            if (onChangeCustom) {
-              onChangeCustom(item, onChange);
-            } else {
-              onChange(item);
-            }
-            bottomSheetModalRef.current?.dismiss();
-          }}
+          onPress={handleSelect}
           className={`${optionClassName} ${
             isSelected ? optionSelectedClassName : ""
           }`}
@@ -347,21 +379,48 @@ export const CustomFormPicker = ({
             className={`${triggerClassName} ${triggerBackgroundClassName}`}
             style={{ backgroundColor: resolvedFormBackgroundColor }}
           >
-            <Text
-              size="lg"
-              className={
-                isDisabled || !(value?.[valueField] ?? value?.value)
-                  ? "text-gray-500"
-                  : triggerTextClassName
-              }
-              style={
-                isDisabled || !(value?.[valueField] ?? value?.value)
-                  ? undefined
-                  : { color: resolvedLabelColor }
-              }
-            >
-              {value?.[labelField] ?? value?.label ?? "Seleccionar un elemento"}
-            </Text>
+            {multi ? (() => {
+              const arr = Array.isArray(value) ? value : [];
+              const isEmpty = arr.length === 0;
+              const triggerText = isEmpty
+                ? "Seleccionar elementos"
+                : arr.length === 1
+                  ? arr[0]?.[labelField] ?? arr[0]?.label ?? "1 seleccionado"
+                  : `${arr.length} seleccionados`;
+              return (
+                <Text
+                  size="lg"
+                  className={
+                    isDisabled || isEmpty
+                      ? "text-typography-500"
+                      : triggerTextClassName
+                  }
+                  style={
+                    isDisabled || isEmpty
+                      ? undefined
+                      : { color: resolvedLabelColor }
+                  }
+                >
+                  {triggerText}
+                </Text>
+              );
+            })() : (
+              <Text
+                size="lg"
+                className={
+                  isDisabled || !(value?.[valueField] ?? value?.value)
+                    ? "text-typography-500"
+                    : triggerTextClassName
+                }
+                style={
+                  isDisabled || !(value?.[valueField] ?? value?.value)
+                    ? undefined
+                    : { color: resolvedLabelColor }
+                }
+              >
+                {value?.[labelField] ?? value?.label ?? "Seleccionar un elemento"}
+              </Text>
+            )}
             <Icon
               as={isDisabled ? LockIcon : ChevronDownIcon}
               size="md"

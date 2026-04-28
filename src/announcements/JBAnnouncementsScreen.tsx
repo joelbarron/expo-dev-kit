@@ -304,7 +304,7 @@ export const JBAnnouncementsScreen = ({
           ) : null}
           {isLoading ? (
             <Box className="flex-1 items-center justify-center px-5">
-              <Text className="text-center text-typography-600 dark:text-typography-400">
+              <Text className="text-center text-typography-600">
                 Cargando novedades...
               </Text>
             </Box>
@@ -313,7 +313,7 @@ export const JBAnnouncementsScreen = ({
               <VStack className="items-center" space="sm">
                 <Text
                   size="md"
-                  className="font-semibold text-typography-black dark:text-typography-white"
+                  className="font-semibold text-typography-900"
                 >
                   No hay novedades por ahora
                 </Text>
@@ -358,7 +358,7 @@ export const JBAnnouncementsScreen = ({
                             </Box>
                           ) : (
                             <Box className="flex-1 items-center justify-center px-5">
-                              <Text className="text-center text-typography-500 dark:text-typography-400">
+                              <Text className="text-center text-typography-500">
                                 Sin imagen
                               </Text>
                             </Box>
@@ -366,11 +366,11 @@ export const JBAnnouncementsScreen = ({
                         </Box>
                         <VStack className="w-full pt-2" space="sm">
                           <Text
-                            className="text-[34px] font-semibold leading-[40px] text-typography-black dark:text-typography-white"
+                            className="text-[34px] font-semibold leading-[40px] text-typography-900"
                           >
                             {item.title || "Novedades"}
                           </Text>
-                          <Text className="text-lg leading-7 text-typography-700 dark:text-typography-300">
+                          <Text className="text-lg leading-7 text-typography-700">
                             {item.body || ""}
                           </Text>
                         </VStack>
