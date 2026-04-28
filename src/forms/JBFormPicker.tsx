@@ -335,36 +335,22 @@ export const CustomFormPicker = ({
                 >
                   {sheetTitle || `Seleccionar ${label.toLowerCase()}`}
                 </Text>
-                <HStack space="md" className="items-center">
-                  {hasManageAction ? (
-                    <TouchableOpacity
-                      onPress={handleManagePress}
-                      className="h-8 px-1 items-center justify-center"
+                {hasManageAction ? (
+                  <TouchableOpacity
+                    onPress={handleManagePress}
+                    className="h-8 px-1 items-center justify-center"
+                  >
+                    <Text
+                      size="sm"
+                      className="font-medium underline"
+                      style={{ color: primaryColor[500] }}
                     >
-                      <Text
-                        size="sm"
-                        className="font-medium underline"
-                        style={{ color: primaryColor[500] }}
-                      >
-                        {manageLabel}
-                      </Text>
-                    </TouchableOpacity>
-                  ) : null}
-                  {multi ? (
-                    <TouchableOpacity
-                      onPress={() => bottomSheetModalRef.current?.dismiss()}
-                      className="h-8 px-1 items-center justify-center"
-                    >
-                      <Text
-                        size="sm"
-                        className="font-semibold"
-                        style={{ color: primaryColor[500] }}
-                      >
-                        {doneLabel}
-                      </Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </HStack>
+                      {manageLabel}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Box />
+                )}
               </HStack>
             </Box>
           }
