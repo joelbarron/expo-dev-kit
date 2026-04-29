@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Controller } from "react-hook-form";
 import { Platform } from "react-native";
 
+import { useColorScheme } from "../hooks";
 import {
   FormControl,
   FormControlError,
@@ -16,6 +17,7 @@ import { HStack } from "../ui/hstack";
 import { Input, InputField } from "../ui/input";
 import { Text } from "../ui/text";
 import { VStack } from "../ui/vstack";
+import { getColor } from "../utils";
 
 type TransactionMode = "EXPENSE" | "INCOME" | "NEUTRAL";
 
@@ -54,13 +56,20 @@ export function CustomFormCurrencyAmount({
   locale = "es-MX",
 }: Props) {
   const [isFocused, setIsFocused] = useState(false);
-  // NEUTRAL mode: no sign, default text color (no red/green tint).
+  const scheme = useColorScheme();
+  const typography = getColor("typography") ?? {};
+  // NEUTRAL: theme typography color (white in dark, black in light) — no
+  // red/green tint and no leading sign. Income → green, Expense → red.
+  const neutralColor =
+    scheme === "dark"
+      ? typography.white ?? typography[50] ?? "#f8fafc"
+      : typography.black ?? typography[900] ?? "#0f172a";
   const amountColor =
     mode === "INCOME"
       ? "#22C55E"
       : mode === "EXPENSE"
         ? "#F43F5E"
-        : undefined;
+        : neutralColor;
   const sign = mode === "INCOME" ? "+" : mode === "EXPENSE" ? "-" : "";
 
   return (
