@@ -1043,6 +1043,19 @@ function JBBiometricsAppLockOverlay() {
     () => buildAuthPathPrefixes(authRoutes),
     [authRoutes],
   );
+  const colorScheme = useColorScheme();
+  const resolvedMode = colorScheme === "dark" ? "dark" : "light";
+  const uiConfig = baseConfig?.ui;
+  const lockScreenBg = resolveJBUIColor(
+    uiConfig?.lockScreen?.backgroundColor,
+    resolvedMode,
+    undefined,
+  );
+  const lockScreenTextColor = resolveJBUIColor(
+    uiConfig?.lockScreen?.textColor,
+    resolvedMode,
+    undefined,
+  );
   const securityConfig = settingsConfig.security ?? {};
   const lockMode = securityConfig.biometricsLockMode ?? "on_app_open";
   const lockTimeoutSecondsRaw = Number(
@@ -1217,13 +1230,13 @@ function JBBiometricsAppLockOverlay() {
           flex: 1,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: getColor("primary")?.[500] ?? "#0ea5e9",
+          backgroundColor: lockScreenBg ?? getColor("primary")?.[500] ?? "#0ea5e9",
           paddingHorizontal: 24,
         }}
       >
         <RNText
           style={{
-            color: "#ffffff",
+            color: lockScreenTextColor ?? "#ffffff",
             fontSize: 30,
             fontWeight: "700",
             textAlign: "center",
@@ -1233,7 +1246,9 @@ function JBBiometricsAppLockOverlay() {
         </RNText>
         <RNText
           style={{
-            color: "rgba(255,255,255,0.95)",
+            color: lockScreenTextColor
+              ? `${lockScreenTextColor}cc`
+              : "rgba(255,255,255,0.95)",
             fontSize: 16,
             marginTop: 12,
             textAlign: "center",
