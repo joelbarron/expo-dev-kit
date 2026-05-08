@@ -1,5 +1,11 @@
 # @joelbarron/expo-dev-kit
 
+## 0.1.13
+
+### Patch Changes
+
+- 491be61: fixes
+
 ## 0.1.12
 
 ### Patch Changes
