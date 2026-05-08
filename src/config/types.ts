@@ -329,6 +329,11 @@ export type JBUIThemeOverrides = {
   dark?: Record<string, string>;
 };
 
+export type JBUILockScreenConfig = {
+  backgroundColor?: JBUIColorConfig;
+  textColor?: JBUIColorConfig;
+};
+
 export type JBUIConfig = {
   header?: JBUIHeaderConfig;
   tabs?: JBUITabsConfig;
@@ -337,6 +342,7 @@ export type JBUIConfig = {
   footer?: JBUISectionBackgroundConfig;
   forms?: JBUIFormsConfig;
   auth?: JBUIAuthConfig;
+  lockScreen?: JBUILockScreenConfig;
   // Deprecated: use ui.auth.socialButtons
   socialButtons?: JBUISocialButtonsConfig;
   button?: JBUIButtonConfig;
