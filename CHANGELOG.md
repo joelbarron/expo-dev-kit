@@ -1,5 +1,11 @@
 # @joelbarron/expo-dev-kit
 
+## 0.1.14
+
+### Patch Changes
+
+- ad514fa: fixes
+
 ## 0.1.13
 
 ### Patch Changes
