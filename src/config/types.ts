@@ -18,6 +18,28 @@ export type JBStripeConfig = {
   setReturnUrlSchemeOnAndroid?: boolean;
 };
 
+export type JBRevenueCatConfig = {
+  apiKeyIos?: string;
+  apiKeyAndroid?: string;
+  /**
+   * The entitlement key that marks a session as "premium". Default: 'premium'.
+   * Should match the key registered in `Entitlement.key` on the backend
+   * (e.g. `finzenio.premium` if you scope per-app).
+   */
+  premiumEntitlementKey?: string;
+  /** App slug used to build the canonical `app_user_id`. */
+  appUserIdPrefix?: string;
+  debug?: boolean;
+};
+
+export type JBBillingConfig = {
+  enabled?: boolean;
+  basePath?: string;
+  revenueCat?: JBRevenueCatConfig;
+  // TODO[phase-4-stripe]: extend with a stripe sub-config when the Stripe
+  // adapter ships. See jb-drf-billing/PHASE_4_TODO.md.
+};
+
 export type JBSocialProviderName = 'google' | 'facebook' | 'apple';
 export type JBSocialAuthMode = 'native' | 'expo';
 export type JBSocialFallbackMode = 'expo' | 'none';
@@ -503,6 +525,7 @@ export type JBAppConfig = {
     host: JBApiHostConfig;
   };
   stripe?: JBStripeConfig;
+  billing?: JBBillingConfig;
   settings?: JBSettingsConfig;
   permissions?: JBPermissionsConfig;
   runtime?: JBRuntimeConfig;

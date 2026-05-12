@@ -122,6 +122,36 @@
       "import": "./dist/payments/index.js",
       "default": "./dist/payments/index.js"
     },
+    "./subscriptions": {
+      "types": "./dist/subscriptions/index.d.ts",
+      "react-native": "./src/subscriptions/index.ts",
+      "import": "./dist/subscriptions/index.js",
+      "default": "./dist/subscriptions/index.js"
+    },
+    "./subscriptions/provider": {
+      "types": "./dist/subscriptions/provider.d.ts",
+      "react-native": "./src/subscriptions/provider.tsx",
+      "import": "./dist/subscriptions/provider.js",
+      "default": "./dist/subscriptions/provider.js"
+    },
+    "./subscriptions/screens": {
+      "types": "./dist/subscriptions/screens/index.d.ts",
+      "react-native": "./src/subscriptions/screens/index.ts",
+      "import": "./dist/subscriptions/screens/index.js",
+      "default": "./dist/subscriptions/screens/index.js"
+    },
+    "./subscriptions/components": {
+      "types": "./dist/subscriptions/components/index.d.ts",
+      "react-native": "./src/subscriptions/components/index.ts",
+      "import": "./dist/subscriptions/components/index.js",
+      "default": "./dist/subscriptions/components/index.js"
+    },
+    "./subscriptions/hooks": {
+      "types": "./dist/subscriptions/hooks.d.ts",
+      "react-native": "./src/subscriptions/hooks.ts",
+      "import": "./dist/subscriptions/hooks.js",
+      "default": "./dist/subscriptions/hooks.js"
+    },
     "./navigation": {
       "types": "./dist/navigation/index.d.ts",
       "react-native": "./src/navigation/index.ts",
@@ -211,9 +241,15 @@
     "react-native-gesture-handler": ">=2",
     "react-native-svg": ">=15",
     "react-native-toast-message": ">=2",
+    "react-native-purchases": ">=8",
     "react-native-wheel-color-picker": ">=1",
     "zod": ">=4",
     "zustand": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "react-native-purchases": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.7",

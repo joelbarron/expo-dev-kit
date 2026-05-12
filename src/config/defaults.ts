@@ -33,6 +33,17 @@ export const defaultJBExpoConfig: JBAppConfig = {
     urlScheme: "",
     setReturnUrlSchemeOnAndroid: false,
   },
+  billing: {
+    enabled: false,
+    basePath: "/billing",
+    revenueCat: {
+      apiKeyIos: "",
+      apiKeyAndroid: "",
+      premiumEntitlementKey: "premium",
+      appUserIdPrefix: "",
+      debug: false,
+    },
+  },
   settings: {
     routes: {
       root: "/settings",
