@@ -84,6 +84,27 @@ export type BillingTrialInfo = {
  */
 export type BillingLimits = Record<string, number>;
 
+/**
+ * Uso vigente de una cuota mensual (mes calendario UTC). El backend lo
+ * calcula al servir `/billing/status` usando los counters declarados en
+ * `JB_DRF_BILLING.MONTHLY_QUOTAS`.
+ */
+export type BillingQuotaUsage = {
+  used: number;
+  limit: number;
+  remaining: number;
+  /** ISO timestamp del próximo reset (inicio del siguiente mes UTC). */
+  reset_at: string;
+  reached: boolean;
+};
+
+/**
+ * Quotas mensuales del integrador. Keys específicas del producto
+ * (ej. `statement_imports`). Cliente las consume para mostrar contadores
+ * y bloquear UI cuando `reached === true`.
+ */
+export type BillingQuotas = Record<string, BillingQuotaUsage>;
+
 export type BillingStatusResponse = {
   appSlug: string | null;
   subscription: BillingSubscriptionSummary | null;
@@ -94,6 +115,7 @@ export type BillingStatusResponse = {
   purchaseChannels: BillingPurchaseChannels;
   trial: BillingTrialInfo;
   limits: BillingLimits;
+  quotas?: BillingQuotas;
 };
 
 export type BillingAccessCheckItem = {

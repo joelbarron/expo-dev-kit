@@ -12,13 +12,17 @@ import { JBMainLayout } from '../core';
 import { Box, Card, HStack, Text, VStack } from '../ui';
 import { useAppConfigStore } from '../runtime';
 import { useJBSettingsSections } from './hooks';
+import type { JBSettingsSection } from './types';
 
 export type JBSettingsScreenProps = {
   title?: string;
+  /** Secciones extra del integrador (ej. "Mi suscripción", "Uso del plan"). */
+  extraSections?: JBSettingsSection[];
 };
 
 export const JBSettingsScreen = ({
   title = 'Configuración',
+  extraSections,
 }: JBSettingsScreenProps) => {
   const router = useRouter();
   const baseConfig = getLastCreatedJBExpoConfig();
@@ -32,6 +36,7 @@ export const JBSettingsScreen = ({
   } as any);
 
   const sections = useJBSettingsSections({
+    extraSections,
     onOpenNotifications: () => {
       const path = settingsConfig.notifications?.path ?? settingsConfig.routes?.notifications;
       router.push(path as any);

@@ -45,6 +45,12 @@ type UseJBSettingsSectionsArgs = {
   onOpenNotifications?: () => void;
   onOpenPermissions?: () => void;
   onOpenSecurity?: () => void;
+  /**
+   * Secciones extra del integrador para insertar antes de las secciones
+   * estándar (versión, preferencias, apariencia). Útil para opciones
+   * específicas del producto (ej. "Mi suscripción", "Uso del plan").
+   */
+  extraSections?: JBSettingsSection[];
 };
 
 export const useJBSettingsSections = (
@@ -202,6 +208,10 @@ export const useJBSettingsSections = (
 
     const sections: JBSettingsSection[] = [];
 
+    if (args?.extraSections?.length) {
+      sections.push(...args.extraSections);
+    }
+
     if (versionItems.length > 0) {
       sections.push({
         id: 'version',
@@ -231,6 +241,7 @@ export const useJBSettingsSections = (
     args?.onOpenNotifications,
     args?.onOpenPermissions,
     args?.onOpenSecurity,
+    args?.extraSections,
     baseConfig,
     remoteConfig,
     setThemeMode,
