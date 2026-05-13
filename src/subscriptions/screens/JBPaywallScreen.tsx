@@ -39,6 +39,19 @@ export type JBPaywallScreenOverrides = {
   retryLabel?: string;
   /** Fine print del footer. */
   legalFootnote?: string;
+  /**
+   * Mensaje cuando RC no expone offerings para la plataforma actual
+   * (ej. Android sin productos configurados en Play Console). Se
+   * muestra inline y deshabilita el botón de compra.
+   */
+  storeUnavailableTitle?: string;
+  storeUnavailableMessage?: string;
+  /**
+   * Mensaje cuando hay offerings pero el price seleccionado no tiene
+   * package en la store (caso raro: catálogo del backend trae un SKU
+   * que aún no existe en la store).
+   */
+  priceUnavailableMessage?: string;
 };
 
 export type JBPaywallRestoreResult = 'restored' | 'no_purchases' | 'error';
@@ -183,6 +196,25 @@ export const JBPaywallScreen: React.FC<JBPaywallScreenProps> = ({ overrides, onS
   const hasStoreOfferings = !!offerings && !offeringsError;
   const showTrialCta = trial.eligible && trial.days > 0;
 
+  // Cuando RC no expone offerings (plataforma sin configurar, sin
+  // conexión a stores, etc.), aún mostramos los planes del catálogo para
+  // que el user entienda qué incluye Premium, pero deshabilitamos la
+  // compra y avisamos. Esto evita el "click → error inmediato".
+  const storeOfferingsMissing =
+    !offeringsLoading && !hasStoreOfferings && purchasesAvailable;
+  const selectedPriceObj = premiumPrices.find((p) => p.id === selectedPriceId);
+  const selectedPackage =
+    selectedPriceObj && hasStoreOfferings
+      ? findPackageForPrice(offerings, selectedPriceObj)
+      : null;
+  const selectedPriceUnavailable =
+    hasStoreOfferings && !!selectedPriceObj && !selectedPackage;
+  const purchaseDisabled =
+    purchasing ||
+    !selectedPriceId ||
+    storeOfferingsMissing ||
+    selectedPriceUnavailable;
+
   const handlePurchase = async () => {
     setErrorMsg(null);
     const price = premiumPrices.find((p) => p.id === selectedPriceId);
@@ -314,9 +346,25 @@ export const JBPaywallScreen: React.FC<JBPaywallScreenProps> = ({ overrides, onS
             );
           })}
 
-          {!hasStoreOfferings ? (
+          {storeOfferingsMissing ? (
+            <Box style={styles.unavailableBox}>
+              <Text style={styles.unavailableTitle}>
+                {overrides?.storeUnavailableTitle ??
+                  'Compras no disponibles aún en esta plataforma'}
+              </Text>
+              <Text style={styles.unavailableMessage}>
+                {overrides?.storeUnavailableMessage ??
+                  'Estamos finalizando la configuración con la tienda. Vuelve a intentarlo en unos días o adquiere Premium desde otra plataforma.'}
+              </Text>
+            </Box>
+          ) : selectedPriceUnavailable ? (
             <Text style={styles.warningInline}>
-              Los precios de la tienda aún están cargando. Verás el monto exacto en el modal de Apple al confirmar.
+              {overrides?.priceUnavailableMessage ??
+                'Este plan aún no está disponible en la tienda. Selecciona otro o vuelve más tarde.'}
+            </Text>
+          ) : !hasStoreOfferings && offeringsLoading ? (
+            <Text style={styles.warningInline}>
+              Los precios de la tienda aún están cargando. Verás el monto exacto al confirmar.
             </Text>
           ) : null}
 
@@ -326,10 +374,10 @@ export const JBPaywallScreen: React.FC<JBPaywallScreenProps> = ({ overrides, onS
             style={[
               styles.primaryCta,
               { backgroundColor: ctaBg },
-              (purchasing || !selectedPriceId) && styles.primaryCtaDisabled,
+              purchaseDisabled && styles.primaryCtaDisabled,
             ]}
             activeOpacity={0.85}
-            disabled={purchasing || !selectedPriceId}
+            disabled={purchaseDisabled}
             onPress={handlePurchase}
           >
             <Text style={styles.primaryCtaText}>
@@ -374,7 +422,28 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
   },
-  primaryCtaDisabled: { opacity: 0.55 },
+  primaryCtaDisabled: { opacity: 0.45 },
+  unavailableBox: {
+    marginTop: 4,
+    marginBottom: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
+    backgroundColor: 'rgba(255, 184, 0, 0.08)',
+  },
+  unavailableTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#7A5A00',
+    marginBottom: 4,
+  },
+  unavailableMessage: {
+    fontSize: 12,
+    color: '#7A5A00',
+    lineHeight: 17,
+  },
   primaryCtaText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16, letterSpacing: 0.2 },
   secondaryCta: { marginTop: 14, alignItems: 'center', paddingVertical: 10 },
   secondaryCtaDisabled: { opacity: 0.55 },

@@ -302,7 +302,34 @@ export const useJBUserAccountMenu = ({
       order.length ? order : defaultMenuItemOrder
     );
 
-    return [...sortedDefaults, ...extraOptions].filter((item) => item?.visible !== false);
+    // Merge extras: si tienen `insertAfter`, se intercalan justo
+    // después del item con ese menuId; el resto cae al final.
+    const itemIdToMenuId: Record<string, JBUserHomeMenuId> = {
+      'account-security': 'security',
+      'payment-methods': 'paymentMethods',
+      subscription: 'subscription',
+      settings: 'settings',
+      'sign-out': 'signOut',
+      notifications: 'notifications',
+    };
+    const merged: JBUserHomeMenuItem[] = [...sortedDefaults];
+    const trailingExtras: JBUserHomeMenuItem[] = [];
+    extraOptions.forEach((extra) => {
+      if (!extra?.insertAfter) {
+        trailingExtras.push(extra);
+        return;
+      }
+      const targetIndex = merged.findIndex(
+        (it) => itemIdToMenuId[it.id] === extra.insertAfter,
+      );
+      if (targetIndex === -1) {
+        trailingExtras.push(extra);
+      } else {
+        merged.splice(targetIndex + 1, 0, extra);
+      }
+    });
+
+    return [...merged, ...trailingExtras].filter((item) => item?.visible !== false);
   }, [
     appConfig?.auth,
     appConfig?.settings,

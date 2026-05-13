@@ -26,6 +26,13 @@ export type JBUserHomeMenuItem = {
   onPress?: () => void | Promise<void>;
   visible?: boolean;
   confirmation?: JBUserHomeMenuItemConfirmation;
+  /**
+   * Solo aplica a items pasados vía `extraOptions`. Inserta este item
+   * inmediatamente después del item con el `menuId` indicado (ej.
+   * `'subscription'`). Si no se especifica o no se encuentra el target,
+   * el item se agrega al final.
+   */
+  insertAfter?: JBUserHomeMenuId;
 };
 
 export type JBUserHomeDefaultOptions = {
