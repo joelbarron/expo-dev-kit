@@ -1,5 +1,11 @@
 # @joelbarron/expo-dev-kit
 
+## 0.1.17
+
+### Patch Changes
+
+- fa4bb85: fix
+
 ## 0.1.16
 
 ### Patch Changes
