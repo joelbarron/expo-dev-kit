@@ -121,6 +121,7 @@ export type JBAuthRoutesConfig = {
   profilePhotoPath?: string;
   profilesPath?: string;
   paymentMethodsPath?: string;
+  subscriptionPath?: string;
   profileCompletionPath?: string;
 };
 
@@ -178,6 +179,7 @@ export type JBAuthAccountScreensConfig = {
 export type JBAuthAccountMenuItemId =
   | 'security'
   | 'paymentMethods'
+  | 'subscription'
   | 'settings'
   | 'signOut'
   | 'notifications';

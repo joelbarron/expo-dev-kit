@@ -51,6 +51,7 @@ export type {
   BillingCatalogResponse,
   BillingEntitlementGrant,
   BillingEntitlementSummary,
+  BillingLimits,
   BillingMobileSyncResponse,
   BillingPlan,
   BillingPlanEntitlement,
