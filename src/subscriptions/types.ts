@@ -93,8 +93,12 @@ export type BillingQuotaUsage = {
   used: number;
   limit: number;
   remaining: number;
-  /** ISO timestamp del próximo reset (inicio del siguiente mes UTC). */
-  reset_at: string;
+  /**
+   * ISO timestamp del próximo reset (inicio del siguiente mes UTC).
+   * El backend lo entrega como `reset_at` pero el render
+   * `djangorestframework_camel_case` lo convierte a `resetAt` en JSON.
+   */
+  resetAt: string;
   reached: boolean;
 };
 

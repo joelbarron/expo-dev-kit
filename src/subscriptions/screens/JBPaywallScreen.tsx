@@ -39,6 +39,13 @@ export type JBPaywallScreenOverrides = {
   retryLabel?: string;
   /** Fine print del footer. */
   legalFootnote?: string;
+  /**
+   * Mensaje cuando RC no expone offerings para la plataforma actual
+   * (ej. Android sin productos configurados en Play Console). Se
+   * muestra inline y deshabilita el botón de compra.
+   */
+  storeUnavailableTitle?: string;
+  storeUnavailableMessage?: string;
 };
 
 export type JBPaywallRestoreResult = 'restored' | 'no_purchases' | 'error';
@@ -90,21 +97,57 @@ const useOfferings = (): OfferingsState & { refetch: () => void } => {
 };
 
 const findPackageForPrice = (offerings: any, price: BillingPlanPrice) => {
-  if (!offerings || !price.revenuecatProductId) return null;
+  if (!offerings) {
+    console.warn('[paywall] findPackageForPrice: no offerings object');
+    return null;
+  }
+  if (!price.revenuecatProductId) {
+    console.warn(
+      '[paywall] findPackageForPrice: price has no revenuecatProductId',
+      { priceId: price.id, price },
+    );
+    return null;
+  }
   const current = offerings.current;
-  if (!current?.availablePackages) return null;
+  if (!current?.availablePackages) {
+    console.warn(
+      '[paywall] findPackageForPrice: offerings.current has no availablePackages',
+      {
+        hasCurrent: !!current,
+        offeringKeys: offerings?.all ? Object.keys(offerings.all) : [],
+      },
+    );
+    return null;
+  }
   const target = price.revenuecatProductId;
-  return (
-    current.availablePackages.find((pkg: any) => {
-      const candidates = [
-        pkg?.product?.identifier,
-        pkg?.product?.productIdentifier,
-        pkg?.storeProduct?.identifier,
+  const pkgs = current.availablePackages;
+  const match = pkgs.find((pkg: any) => {
+    const candidates = [
+      pkg?.product?.identifier,
+      pkg?.product?.productIdentifier,
+      pkg?.storeProduct?.identifier,
+      pkg?.storeProduct?.productIdentifier,
+    ];
+    return candidates.includes(target);
+  });
+  if (!match) {
+    // Log para diagnosticar mismatch entre catálogo del backend y los
+    // products configurados en RC/store.
+    const availableIds = pkgs.map((pkg: any) => ({
+      pkgId: pkg?.identifier,
+      productId:
+        pkg?.product?.identifier ??
+        pkg?.product?.productIdentifier ??
+        pkg?.storeProduct?.identifier ??
         pkg?.storeProduct?.productIdentifier,
-      ];
-      return candidates.includes(target);
-    }) ?? null
-  );
+    }));
+    console.warn('[paywall] findPackageForPrice: no match', {
+      lookingFor: target,
+      availableInOffering: availableIds,
+      offeringIdentifier: current?.identifier,
+    });
+  }
+  return match ?? null;
 };
 
 const getDisplayPrice = (pkg: any, price: BillingPlanPrice): string => {
@@ -182,6 +225,21 @@ export const JBPaywallScreen: React.FC<JBPaywallScreenProps> = ({ overrides, onS
   const hasCatalogPrices = premiumPrices.length > 0;
   const hasStoreOfferings = !!offerings && !offeringsError;
   const showTrialCta = trial.eligible && trial.days > 0;
+
+  // Cuando RC no expone offerings (plataforma sin configurar en RC/Play,
+  // sin conexión a stores, etc.), aún mostramos los planes del catálogo
+  // para que el user entienda qué incluye Premium, pero deshabilitamos
+  // la compra y avisamos. Evita "click → error inmediato".
+  //
+  // NOTA: NO chequeamos por-price (findPackageForPrice) aquí porque la
+  // función puede retornar null transitoriamente (timing entre offerings
+  // y catálogo) o cuando un price específico no tiene mapeo a RC pero el
+  // offering general sí existe. El error per-price lo maneja
+  // `handlePurchase` (que dispara el flow de "Restaurar compras").
+  const storeOfferingsMissing =
+    !offeringsLoading && !hasStoreOfferings && purchasesAvailable;
+  const purchaseDisabled =
+    purchasing || !selectedPriceId || storeOfferingsMissing;
 
   const handlePurchase = async () => {
     setErrorMsg(null);
@@ -314,9 +372,20 @@ export const JBPaywallScreen: React.FC<JBPaywallScreenProps> = ({ overrides, onS
             );
           })}
 
-          {!hasStoreOfferings ? (
+          {storeOfferingsMissing ? (
+            <Box style={styles.unavailableBox}>
+              <Text style={styles.unavailableTitle}>
+                {overrides?.storeUnavailableTitle ??
+                  'Compras no disponibles aún en esta plataforma'}
+              </Text>
+              <Text style={styles.unavailableMessage}>
+                {overrides?.storeUnavailableMessage ??
+                  'Estamos finalizando la configuración con la tienda. Vuelve a intentarlo en unos días o adquiere Premium desde otra plataforma.'}
+              </Text>
+            </Box>
+          ) : !hasStoreOfferings && offeringsLoading ? (
             <Text style={styles.warningInline}>
-              Los precios de la tienda aún están cargando. Verás el monto exacto en el modal de Apple al confirmar.
+              Los precios de la tienda aún están cargando. Verás el monto exacto al confirmar.
             </Text>
           ) : null}
 
@@ -326,10 +395,10 @@ export const JBPaywallScreen: React.FC<JBPaywallScreenProps> = ({ overrides, onS
             style={[
               styles.primaryCta,
               { backgroundColor: ctaBg },
-              (purchasing || !selectedPriceId) && styles.primaryCtaDisabled,
+              purchaseDisabled && styles.primaryCtaDisabled,
             ]}
             activeOpacity={0.85}
-            disabled={purchasing || !selectedPriceId}
+            disabled={purchaseDisabled}
             onPress={handlePurchase}
           >
             <Text style={styles.primaryCtaText}>
@@ -374,7 +443,28 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
   },
-  primaryCtaDisabled: { opacity: 0.55 },
+  primaryCtaDisabled: { opacity: 0.45 },
+  unavailableBox: {
+    marginTop: 4,
+    marginBottom: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
+    backgroundColor: 'rgba(255, 184, 0, 0.08)',
+  },
+  unavailableTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#7A5A00',
+    marginBottom: 4,
+  },
+  unavailableMessage: {
+    fontSize: 12,
+    color: '#7A5A00',
+    lineHeight: 17,
+  },
   primaryCtaText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16, letterSpacing: 0.2 },
   secondaryCta: { marginTop: 14, alignItems: 'center', paddingVertical: 10 },
   secondaryCtaDisabled: { opacity: 0.55 },
