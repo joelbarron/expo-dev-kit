@@ -46,12 +46,6 @@ export type JBPaywallScreenOverrides = {
    */
   storeUnavailableTitle?: string;
   storeUnavailableMessage?: string;
-  /**
-   * Mensaje cuando hay offerings pero el price seleccionado no tiene
-   * package en la store (caso raro: catálogo del backend trae un SKU
-   * que aún no existe en la store).
-   */
-  priceUnavailableMessage?: string;
 };
 
 export type JBPaywallRestoreResult = 'restored' | 'no_purchases' | 'error';
@@ -103,21 +97,57 @@ const useOfferings = (): OfferingsState & { refetch: () => void } => {
 };
 
 const findPackageForPrice = (offerings: any, price: BillingPlanPrice) => {
-  if (!offerings || !price.revenuecatProductId) return null;
+  if (!offerings) {
+    console.warn('[paywall] findPackageForPrice: no offerings object');
+    return null;
+  }
+  if (!price.revenuecatProductId) {
+    console.warn(
+      '[paywall] findPackageForPrice: price has no revenuecatProductId',
+      { priceId: price.id, price },
+    );
+    return null;
+  }
   const current = offerings.current;
-  if (!current?.availablePackages) return null;
+  if (!current?.availablePackages) {
+    console.warn(
+      '[paywall] findPackageForPrice: offerings.current has no availablePackages',
+      {
+        hasCurrent: !!current,
+        offeringKeys: offerings?.all ? Object.keys(offerings.all) : [],
+      },
+    );
+    return null;
+  }
   const target = price.revenuecatProductId;
-  return (
-    current.availablePackages.find((pkg: any) => {
-      const candidates = [
-        pkg?.product?.identifier,
-        pkg?.product?.productIdentifier,
-        pkg?.storeProduct?.identifier,
+  const pkgs = current.availablePackages;
+  const match = pkgs.find((pkg: any) => {
+    const candidates = [
+      pkg?.product?.identifier,
+      pkg?.product?.productIdentifier,
+      pkg?.storeProduct?.identifier,
+      pkg?.storeProduct?.productIdentifier,
+    ];
+    return candidates.includes(target);
+  });
+  if (!match) {
+    // Log para diagnosticar mismatch entre catálogo del backend y los
+    // products configurados en RC/store.
+    const availableIds = pkgs.map((pkg: any) => ({
+      pkgId: pkg?.identifier,
+      productId:
+        pkg?.product?.identifier ??
+        pkg?.product?.productIdentifier ??
+        pkg?.storeProduct?.identifier ??
         pkg?.storeProduct?.productIdentifier,
-      ];
-      return candidates.includes(target);
-    }) ?? null
-  );
+    }));
+    console.warn('[paywall] findPackageForPrice: no match', {
+      lookingFor: target,
+      availableInOffering: availableIds,
+      offeringIdentifier: current?.identifier,
+    });
+  }
+  return match ?? null;
 };
 
 const getDisplayPrice = (pkg: any, price: BillingPlanPrice): string => {
@@ -196,24 +226,20 @@ export const JBPaywallScreen: React.FC<JBPaywallScreenProps> = ({ overrides, onS
   const hasStoreOfferings = !!offerings && !offeringsError;
   const showTrialCta = trial.eligible && trial.days > 0;
 
-  // Cuando RC no expone offerings (plataforma sin configurar, sin
-  // conexión a stores, etc.), aún mostramos los planes del catálogo para
-  // que el user entienda qué incluye Premium, pero deshabilitamos la
-  // compra y avisamos. Esto evita el "click → error inmediato".
+  // Cuando RC no expone offerings (plataforma sin configurar en RC/Play,
+  // sin conexión a stores, etc.), aún mostramos los planes del catálogo
+  // para que el user entienda qué incluye Premium, pero deshabilitamos
+  // la compra y avisamos. Evita "click → error inmediato".
+  //
+  // NOTA: NO chequeamos por-price (findPackageForPrice) aquí porque la
+  // función puede retornar null transitoriamente (timing entre offerings
+  // y catálogo) o cuando un price específico no tiene mapeo a RC pero el
+  // offering general sí existe. El error per-price lo maneja
+  // `handlePurchase` (que dispara el flow de "Restaurar compras").
   const storeOfferingsMissing =
     !offeringsLoading && !hasStoreOfferings && purchasesAvailable;
-  const selectedPriceObj = premiumPrices.find((p) => p.id === selectedPriceId);
-  const selectedPackage =
-    selectedPriceObj && hasStoreOfferings
-      ? findPackageForPrice(offerings, selectedPriceObj)
-      : null;
-  const selectedPriceUnavailable =
-    hasStoreOfferings && !!selectedPriceObj && !selectedPackage;
   const purchaseDisabled =
-    purchasing ||
-    !selectedPriceId ||
-    storeOfferingsMissing ||
-    selectedPriceUnavailable;
+    purchasing || !selectedPriceId || storeOfferingsMissing;
 
   const handlePurchase = async () => {
     setErrorMsg(null);
@@ -357,11 +383,6 @@ export const JBPaywallScreen: React.FC<JBPaywallScreenProps> = ({ overrides, onS
                   'Estamos finalizando la configuración con la tienda. Vuelve a intentarlo en unos días o adquiere Premium desde otra plataforma.'}
               </Text>
             </Box>
-          ) : selectedPriceUnavailable ? (
-            <Text style={styles.warningInline}>
-              {overrides?.priceUnavailableMessage ??
-                'Este plan aún no está disponible en la tienda. Selecciona otro o vuelve más tarde.'}
-            </Text>
           ) : !hasStoreOfferings && offeringsLoading ? (
             <Text style={styles.warningInline}>
               Los precios de la tienda aún están cargando. Verás el monto exacto al confirmar.
