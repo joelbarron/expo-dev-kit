@@ -236,6 +236,10 @@ export const getAuthRoutesConfig = (
       override.paymentMethodsPath ?? base.paymentMethodsPath,
       "/payments/payment-methods/list",
     ),
+    subscriptionPath: normalizeAbsoluteRoutePath(
+      override.subscriptionPath ?? base.subscriptionPath,
+      "/subscription",
+    ),
     profileCompletionPath,
   };
 };

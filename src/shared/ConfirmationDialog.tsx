@@ -42,6 +42,8 @@ type ConfirmationDialogProps = {
   onAgree?: () => void | Promise<void>;
   onDisAgree?: () => void | Promise<void>;
   footerLayout?: DialogLayout;
+  /** When true and footerLayout="column", renders the agree button first (top) and disagree second (bottom). */
+  footerReverse?: boolean;
   footerClassName?: string;
   contentClassName?: string;
   disagreeTextButtonClassName?: string;
@@ -99,6 +101,7 @@ export const ConfirmationDialog = ({
   onAgree,
   onDisAgree,
   footerLayout = "row",
+  footerReverse = false,
   footerClassName = "",
   contentClassName = "w-full max-w-[415px] items-center gap-4 rounded-3xl border border-outline-200 bg-background-light px-5 py-5 dark:border-outline-700 dark:bg-background-0",
   disagreeTextButtonClassName = "",
@@ -149,6 +152,21 @@ export const ConfirmationDialog = ({
         </AlertDialogBody>
 
         <AlertDialogFooter className={`mt-5 w-full ${footerLayoutClass} ${footerClassName}`.trim()}>
+          {footerReverse && !hideAgree ? (
+            <JBFormButton
+              variant={agreeVariant}
+              action={agreeColor}
+              size="sm"
+              text={agreeText}
+              loading={agreeLoading}
+              isDisabled={agreeDisabled}
+              textClassName={resolveDialogActionTextClass(agreeVariant, agreeColor)}
+              className={footerLayout === "column" ? "w-full" : "flex-1"}
+              onPress={() => void handleClickAgree()}
+              {...agreeButtonProps}
+            />
+          ) : null}
+
           {!hideDisagree ? (
             <JBFormButton
               variant={disagreeVariant}
@@ -168,7 +186,7 @@ export const ConfirmationDialog = ({
             />
           ) : null}
 
-          {!hideAgree ? (
+          {!footerReverse && !hideAgree ? (
             <JBFormButton
               variant={agreeVariant}
               action={agreeColor}

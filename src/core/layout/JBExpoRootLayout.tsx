@@ -803,13 +803,34 @@ function JBBiometricsActivationPromptGuard() {
     shouldPromptOnLogin,
   ]);
 
+  const biometricIcon = (
+    <View
+      style={{
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(16,185,129,0.12)",
+        marginBottom: 4,
+      }}
+    >
+      <RNText style={{ fontSize: 30 }}>
+        {Platform.OS === "ios" && biometricLabel?.toLowerCase().includes("face")
+          ? "🪪"
+          : "🔐"}
+      </RNText>
+    </View>
+  );
+
   return (
     <ConfirmationDialog
       open={showPrompt}
       setOpen={setShowPrompt}
-      showIcon={false}
+      showIcon
+      icon={biometricIcon}
       title={`Activa ${biometricLabel}`}
-      content={`Usa ${biometricLabel} para desbloquear tu sesión de forma rápida y segura.`}
+      content={`Usa ${biometricLabel} para desbloquear tu sesión de forma rápida y segura. Podrás desactivarlo en cualquier momento desde Ajustes.`}
       agreeText={`Activar ${biometricLabel}`}
       agreeColor="primary"
       agreeVariant="solid"
@@ -817,7 +838,9 @@ function JBBiometricsActivationPromptGuard() {
       disagreeColor="secondary"
       disagreeVariant="link"
       footerLayout="column"
+      footerReverse
       closeOnAgree={false}
+      contentClassName="w-full max-w-[415px] items-center gap-4 rounded-3xl border border-outline-200 bg-background-light px-6 py-8 dark:border-outline-700 dark:bg-background-0"
       onAgree={async () => {
         const result = await authenticate({
           context: "enable",

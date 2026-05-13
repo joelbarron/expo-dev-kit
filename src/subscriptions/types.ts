@@ -77,6 +77,13 @@ export type BillingTrialInfo = {
   eligible: boolean;
 };
 
+/**
+ * Caps del tier gratuito definidos por el integrador en
+ * `JB_DRF_BILLING.FREE_LIMITS`. Las keys son específicas del producto
+ * (ej. `moneyAccounts`, `customCategories`).
+ */
+export type BillingLimits = Record<string, number>;
+
 export type BillingStatusResponse = {
   appSlug: string | null;
   subscription: BillingSubscriptionSummary | null;
@@ -86,6 +93,7 @@ export type BillingStatusResponse = {
   };
   purchaseChannels: BillingPurchaseChannels;
   trial: BillingTrialInfo;
+  limits: BillingLimits;
 };
 
 export type BillingAccessCheckItem = {

@@ -39,6 +39,7 @@ export type JBUserHomeDefaultOptions = {
 export type JBUserHomeMenuId =
   | 'security'
   | 'paymentMethods'
+  | 'subscription'
   | 'settings'
   | 'signOut'
   | 'notifications';

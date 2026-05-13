@@ -25,13 +25,21 @@ const defaultLegacyOptions: Required<JBUserHomeDefaultOptions> = {
   signOutPath: '/sign-out',
 };
 
-const defaultMenuItemOrder: JBUserHomeMenuId[] = ['security', 'paymentMethods', 'settings', 'signOut', 'notifications'];
+const defaultMenuItemOrder: JBUserHomeMenuId[] = [
+  'security',
+  'paymentMethods',
+  'subscription',
+  'settings',
+  'signOut',
+  'notifications',
+];
 
 type JBUserMenuRoutePaths = {
   accountSecurityPath: string;
   notificationsPath: string;
   settingsPath: string;
   paymentMethodsPath: string;
+  subscriptionPath: string;
 };
 
 export const createJBUserHomeDefaultOptions = (
@@ -49,6 +57,7 @@ export const createJBUserHomeDefaultOptions = (
     settingsPath: routePaths?.settingsPath ?? '/settings',
     paymentMethodsPath:
       routePaths?.paymentMethodsPath ?? '/payments/payment-methods/list',
+    subscriptionPath: routePaths?.subscriptionPath ?? '/subscription',
   };
   const items: Array<JBUserHomeMenuItem> = [];
 
@@ -109,12 +118,14 @@ const getConfiguredDefaultMenuItems = ({
   settingsPath,
   notificationsPath,
   paymentMethodsPath,
+  subscriptionPath,
 }: {
   basePath: string;
   signOutPath: string;
   settingsPath: string;
   notificationsPath: string;
   paymentMethodsPath: string;
+  subscriptionPath: string;
 }): Record<JBUserHomeMenuId, JBUserHomeMenuItem> => ({
   security: {
     id: 'account-security',
@@ -129,6 +140,13 @@ const getConfiguredDefaultMenuItems = ({
     subtitle: 'Configura tus metodos de pago',
     iconName: 'credit-card',
     href: paymentMethodsPath,
+  },
+  subscription: {
+    id: 'subscription',
+    title: 'Mi suscripcion',
+    subtitle: 'Administra tu plan y restaura compras',
+    iconName: 'card-membership',
+    href: subscriptionPath,
   },
   settings: {
     id: 'settings',
@@ -181,6 +199,7 @@ const applyMenuOrdering = (
   const itemIdToMenuId: Record<string, JBUserHomeMenuId> = {
     'account-security': 'security',
     'payment-methods': 'paymentMethods',
+    subscription: 'subscription',
     settings: 'settings',
     'sign-out': 'signOut',
     notifications: 'notifications',
@@ -254,6 +273,8 @@ export const useJBUserAccountMenu = ({
       settingsPath: settingsRoutes.root,
       notificationsPath: settingsRoutes.notifications,
       paymentMethodsPath: authRoutes.paymentMethodsPath,
+      subscriptionPath:
+        (authRoutes as any).subscriptionPath ?? '/subscription',
     });
     const mappedDefaults = include
       .map((menuId) => {

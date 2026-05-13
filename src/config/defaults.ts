@@ -164,6 +164,7 @@ export const defaultJBExpoConfig: JBAppConfig = {
       profilePhotoPath: "/user/photo",
       profilesPath: "/user/profiles",
       paymentMethodsPath: "/payments/payment-methods/list",
+      subscriptionPath: "/subscription",
       profileCompletionPath: "/account/complete-profile",
     },
     showDebugSocial: false,
