@@ -96,58 +96,35 @@ const useOfferings = (): OfferingsState & { refetch: () => void } => {
   return { ...state, refetch: () => setTick((t) => t + 1) };
 };
 
+/**
+ * Normaliza un product identifier. Google Play Billing v5+ devuelve
+ * `productId:basePlanId` (ej. `finzenio_premium_monthly_mx:monthly`),
+ * mientras que iOS devuelve solo `productId`. Comparamos por la parte
+ * previa al `:` para que el matcheo funcione en ambas plataformas.
+ */
+const normalizeProductId = (raw: string | null | undefined): string | null => {
+  if (!raw) return null;
+  const colonIdx = raw.indexOf(':');
+  return colonIdx === -1 ? raw : raw.slice(0, colonIdx);
+};
+
 const findPackageForPrice = (offerings: any, price: BillingPlanPrice) => {
-  if (!offerings) {
-    console.warn('[paywall] findPackageForPrice: no offerings object');
-    return null;
-  }
-  if (!price.revenuecatProductId) {
-    console.warn(
-      '[paywall] findPackageForPrice: price has no revenuecatProductId',
-      { priceId: price.id, price },
-    );
-    return null;
-  }
+  if (!offerings) return null;
+  if (!price.revenuecatProductId) return null;
   const current = offerings.current;
-  if (!current?.availablePackages) {
-    console.warn(
-      '[paywall] findPackageForPrice: offerings.current has no availablePackages',
-      {
-        hasCurrent: !!current,
-        offeringKeys: offerings?.all ? Object.keys(offerings.all) : [],
-      },
-    );
-    return null;
-  }
+  if (!current?.availablePackages) return null;
   const target = price.revenuecatProductId;
-  const pkgs = current.availablePackages;
-  const match = pkgs.find((pkg: any) => {
-    const candidates = [
-      pkg?.product?.identifier,
-      pkg?.product?.productIdentifier,
-      pkg?.storeProduct?.identifier,
-      pkg?.storeProduct?.productIdentifier,
-    ];
-    return candidates.includes(target);
-  });
-  if (!match) {
-    // Log para diagnosticar mismatch entre catálogo del backend y los
-    // products configurados en RC/store.
-    const availableIds = pkgs.map((pkg: any) => ({
-      pkgId: pkg?.identifier,
-      productId:
-        pkg?.product?.identifier ??
-        pkg?.product?.productIdentifier ??
-        pkg?.storeProduct?.identifier ??
+  return (
+    current.availablePackages.find((pkg: any) => {
+      const candidates = [
+        pkg?.product?.identifier,
+        pkg?.product?.productIdentifier,
+        pkg?.storeProduct?.identifier,
         pkg?.storeProduct?.productIdentifier,
-    }));
-    console.warn('[paywall] findPackageForPrice: no match', {
-      lookingFor: target,
-      availableInOffering: availableIds,
-      offeringIdentifier: current?.identifier,
-    });
-  }
-  return match ?? null;
+      ];
+      return candidates.some((id) => normalizeProductId(id) === target);
+    }) ?? null
+  );
 };
 
 const getDisplayPrice = (pkg: any, price: BillingPlanPrice): string => {
