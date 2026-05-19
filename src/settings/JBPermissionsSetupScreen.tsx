@@ -342,7 +342,7 @@ export const JBPermissionsSetupScreen = ({
 
                       {showGrantAction ? (
                         <JBFormButton
-                          text={isRequesting ? 'Solicitando...' : 'Conceder'}
+                          text={isRequesting ? 'Solicitando...' : 'Continuar'}
                           action="primary"
                           variant="link"
                           onPress={() => void requestPermission(permission.key)}
