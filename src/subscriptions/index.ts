@@ -32,6 +32,11 @@ export {
 } from './purchases';
 export { buildAppUserId, parseAppUserId } from './utils/appUserId';
 export {
+  isEntitlementHiddenInPaywall,
+  visiblePaywallEntitlements,
+  type PaywallPlatform,
+} from './utils/paywallVisibility';
+export {
   EntitlementGate,
   JBPlanCard,
   JBTrialBannerCard,

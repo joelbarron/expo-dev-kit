@@ -27,6 +27,7 @@ import {
 } from '../purchases';
 import { useJBBilling } from '../provider';
 import { BillingPlan, BillingPlanPrice, BillingPlatform } from '../types';
+import { visiblePaywallEntitlements } from '../utils/paywallVisibility';
 
 export type JBPaywallScreenOverrides = {
   title?: string;
@@ -177,6 +178,16 @@ export const JBPaywallScreen: React.FC<JBPaywallScreenProps> = ({ overrides, onS
     return byPrices;
   }, [catalogQuery.data]);
 
+  /**
+   * Un plan puede incluir features que esta plataforma no ofrece (p. ej. algo
+   * disponible solo en la versión web). El backend los marca con
+   * `flags.hiddenInPaywall` y aquí no se anuncian.
+   */
+  const paywallFeatures = useMemo(
+    () => visiblePaywallEntitlements(premiumPlan?.entitlements),
+    [premiumPlan],
+  );
+
   const premiumPrices = premiumPlan?.prices ?? [];
   const yearlySavings = useMemo(() => computeYearlySavingsPercent(premiumPrices), [premiumPrices]);
 
@@ -305,7 +316,7 @@ export const JBPaywallScreen: React.FC<JBPaywallScreenProps> = ({ overrides, onS
       <PaywallHero
         title={overrides?.title ?? 'FinZenio Premium'}
         subtitle={overrides?.subtitle ?? 'Lleva tus finanzas al siguiente nivel.'}
-        features={premiumPlan?.entitlements}
+        features={paywallFeatures}
         trial={trial}
       />
 
