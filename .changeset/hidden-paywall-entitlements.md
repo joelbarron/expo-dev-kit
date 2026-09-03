@@ -1,5 +1,5 @@
 ---
-"@joelbarron/expo-dev-kit": minor
+"@joelbarron/expo-dev-kit": patch
 ---
 
 feat(subscriptions): ocultar entitlements del paywall por plataforma
